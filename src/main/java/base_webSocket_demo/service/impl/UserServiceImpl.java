@@ -15,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,6 +60,28 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         userHasRoleRepository.save(userHasRole);
+    }
+
+    @Override
+    public User findOrCreateUser(String email, String name) {
+        return userRepository.findByEmail(email)
+                .orElseGet(() -> {
+
+                    Role role = roleRepository.findByName("user")
+                            .orElseThrow(() -> new RuntimeException("Role name not found"));
+
+                    User user = new User();
+                    user.setUsername(name);
+                    user.setEmail(email);
+
+                    UserHasRole userHasRole = new UserHasRole();
+                    userHasRole.setUser(user);
+                    userHasRole.setRole(role);
+
+                    user.setUserHasRoles(Set.of(userHasRole));
+
+                    return userRepository.save(user);
+                });
     }
 
     @Override

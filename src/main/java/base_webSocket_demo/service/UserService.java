@@ -12,5 +12,7 @@ public interface UserService {
 
     void createUser(RegisterRequest request);
 
+    User findOrCreateUser(String email, String name);
+
     UserDTO convertToDto(User user);
 }
