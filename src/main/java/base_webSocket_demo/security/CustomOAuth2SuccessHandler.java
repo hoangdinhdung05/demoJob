@@ -39,31 +39,22 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
 
         User user = userService.findOrCreateUser(email, name);
 
-//        List<GrantedAuthority> authorities = user.getUserHasRoles().stream()
-//                .map(userHasRole -> new SimpleGrantedAuthority(userHasRole.getRole().getName()))
-//                .map(authority -> (GrantedAuthority) authority)
-//                .collect(Collectors.toList());
-//
-//
-//        Authentication fakeAuth = new UsernamePasswordAuthenticationToken(
-//                user.getUsername(),
-//                null,
-//                authorities
-//        );
-
         String token = jwtTokenProvider.generateAccessToken(user);
 
-        Map<String, Object> responseBody = new HashMap<>();
-        responseBody.put("accessToken", token);
-        responseBody.put("tokenType", TokenType.ACCESS_TOKEN);
-        responseBody.put("userId", user.getId());
-        responseBody.put("username", user.getUsername());
-        responseBody.put("roles", user.getUserHasRoles().stream()
-                .map(userHasRole -> new SimpleGrantedAuthority(userHasRole.getRole().getName()))
-                .collect(Collectors.toSet())
-        );
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(responseBody));
+//        Map<String, Object> responseBody = new HashMap<>();
+//        responseBody.put("accessToken", token);
+//        responseBody.put("tokenType", TokenType.ACCESS_TOKEN);
+//        responseBody.put("userId", user.getId());
+//        responseBody.put("username", user.getUsername());
+//        responseBody.put("roles", user.getUserHasRoles().stream()
+//                .map(userHasRole -> new SimpleGrantedAuthority(userHasRole.getRole().getName()))
+//                .collect(Collectors.toSet())
+//        );
+//        response.setContentType("application/json");
+//        response.setCharacterEncoding("UTF-8");
+//        response.getWriter().write(objectMapper.writeValueAsString(responseBody));
+        String redirectUrl = "http://localhost:3000/oauth2-redirect?token=" + token;
+
+        response.sendRedirect(redirectUrl);
     }
 }
