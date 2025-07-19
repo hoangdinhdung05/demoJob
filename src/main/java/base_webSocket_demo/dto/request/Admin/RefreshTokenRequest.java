@@ -1,4 +1,4 @@
-package base_webSocket_demo.dto.request;
+package base_webSocket_demo.dto.request.Admin;
 
 import lombok.Data;
 

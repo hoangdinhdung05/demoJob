@@ -1,6 +1,7 @@
 package base_webSocket_demo.controller;
 
 import base_webSocket_demo.dto.request.LoginRequest;
+import base_webSocket_demo.dto.request.RegisterRequest;
 import base_webSocket_demo.dto.response.AuthResponse;
 import base_webSocket_demo.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.authenticateUser(request));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
     }
 
 

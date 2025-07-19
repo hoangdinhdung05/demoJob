@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "tbl_user")
@@ -29,6 +30,10 @@ public class User extends AbstractEntity<Long> {
     @Column(name = "password")
     private String password;
 
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserProfile userProfile;
+
     @OneToMany(
             cascade = CascadeType.ALL,
             fetch = FetchType.EAGER,
@@ -36,4 +41,10 @@ public class User extends AbstractEntity<Long> {
             orphanRemoval = true
     )
     private Set<UserHasRole> userHasRoles = new HashSet<>();
+
+    public Set<Role> getRoles() {
+        return userHasRoles.stream()
+                .map(UserHasRole::getRole)
+                .collect(Collectors.toSet());
+    }
 }
