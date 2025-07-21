@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-import java.util.List;
+
 import java.util.Set;
 
 @Getter
@@ -20,5 +20,5 @@ public class AdminCreateUserResponse {
 
     private AdminUserProfileResponse userProfile;
 
-    private Set<RoleResponse> roles;
+    private Set<RoleUseResponse> roles;
 }

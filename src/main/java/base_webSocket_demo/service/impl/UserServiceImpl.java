@@ -7,7 +7,7 @@ import base_webSocket_demo.dto.request.Admin.Users.UserUpdateRequest;
 import base_webSocket_demo.dto.request.RegisterRequest;
 import base_webSocket_demo.dto.response.Admin.AdminCreateUserResponse;
 import base_webSocket_demo.dto.response.Admin.AdminUserProfileResponse;
-import base_webSocket_demo.dto.response.Admin.RoleResponse;
+import base_webSocket_demo.dto.response.Admin.RoleUseResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 import base_webSocket_demo.entity.Role;
 import base_webSocket_demo.entity.User;
@@ -149,9 +149,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public AdminCreateUserResponse adminUpdateUser(long userId, UserUpdateRequest request) {
-        //check userId
+        // Check userId
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " +  userId));
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
@@ -164,28 +164,30 @@ public class UserServiceImpl implements UserService {
 
         if (request.getUserProfile() != null) {
             UserProfile profile = getUserProfile(request, user);
-
             user.setUserProfile(profile);
         }
 
-        User newUser = user;
+        // Update roles safely for Hibernate
+
         if (request.getRoles() != null && !request.getRoles().isEmpty()) {
-            Set<UserHasRole> roles = request.getRoles().stream()
+            User finalUser = user;
+            Set<UserHasRole> newRoles = request.getRoles().stream()
                     .map(roleName -> {
                         Role role = roleRepository.findByName(roleName)
                                 .orElseThrow(() -> new RuntimeException("Role name not found with name: " + roleName));
-
-                        log.warn("Role name not found with role name={}", roleName);
-
                         return UserHasRole.builder()
-                                .user(newUser)
+                                .user(finalUser)
                                 .role(role)
                                 .build();
                     })
                     .collect(Collectors.toSet());
 
-            user.getUserHasRoles().clear(); // xoa di role cu
-            user.setUserHasRoles(roles);
+            user.getUserHasRoles().clear();
+            userRepository.save(user); // <-- Bắt buộc phải flush sau khi clear
+            user.getUserHasRoles().addAll(newRoles);
+        } else {
+            user.getUserHasRoles().clear();
+            userRepository.save(user); // <-- flush nếu xóa hết role
         }
 
         user = userRepository.save(user);
@@ -232,9 +234,9 @@ public class UserServiceImpl implements UserService {
                 .toList();
 
         return PageResponse.<UserDTO>builder()
-                .page(page)
-                .size(size)
-                .total(userPages.getTotalPages())
+                .page(userPages.getNumber() + 1)
+                .size(userPages.getSize())
+                .total(userPages.getTotalElements())
                 .items(responseList)
                 .build();
     }
@@ -322,7 +324,7 @@ public class UserServiceImpl implements UserService {
                 .roles(user.getUserHasRoles().stream()
                         .map(urs -> {
                             Role role = urs.getRole();
-                            return new RoleResponse(role.getId(), role.getName());
+                            return new RoleUseResponse(role.getId(), role.getName());
                         })
                         .collect(Collectors.toSet())
                 )

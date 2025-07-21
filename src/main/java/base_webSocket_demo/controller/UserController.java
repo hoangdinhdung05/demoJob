@@ -52,7 +52,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("/admin/{userId}")
+    @PatchMapping("/admin/{userId}")
     public ResponseData<?> adminUpdateUserByUserId(@PathVariable @Min(1) Long userId, @RequestBody UserUpdateRequest request) {
 
         log.info("Api admin update user by user id={}", userId);

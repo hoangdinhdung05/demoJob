@@ -7,6 +7,7 @@ import base_webSocket_demo.repository.UserRepository;
 import base_webSocket_demo.util.excel.BaseExport;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/excel")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class ExcelController {
 
     private final UserRepository userRepository;
@@ -37,7 +39,7 @@ public class ExcelController {
         new BaseExport<>(listUser)
                 .writeHeaderLine(headers)
                 .writeDataLines(fields, UserExportDTO.class)
-                .exportBase64(response);
+                .export(response, "danhsachUser");
     }
 
     private UserExportDTO toExportDTO(User user) {

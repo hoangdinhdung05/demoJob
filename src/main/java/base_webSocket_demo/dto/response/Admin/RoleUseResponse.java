@@ -9,10 +9,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @Builder
-public class RoleResponse {
+public class RoleUseResponse {
 
     private int id;
     private String name;
-    private String description;
-
 }
