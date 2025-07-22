@@ -7,6 +7,8 @@ import base_webSocket_demo.dto.request.RegisterRequest;
 import base_webSocket_demo.dto.response.Admin.User.AdminCreateUserResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 import base_webSocket_demo.entity.User;
+import base_webSocket_demo.util.UserStatus;
+
 import java.util.Optional;
 
 public interface UserService {
@@ -27,5 +29,7 @@ public interface UserService {
     PageResponse<?> adminGetListUser(int page, int size);
 
     void adminDeleteUser(long userId);
+
+    AdminCreateUserResponse changeUserStatus(long userId, UserStatus userStatus);
 
 }

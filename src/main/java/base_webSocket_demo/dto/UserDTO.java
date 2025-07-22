@@ -1,5 +1,6 @@
 package base_webSocket_demo.dto;
 
+import base_webSocket_demo.dto.response.Admin.User.UserCompanyResponse;
 import lombok.Builder;
 import lombok.Data;
 import java.util.Set;

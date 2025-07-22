@@ -20,5 +20,7 @@ public class UserUpdateRequest {
 
     private UserProfileRequest userProfile;
 
+    private UserCompanyRequest companyInfo;
+
     private Set<String> roles;
 }

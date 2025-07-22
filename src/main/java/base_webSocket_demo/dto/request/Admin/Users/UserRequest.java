@@ -1,5 +1,6 @@
 package base_webSocket_demo.dto.request.Admin.Users;
 
+import base_webSocket_demo.util.UserStatus;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,9 +31,13 @@ public class UserRequest implements Serializable {
     @NotBlank(message = "Password must not be blank")
     private String password;
 
+    private UserStatus userStatus;
+
     private UserProfileRequest userProfile;
 
     @NotEmpty(message = "User must have at least one role")
     private Set<String> roles;
+
+    private UserCompanyRequest companyInfo;
 
 }
