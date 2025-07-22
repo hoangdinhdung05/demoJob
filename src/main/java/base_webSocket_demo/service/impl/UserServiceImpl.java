@@ -299,7 +299,7 @@ public class UserServiceImpl implements UserService {
                 .roles(user.getUserHasRoles().stream()
                         .map(urs -> {
                             Role role = urs.getRole();
-                            return new RoleUseResponse(role.getId(), role.getName());
+                            return new RoleUseResponse(role.getId(), role.getName(), role.getCreatedBy(), role.getUpdatedBy());
                         })
                         .collect(Collectors.toSet())
                 )
