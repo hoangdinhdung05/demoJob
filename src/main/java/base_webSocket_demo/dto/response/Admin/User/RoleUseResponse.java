@@ -1,4 +1,4 @@
-package base_webSocket_demo.dto.response.Admin;
+package base_webSocket_demo.dto.response.Admin.User;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,4 +13,6 @@ public class RoleUseResponse {
 
     private int id;
     private String name;
+    private String createdBy;
+    private String updatedBy;
 }

@@ -2,7 +2,6 @@ package base_webSocket_demo.service;
 
 import base_webSocket_demo.dto.request.Admin.RoleRequest;
 import base_webSocket_demo.dto.response.Admin.RoleResponse;
-import base_webSocket_demo.dto.response.Admin.RoleUseResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 
 public interface RoleService {

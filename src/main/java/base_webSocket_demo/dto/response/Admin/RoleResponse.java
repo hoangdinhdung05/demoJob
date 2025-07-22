@@ -14,5 +14,7 @@ public class RoleResponse {
     private int id;
     private String name;
     private String description;
+    private String createdBy;
+    private String updatedBy;
 
 }

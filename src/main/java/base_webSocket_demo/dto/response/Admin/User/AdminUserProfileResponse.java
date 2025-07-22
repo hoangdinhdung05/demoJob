@@ -1,4 +1,4 @@
-package base_webSocket_demo.dto.response.Admin;
+package base_webSocket_demo.dto.response.Admin.User;
 
 import base_webSocket_demo.util.Gender;
 import lombok.AllArgsConstructor;

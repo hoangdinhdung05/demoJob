@@ -5,9 +5,9 @@ import base_webSocket_demo.dto.request.Admin.Users.UserProfileRequest;
 import base_webSocket_demo.dto.request.Admin.Users.UserRequest;
 import base_webSocket_demo.dto.request.Admin.Users.UserUpdateRequest;
 import base_webSocket_demo.dto.request.RegisterRequest;
-import base_webSocket_demo.dto.response.Admin.AdminCreateUserResponse;
-import base_webSocket_demo.dto.response.Admin.AdminUserProfileResponse;
-import base_webSocket_demo.dto.response.Admin.RoleUseResponse;
+import base_webSocket_demo.dto.response.Admin.User.AdminCreateUserResponse;
+import base_webSocket_demo.dto.response.Admin.User.AdminUserProfileResponse;
+import base_webSocket_demo.dto.response.Admin.User.RoleUseResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 import base_webSocket_demo.entity.Role;
 import base_webSocket_demo.entity.User;
@@ -49,31 +49,6 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email);
     }
 
-//    @Override
-//    public UserDTO createUser(RegisterRequest request) {
-//
-//        User user = User.builder()
-//                .username(request.getUsername())
-//                .email(request.getEmail())
-//                .firstName(request.getFirstName())
-//                .lastName(request.getLastName())
-//                .password(passwordEncoder.encode(request.getPassword()))
-//                .build();
-//        user = userRepository.save(user);
-//
-//        Role defaultRole = roleRepository.findByName("user") //ROLE_USER
-//                .orElseThrow(() -> new RuntimeException("Default role not found"));
-//
-//        System.out.println(defaultRole);
-//
-//        UserHasRole userHasRole = UserHasRole.builder()
-//                .user(user)
-//                .role(defaultRole)
-//                .build();
-//
-//        userHasRoleRepository.save(userHasRole);
-//        return convertUserDTO(user);
-//    }
     @Override
     public UserDTO createUser(RegisterRequest request) {
         // 1. Tìm role mặc định

@@ -2,7 +2,7 @@ package base_webSocket_demo.controller;
 
 import base_webSocket_demo.dto.request.Admin.Users.UserRequest;
 import base_webSocket_demo.dto.request.Admin.Users.UserUpdateRequest;
-import base_webSocket_demo.dto.response.Admin.AdminCreateUserResponse;
+import base_webSocket_demo.dto.response.Admin.User.AdminCreateUserResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 import base_webSocket_demo.dto.response.system.ResponseData;
 import base_webSocket_demo.dto.response.system.ResponseError;

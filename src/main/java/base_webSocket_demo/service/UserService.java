@@ -4,7 +4,7 @@ import base_webSocket_demo.dto.UserDTO;
 import base_webSocket_demo.dto.request.Admin.Users.UserRequest;
 import base_webSocket_demo.dto.request.Admin.Users.UserUpdateRequest;
 import base_webSocket_demo.dto.request.RegisterRequest;
-import base_webSocket_demo.dto.response.Admin.AdminCreateUserResponse;
+import base_webSocket_demo.dto.response.Admin.User.AdminCreateUserResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 import base_webSocket_demo.entity.User;
 import java.util.Optional;

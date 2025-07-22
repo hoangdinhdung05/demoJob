@@ -7,6 +7,9 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.time.LocalDateTime;
@@ -87,6 +90,30 @@ public class JwtTokenProvider {
     }
 
     // ===================== COMMON UTILS =====================
+
+    public static Optional<String> getCurrentUserLogin() {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        return Optional.ofNullable(extractPrincipal(securityContext.getAuthentication()));
+    }
+
+
+    private static String extractPrincipal(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof UserDetails) {
+            return ((UserDetails) principal).getUsername(); // hoặc getEmail()
+        }
+
+        if (principal instanceof String) {
+            return (String) principal; // ví dụ: "admin"
+        }
+
+        return null;
+    }
 
     private String buildToken(String subject, String roles, Key key, Date expiryDate) {
         JwtBuilder builder = Jwts.builder()

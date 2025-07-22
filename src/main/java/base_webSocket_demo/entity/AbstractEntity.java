@@ -1,5 +1,6 @@
 package base_webSocket_demo.entity;
 
+import base_webSocket_demo.security.JwtTokenProvider;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -27,5 +28,23 @@ public abstract class AbstractEntity<T extends Serializable> implements Serializ
     @UpdateTimestamp
     @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime updatedAt;
+
+    private String createdBy;
+
+    private String updatedBy;
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdBy = JwtTokenProvider.getCurrentUserLogin().isPresent()
+                ? JwtTokenProvider.getCurrentUserLogin().get()
+                : "";
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedBy = JwtTokenProvider.getCurrentUserLogin().isPresent()
+                ? JwtTokenProvider.getCurrentUserLogin().get()
+                : "";
+    }
 
 }

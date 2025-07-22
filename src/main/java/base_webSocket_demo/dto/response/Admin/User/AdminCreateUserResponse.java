@@ -1,4 +1,4 @@
-package base_webSocket_demo.dto.response.Admin;
+package base_webSocket_demo.dto.response.Admin.User;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
