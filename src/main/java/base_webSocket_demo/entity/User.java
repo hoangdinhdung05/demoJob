@@ -1,5 +1,6 @@
 package base_webSocket_demo.entity;
 
+import base_webSocket_demo.util.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.HashSet;
@@ -30,9 +31,16 @@ public class User extends AbstractEntity<Long> {
     @Column(name = "password")
     private String password;
 
+    private UserStatus status;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserProfile userProfile;
+
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private Set<UserCompany> userCompanies = new HashSet<>();
 
     @OneToMany(
             cascade = CascadeType.ALL,

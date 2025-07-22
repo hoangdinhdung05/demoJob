@@ -1,6 +1,7 @@
 package base_webSocket_demo.service.impl;
 
 import base_webSocket_demo.dto.UserDTO;
+import base_webSocket_demo.dto.request.Admin.Users.UserCompanyRequest;
 import base_webSocket_demo.dto.request.Admin.Users.UserProfileRequest;
 import base_webSocket_demo.dto.request.Admin.Users.UserRequest;
 import base_webSocket_demo.dto.request.Admin.Users.UserUpdateRequest;
@@ -8,15 +9,12 @@ import base_webSocket_demo.dto.request.RegisterRequest;
 import base_webSocket_demo.dto.response.Admin.User.AdminCreateUserResponse;
 import base_webSocket_demo.dto.response.Admin.User.AdminUserProfileResponse;
 import base_webSocket_demo.dto.response.Admin.User.RoleUseResponse;
+import base_webSocket_demo.dto.response.Admin.User.UserCompanyResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
-import base_webSocket_demo.entity.Role;
-import base_webSocket_demo.entity.User;
-import base_webSocket_demo.entity.UserHasRole;
-import base_webSocket_demo.entity.UserProfile;
-import base_webSocket_demo.repository.RoleRepository;
-import base_webSocket_demo.repository.UserHasRoleRepository;
-import base_webSocket_demo.repository.UserRepository;
+import base_webSocket_demo.entity.*;
+import base_webSocket_demo.repository.*;
 import base_webSocket_demo.service.UserService;
+import base_webSocket_demo.util.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -35,7 +33,9 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final CompanyRepository companyRepository;
     private final UserHasRoleRepository userHasRoleRepository;
+    private final UserCompanyRepository userCompanyRepository;
     private final PasswordEncoder passwordEncoder;
 
 
@@ -115,6 +115,23 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toSet());
 
         user.setUserHasRoles(userHasRoles);
+
+        //check comapny
+        if (request.getCompanyInfo() != null) {
+            UserCompanyRequest companyInfo = request.getCompanyInfo();
+
+            Company company = companyRepository.findById(companyInfo.getCompanyId())
+                    .orElseThrow(() -> new RuntimeException("Company not found"));
+
+            UserCompany userCompany = UserCompany.builder()
+                    .user(user)
+                    .company(company)
+                    .position(companyInfo.getPosition())
+                    .build();
+
+            user.setUserCompanies(Set.of(userCompany));
+        }
+
         user = userRepository.save(user);
 
         log.info("Admin create user successfully with userId={}", user.getId());
@@ -165,12 +182,34 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user); // <-- flush nếu xóa hết role
         }
 
+        //check company
+        if (request.getCompanyInfo() != null) {
+            updateUserCompany(user, request.getCompanyInfo());
+        }
+
         user = userRepository.save(user);
 
         log.info("Admin update user with user id={}", userId);
 
         return convertAdminCreateUser(user);
     }
+
+    private void updateUserCompany(User user, UserCompanyRequest companyInfo) {
+        // Xóa quan hệ cũ (nếu dùng orphanRemoval=true thì chỉ cần clear)
+        user.getUserCompanies().clear();
+
+        Company company = companyRepository.findById(companyInfo.getCompanyId())
+                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+        UserCompany userCompany = UserCompany.builder()
+                .user(user)
+                .company(company)
+                .position(companyInfo.getPosition())
+                .build();
+
+        user.getUserCompanies().add(userCompany);
+    }
+
 
     private static UserProfile getUserProfile(UserUpdateRequest request, User user) {
         UserProfileRequest profileRequest = request.getUserProfile();
@@ -223,7 +262,19 @@ public class UserServiceImpl implements UserService {
 
         log.info("Admin delete User with id={}", userId);
 
-        userRepository.delete(user);
+//        userRepository.delete(user);
+        user.setStatus(UserStatus.DELETE);
+        user = userRepository.save(user);
+    }
+
+    @Override
+    public AdminCreateUserResponse changeUserStatus(long userId, UserStatus userStatus) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setStatus(userStatus);
+        user = userRepository.save(user);
+
+        return convertAdminCreateUser(user);
     }
 
 
@@ -285,6 +336,7 @@ public class UserServiceImpl implements UserService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .username(user.getUsername())
+                .userStatus(user.getStatus())
                 .userProfile(
                         Optional.ofNullable(user.getUserProfile())
                                 .map(profile -> AdminUserProfileResponse.builder()
@@ -299,11 +351,10 @@ public class UserServiceImpl implements UserService {
                 .roles(user.getUserHasRoles().stream()
                         .map(urs -> {
                             Role role = urs.getRole();
-                            return new RoleUseResponse(role.getId(), role.getName());
+                            return new RoleUseResponse(role.getId(), role.getName(), role.getCreatedBy(), role.getUpdatedBy());
                         })
                         .collect(Collectors.toSet())
                 )
                 .build();
     }
-
 }

@@ -9,6 +9,7 @@ import base_webSocket_demo.entity.Company;
 import base_webSocket_demo.entity.CompanyProfile;
 import base_webSocket_demo.repository.CompanyProfileRepository;
 import base_webSocket_demo.repository.CompanyRepository;
+import base_webSocket_demo.repository.UserCompanyRepository;
 import base_webSocket_demo.service.CompanyService;
 import base_webSocket_demo.util.CompanyStatus;
 import jakarta.persistence.EntityNotFoundException;
@@ -27,6 +28,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
     private final CompanyProfileRepository companyProfileRepository;
+    private final UserCompanyRepository userCompanyRepository;
 
     @Override
     public CompanyResponse createCompany(CompanyRequest request) {
@@ -83,6 +85,8 @@ public class CompanyServiceImpl implements CompanyService {
     public void deleteCompany(long companyId) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new EntityNotFoundException("Company not found"));
+
+        userCompanyRepository.deleteByCompanyId(companyId);
         companyProfileRepository.delete(company.getProfile());
         companyRepository.delete(company);
     }
