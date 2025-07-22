@@ -5,11 +5,14 @@ import base_webSocket_demo.dto.response.Admin.Company.CompanyResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 import base_webSocket_demo.dto.response.system.ResponseData;
 import base_webSocket_demo.dto.response.system.ResponseError;
+import base_webSocket_demo.entity.Company;
 import base_webSocket_demo.service.CompanyService;
+import com.turkraft.springfilter.boot.Filter;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,12 +53,12 @@ public class CompanyController {
     }
 
     @GetMapping("/admin/getAllCompanyNoPage")
-    public ResponseData<?> getAllCompany() {
+    public ResponseData<?> getAllCompany(@Filter Specification<Company> specification) {
         log.info("Api get no page company");
 
         try {
 
-            List<CompanyResponse> response = companyService.getAllCompanys();
+            List<CompanyResponse> response = companyService.getAllCompanys(specification);
             return new ResponseData<>(HttpStatus.OK.value(), "Api get all company no page successfully", response);
 
         } catch (Exception e) {

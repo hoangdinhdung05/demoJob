@@ -3,7 +3,9 @@ package base_webSocket_demo.service;
 import base_webSocket_demo.dto.request.Admin.Company.CompanyRequest;
 import base_webSocket_demo.dto.response.Admin.Company.CompanyResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
+import base_webSocket_demo.entity.Company;
 import base_webSocket_demo.util.CompanyStatus;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 
@@ -19,7 +21,7 @@ public interface CompanyService {
 
     CompanyResponse getCompanyByCompanyId(long companyId);
 
-    List<CompanyResponse> getAllCompanys();
+    List<CompanyResponse> getAllCompanys(Specification<Company> specification);
 
     PageResponse<?> getPageCompany(int page, int size);
 
