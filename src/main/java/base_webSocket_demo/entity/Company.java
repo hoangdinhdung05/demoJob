@@ -2,9 +2,11 @@ package base_webSocket_demo.entity;
 
 import base_webSocket_demo.util.CompanyStatus;
 import base_webSocket_demo.util.validator.PhoneNumber;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -29,6 +31,10 @@ public class Company extends AbstractEntity<Long> {
 
     @Enumerated(EnumType.STRING)
     private CompanyStatus status;
+
+    @OneToMany( mappedBy = "company", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Job> job;
 
     @OneToOne(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private CompanyProfile profile;
