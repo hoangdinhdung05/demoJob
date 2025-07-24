@@ -1,9 +1,11 @@
 package base_webSocket_demo.entity;
 
 import base_webSocket_demo.util.UserStatus;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,6 +51,10 @@ public class User extends AbstractEntity<Long> {
             orphanRemoval = true
     )
     private Set<UserHasRole> userHasRoles = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @JsonIgnore
+    List<Resume> resumes;
 
     public Set<Role> getRoles() {
         return userHasRoles.stream()
