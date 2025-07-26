@@ -4,9 +4,13 @@ import base_webSocket_demo.entity.UserCompany;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface UserCompanyRepository extends JpaRepository<UserCompany, Long> {
     boolean findByUserId(long userId);
     boolean findByCompanyId(long companyId);
     void deleteByCompanyId(Long companyId);
+    boolean existsByUserIdAndCompanyIdAndPosition(long userId, long companyId, String roles);
+    List<UserCompany> findByCompanyId(Long companyId);
 }

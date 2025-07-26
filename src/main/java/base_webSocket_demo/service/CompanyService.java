@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface CompanyService {
 
-    CompanyResponse createCompany(CompanyRequest request);
+    CompanyResponse createCompany(CompanyRequest request, long userId);
 
     CompanyResponse updateCompany(long companyId, CompanyRequest request);
 

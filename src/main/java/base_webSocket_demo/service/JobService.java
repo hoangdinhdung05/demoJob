@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface JobService {
 
-    JobResponse createJob(JobRequest request);
+    JobResponse createJob(JobRequest request, long userId);
 
     JobResponse updateJob(long jobId, JobRequest request);
 

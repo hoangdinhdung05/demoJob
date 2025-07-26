@@ -5,12 +5,14 @@ import base_webSocket_demo.dto.response.Admin.Company.CompanyResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 import base_webSocket_demo.dto.response.system.ResponseData;
 import base_webSocket_demo.dto.response.system.ResponseError;
+import base_webSocket_demo.security.CustomUserDetails;
 import base_webSocket_demo.service.CompanyService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,11 +26,12 @@ public class CompanyController {
     private final CompanyService companyService;
 
     @PostMapping("/admin/create")
-    public ResponseData<?> adminCreateCompany(@RequestBody @Valid CompanyRequest request) {
+    public ResponseData<?> adminCreateCompany(@RequestBody @Valid CompanyRequest request,
+                                              @AuthenticationPrincipal CustomUserDetails user) {
         log.info("Api admin create company");
 
         try {
-            CompanyResponse response = companyService.createCompany(request);
+            CompanyResponse response = companyService.createCompany(request, user.getId());
             return new ResponseData<>(HttpStatus.OK.value(), "Api admin create company successfully", response);
         } catch (Exception e) {
             log.error("Api admin create company error={}, cause={}", e.getMessage(), e.getCause());

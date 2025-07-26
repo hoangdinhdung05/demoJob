@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .header { font-size: 18px; font-weight: bold; color: #00b14f; margin-bottom: 10px; }
+        .info-box { background: #f5f5f5; padding: 10px; border-radius: 8px; margin-top: 10px; }
+        .info-item { margin-bottom: 5px; }
+        .apply-btn {
+            margin-top: 10px;
+            display: inline-block;
+            background: #00b14f;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <p class="header">Ứng viên mới đã ứng tuyển công việc: <span th:text="${jobTitle}"></span></p>
+
+    <div class="info-box">
+        <div class="info-item"><b>Họ tên:</b> <span th:text="${userName}"></span></div>
+        <div class="info-item"><b>Email:</b> <span th:text="${userEmail}"></span></div>
+        <div class="info-item"><b>Số điện thoại:</b> <span th:text="${userPhone}"></span></div>
+        <div class="info-item"><b>CV:</b> <a th:href="${cvUrl}" target="_blank">Xem CV</a></div>
+    </div>
+
+    <a th:href="${jobLink}" class="apply-btn" target="_blank">Xem chi tiết job</a>
+</body>
+</html>

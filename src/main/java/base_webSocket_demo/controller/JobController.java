@@ -5,6 +5,7 @@ import base_webSocket_demo.dto.response.Admin.Job.JobResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 import base_webSocket_demo.dto.response.system.ResponseData;
 import base_webSocket_demo.dto.response.system.ResponseError;
+import base_webSocket_demo.security.CustomUserDetails;
 import base_webSocket_demo.service.JobService;
 import base_webSocket_demo.util.JobStatus;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,11 +25,12 @@ public class JobController {
     private final JobService jobService;
 
     @PostMapping("/admin/create")
-    public ResponseData<?> adminCreateJob(@RequestBody @Valid JobRequest request) {
+    public ResponseData<?> adminCreateJob(@RequestBody @Valid JobRequest request,
+                                          @AuthenticationPrincipal CustomUserDetails user) {
         log.info("API admin create job");
 
         try {
-            JobResponse jobResponse = jobService.createJob(request);
+            JobResponse jobResponse = jobService.createJob(request, user.getId());
             return new ResponseData<>(HttpStatus.OK.value(), "Job created successfully", jobResponse);
         } catch (Exception e) {
             log.error("Job creation failed: {}", e.getMessage(), e);

@@ -7,9 +7,12 @@ import base_webSocket_demo.dto.response.Admin.Company.CompanyResponse;
 import base_webSocket_demo.dto.response.system.PageResponse;
 import base_webSocket_demo.entity.Company;
 import base_webSocket_demo.entity.CompanyProfile;
+import base_webSocket_demo.entity.User;
+import base_webSocket_demo.entity.UserCompany;
 import base_webSocket_demo.repository.CompanyProfileRepository;
 import base_webSocket_demo.repository.CompanyRepository;
 import base_webSocket_demo.repository.UserCompanyRepository;
+import base_webSocket_demo.repository.UserRepository;
 import base_webSocket_demo.service.CompanyService;
 import base_webSocket_demo.util.CompanyStatus;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,9 +32,10 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyProfileRepository companyProfileRepository;
     private final UserCompanyRepository userCompanyRepository;
+    private final UserRepository userRepository;
 
     @Override
-    public CompanyResponse createCompany(CompanyRequest request) {
+    public CompanyResponse createCompany(CompanyRequest request, long userId) {
         Company company = Company.builder()
                 .name(request.getName())
                 .logo(request.getLogo())
@@ -47,6 +51,15 @@ public class CompanyServiceImpl implements CompanyService {
         companyProfileRepository.save(companyProfile);
 
         company.setProfile(companyProfile);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        UserCompany userCompany = UserCompany.builder()
+                .user(user)
+                .company(company)
+                .position("HR") // hoặc dùng enum PositionType.HR.name()
+                .build();
+        userCompanyRepository.save(userCompany);
 
         return convertToCompany(company);
     }

@@ -11,6 +11,7 @@ import base_webSocket_demo.entity.Skill;
 import base_webSocket_demo.repository.CompanyRepository;
 import base_webSocket_demo.repository.JobRepository;
 import base_webSocket_demo.repository.SkillRepository;
+import base_webSocket_demo.repository.UserCompanyRepository;
 import base_webSocket_demo.service.JobService;
 import base_webSocket_demo.util.JobStatus;
 import lombok.RequiredArgsConstructor;
@@ -29,9 +30,10 @@ public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final SkillRepository skillRepository;
     private final CompanyRepository companyRepository;
+    private final UserCompanyRepository userCompanyRepository;
 
     @Override
-    public JobResponse createJob(JobRequest request) {
+    public JobResponse createJob(JobRequest request, long userId) {
 
         log.info("Create a job with name={}", request.getName());
 
@@ -40,6 +42,11 @@ public class JobServiceImpl implements JobService {
                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
         List<Skill> skills = fetchSkillsByIds(request.getSkillIds());
+
+        boolean isHR = userCompanyRepository.existsByUserIdAndCompanyIdAndPosition(userId, company.getId(), "HR");
+        if (!isHR) {
+            throw new RuntimeException("You are not authorized to create job for this company");
+        }
 
         Job job = Job.builder()
                 .name(request.getName())
