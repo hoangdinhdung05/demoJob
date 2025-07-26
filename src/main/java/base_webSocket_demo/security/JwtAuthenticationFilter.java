@@ -29,7 +29,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         // Bỏ qua filter với các endpoint auth
-        return path.startsWith("/api/auth/");
+        return path.startsWith("/api/auth/")
+                || path.startsWith("/ott/**")
+                || path.startsWith("/otp/**");
     }
 
 

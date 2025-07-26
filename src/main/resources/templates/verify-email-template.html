@@ -1,0 +1,9 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <h2>Chào <span th:text="${username}">User</span>,</h2>
+    <p>Vui lòng xác minh email của bạn:</p>
+    <a th:href="${verifyUrl}" style="padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none;">
+        Xác minh tài khoản
+    </a>
+</body>
+</html>

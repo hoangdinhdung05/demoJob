@@ -1,6 +1,7 @@
 package base_webSocket_demo.service;
 
 import base_webSocket_demo.dto.UserDTO;
+import base_webSocket_demo.dto.request.LoginEmailRequest;
 import base_webSocket_demo.dto.request.LoginRequest;
 import base_webSocket_demo.dto.request.Admin.RefreshTokenRequest;
 import base_webSocket_demo.dto.request.RegisterRequest;
@@ -15,4 +16,9 @@ public interface AuthService {
     TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
 
     String logout(String token);
+
+    void loginWithOtp(LoginEmailRequest request);
+
+    AuthResponse verifyOtpAndLogin(String email, String code);
+
 }

@@ -35,6 +35,9 @@ public class User extends AbstractEntity<Long> {
 
     private UserStatus status;
 
+    @Column(name = "email_verified")
+    private Boolean emailVerified;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserProfile userProfile;
 
