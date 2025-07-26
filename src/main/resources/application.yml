@@ -26,6 +26,17 @@ spring:
             authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: hoangdinhdung0205@gmail.com
+    password: ${password-email}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   datasource:
     url: jdbc:mysql://localhost:3306/chatapp
