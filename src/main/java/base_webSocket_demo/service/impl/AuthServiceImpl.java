@@ -63,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
                     .build();
 
         } catch (Exception e) {
-            log.error("Authenticate failed: {}", e.getMessage());
+            log.error("Authenticate failed", e);
             throw new RuntimeException("Authentication failed");
         }
     }

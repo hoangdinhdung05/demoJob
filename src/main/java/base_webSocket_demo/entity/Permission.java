@@ -1,5 +1,6 @@
 package base_webSocket_demo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
@@ -24,5 +25,6 @@ public class Permission extends AbstractEntity<Integer> {
     private String description;
 
     @OneToMany(mappedBy = "permission")
+    @JsonIgnore
     private Set<RoleHasPermission> permissions = new HashSet<>();
 }
