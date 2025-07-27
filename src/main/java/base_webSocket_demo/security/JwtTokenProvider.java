@@ -25,11 +25,11 @@ public class JwtTokenProvider {
     @Value("${jwt.refreshKey}")
     private String refreshKeyBase64;
 
-    @Value("${jwt.expiryHour}")
-    private int expiryHour;
+    @Value("${jwt.expiryMinutes}")
+    private long expiryMinutes;
 
     @Value("${jwt.expiryDay}")
-    private int expiryDay;
+    private long expiryDay;
 
     private Key accessKey;
     private Key refreshKey;
@@ -150,12 +150,12 @@ public class JwtTokenProvider {
     }
 
     private Date getAccessTokenExpiryDate() {
-        long expiryMillis = System.currentTimeMillis() + expiryHour * 3600_000L + expiryDay * 24 * 3600_000L;
+        long expiryMillis = System.currentTimeMillis() + 1000 * 60 * expiryMinutes;
         return new Date(expiryMillis);
     }
 
-    private Date getRefreshTokenExpiryDate() {
-        long expiryMillis = System.currentTimeMillis() + expiryDay * 24 * 3600_000L;
+    public Date getRefreshTokenExpiryDate() {
+        long expiryMillis = System.currentTimeMillis() + 1000 * 60 * 60 * 24 * expiryDay;
         return new Date(expiryMillis);
     }
 

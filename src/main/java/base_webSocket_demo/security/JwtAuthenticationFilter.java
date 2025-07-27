@@ -1,7 +1,7 @@
 package base_webSocket_demo.security;
 
 import java.io.IOException;
-
+import base_webSocket_demo.service.BlacklistService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,59 +23,59 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final BlacklistService blacklistService;
     private final UserDetailsService userDetailsService;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        // Bỏ qua filter với các endpoint auth
         return path.startsWith("/api/auth/")
-                || path.startsWith("/ott/**")
-                || path.startsWith("/otp/**");
+                || path.startsWith("/ott/")
+                || path.startsWith("/otp/");
     }
-
 
     @Override
     protected void doFilterInternal(
-        @NonNull HttpServletRequest request, 
-        @NonNull HttpServletResponse response, 
-        @NonNull FilterChain filterChain) throws ServletException, IOException {
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
 
         log.info("========doFilterInternal=========");
-        
 
         String header = request.getHeader("Authorization");
-
         String token = null;
         String username = null;
 
-        if(header != null && header.startsWith("Bearer ")) {
+        if (header != null && header.startsWith("Bearer ")) {
             token = header.substring(7);
-            
-            if(jwtTokenProvider.validateAccessToken(token)) {
+
+            if (jwtTokenProvider.validateAccessToken(token)) {
+
+                // ✅ Check blacklist
+                if (blacklistService.isBlacklisted(token)) {
+                    log.warn("Token is blacklisted");
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token is blacklisted");
+                    return;
+                }
+
                 username = jwtTokenProvider.getUsernameFromAccessToken(token);
             } else {
-                log.error("Token is not valid");
+                log.error("Access Token is not valid");
             }
         }
 
-        if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            UsernamePasswordAuthenticationToken authentication = 
-                new UsernamePasswordAuthenticationToken(
-                    userDetails,
-                    null,
-                    userDetails.getAuthorities()
-                );
-            
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
 
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-        
 
         filterChain.doFilter(request, response);
     }
-    
 }

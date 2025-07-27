@@ -1,10 +1,13 @@
 package base_webSocket_demo.controller;
 
+import base_webSocket_demo.dto.request.Admin.RefreshTokenRequest;
 import base_webSocket_demo.dto.request.LoginEmailRequest;
 import base_webSocket_demo.dto.request.LoginRequest;
 import base_webSocket_demo.dto.request.RegisterRequest;
 import base_webSocket_demo.dto.response.AuthResponse;
+import base_webSocket_demo.dto.response.TokenRefreshResponse;
 import base_webSocket_demo.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +23,23 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.authenticateUser(request));
     }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<TokenRefreshResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refreshToken(request));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
+            String result = authService.logout(token);
+            return ResponseEntity.ok(result);
+        }
+        return ResponseEntity.badRequest().body("Token not provided");
+    }
+
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -38,6 +58,5 @@ public class AuthController {
         AuthResponse response = authService.verifyOtpAndLogin(email, code);
         return ResponseEntity.ok(response);
     }
-
 
 }
