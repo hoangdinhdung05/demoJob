@@ -56,8 +56,8 @@ spring:
     add-properties: true
 
 jwt:
-  expiryHour: 1
-  expiryDay: 15
+  expiryMinutes: 5
+  expiryDay: 14
   accessKey: p1zs6HE4bebUL6aVjJhSEtj/Bp4rhQPK3vUR2gpcA06muNhYO77Z9kzb3U5sDXBkdpEZwECJfm0tNuDRiVu29g==
   refreshKey: vD/tpfdCt2JiqNX5VyXEx0SyxYFC06DjB9GoY6bER6lgyA2qlAGgCegeB9ZB+tfOf5yfw8ZX/SaZNkluZxtXZQ==
 

@@ -8,15 +8,16 @@ import base_webSocket_demo.dto.request.RegisterRequest;
 import base_webSocket_demo.dto.request.SendOtpRequest;
 import base_webSocket_demo.dto.response.AuthResponse;
 import base_webSocket_demo.dto.response.TokenRefreshResponse;
+import base_webSocket_demo.dto.response.TokenResponse;
 import base_webSocket_demo.dto.response.VerifyOtpRequest;
+import base_webSocket_demo.entity.RefreshToken;
 import base_webSocket_demo.entity.Role;
 import base_webSocket_demo.entity.User;
 import base_webSocket_demo.repository.UserRepository;
 import base_webSocket_demo.security.JwtTokenProvider;
-import base_webSocket_demo.service.AuthService;
-import base_webSocket_demo.service.OtpService;
-import base_webSocket_demo.service.UserService;
+import base_webSocket_demo.service.*;
 import base_webSocket_demo.util.OtpType;
+import base_webSocket_demo.util.TokenBlacklistReason;
 import base_webSocket_demo.util.TokenType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +39,8 @@ import java.util.stream.Collectors;
 public class AuthServiceImpl implements AuthService {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
+    private final BlacklistService blacklistService;
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final UserRepository userRepository;
@@ -62,8 +68,12 @@ public class AuthServiceImpl implements AuthService {
 
             String accessToken = jwtTokenProvider.generateAccessToken(authentication);
 
+            String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
+            refreshTokenService.createRefreshToken(user, refreshToken, jwtTokenProvider.getRefreshTokenExpiryDate());
+
             return AuthResponse.builder()
                     .accessToken(accessToken)
+                    .refreshToken(refreshToken)
                     .tokenType(TokenType.ACCESS_TOKEN)
                     .userId(user.getId())
                     .username(user.getUsername())
@@ -89,12 +99,37 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
-        return null;
+        String reqToken = refreshTokenRequest.getRefreshToken();
+
+        RefreshToken refreshToken = refreshTokenService.findByToken(reqToken)
+                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+
+        if (!refreshTokenService.isValid(refreshToken)) {
+            throw new RuntimeException("Refresh token expired or revoked");
+        }
+
+        User user = refreshToken.getUser();
+        String accessToken = jwtTokenProvider.generateAccessToken(user);
+
+        return TokenRefreshResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(reqToken)
+                .build();
     }
 
     @Override
-    public String logout(String token) {
-        return "";
+    public String logout(String accessToken) {
+        String username = jwtTokenProvider.getUsernameFromAccessToken(accessToken);
+        if (username == null) throw new RuntimeException("Invalid access token");
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        refreshTokenService.revokeTokenByUser(user); // ✅ revoke refresh token
+        Instant expiry = jwtTokenProvider.getAccessTokenExpiry(accessToken).atZone(ZoneId.systemDefault()).toInstant();
+        blacklistService.blacklistToken(accessToken, expiry, TokenBlacklistReason.LOGOUT); // ✅ blacklist access
+
+        return "Logout successful";
     }
 
     @Override
@@ -129,9 +164,10 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
 
         String token = jwtTokenProvider.generateAccessToken(user);
-
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
         return AuthResponse.builder()
                 .accessToken(token)
+                .refreshToken(refreshToken)
                 .tokenType(TokenType.ACCESS_TOKEN)
                 .userId(user.getId())
                 .username(user.getUsername())
@@ -142,7 +178,6 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-
     private UserDTO convertUserDTO(User user) {
         return  UserDTO.builder()
                 .id(user.getId())
@@ -152,4 +187,6 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .build();
     }
+
+    //TODO: Thêm lý do FORCE_LOGOUT để admin block user từ backend
 }
