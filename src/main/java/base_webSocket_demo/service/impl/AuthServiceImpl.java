@@ -8,10 +8,8 @@ import base_webSocket_demo.dto.request.RegisterRequest;
 import base_webSocket_demo.dto.request.SendOtpRequest;
 import base_webSocket_demo.dto.response.AuthResponse;
 import base_webSocket_demo.dto.response.TokenRefreshResponse;
-import base_webSocket_demo.dto.response.TokenResponse;
 import base_webSocket_demo.dto.response.VerifyOtpRequest;
 import base_webSocket_demo.entity.RefreshToken;
-import base_webSocket_demo.entity.Role;
 import base_webSocket_demo.entity.User;
 import base_webSocket_demo.repository.UserRepository;
 import base_webSocket_demo.security.JwtTokenProvider;
@@ -28,7 +26,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.stream.Collectors;
@@ -49,52 +46,26 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse authenticateUser(LoginRequest request) {
-        log.info("=====Authenticate User========");
-        log.info("Loading user: {}", request.getUsername());
+        log.info("Authenticating user: {}", request.getUsername());
 
-        try {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getUsername(),
+                        request.getPassword()
+                )
+        );
 
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
-                            request.getPassword()
-                    )
-            );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        User user = userService.findByUsername(request.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-            User user = userService.findByUsername(request.getUsername())
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-            String accessToken = jwtTokenProvider.generateAccessToken(authentication);
-
-            String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
-            refreshTokenService.createRefreshToken(user, refreshToken, jwtTokenProvider.getRefreshTokenExpiryDate());
-
-            return AuthResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .tokenType(TokenType.ACCESS_TOKEN)
-                    .userId(user.getId())
-                    .username(user.getUsername())
-                    .roles(user.getUserHasRoles()
-                            .stream()
-                            .map(u -> u.getRole().getName())
-                            .collect(Collectors.toSet()))
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Authenticate failed", e);
-            throw new RuntimeException("Authentication failed");
-        }
+        return generateAuthResponse(user);
     }
 
     @Override
     public UserDTO register(RegisterRequest request) {
-
-        UserDTO newUser = userService.createUser(request);
-
-        return newUser;
+        return userService.createUser(request);
     }
 
     @Override
@@ -125,9 +96,10 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        refreshTokenService.revokeTokenByUser(user); // ✅ revoke refresh token
-        Instant expiry = jwtTokenProvider.getAccessTokenExpiry(accessToken).atZone(ZoneId.systemDefault()).toInstant();
-        blacklistService.blacklistToken(accessToken, expiry, TokenBlacklistReason.LOGOUT); // ✅ blacklist access
+        refreshTokenService.revokeTokenByUser(user);
+        Instant expiry = jwtTokenProvider.getAccessTokenExpiry(accessToken)
+                .atZone(ZoneId.systemDefault()).toInstant();
+        blacklistService.blacklistToken(accessToken, expiry, TokenBlacklistReason.LOGOUT);
 
         return "Logout successful";
     }
@@ -141,7 +113,6 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Mật khẩu không đúng");
         }
 
-        // Gửi OTP
         otpService.sendOtp(SendOtpRequest.builder()
                 .email(user.getEmail())
                 .type(OtpType.LOGIN)
@@ -163,30 +134,25 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
 
-        String token = jwtTokenProvider.generateAccessToken(user);
+        return generateAuthResponse(user);
+    }
+
+    private AuthResponse generateAuthResponse(User user) {
+        String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
+
+        refreshTokenService.createRefreshToken(user, refreshToken, jwtTokenProvider.getRefreshTokenExpiryDate());
+
         return AuthResponse.builder()
-                .accessToken(token)
+                .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType(TokenType.ACCESS_TOKEN)
                 .userId(user.getId())
                 .username(user.getUsername())
                 .roles(user.getUserHasRoles()
                         .stream()
-                        .map(u -> u.getRole().getName())
+                        .map(role -> role.getRole().getName())
                         .collect(Collectors.toSet()))
                 .build();
     }
-
-    private UserDTO convertUserDTO(User user) {
-        return  UserDTO.builder()
-                .id(user.getId())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .build();
-    }
-
-    //TODO: Thêm lý do FORCE_LOGOUT để admin block user từ backend
 }
