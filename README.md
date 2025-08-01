@@ -128,6 +128,98 @@ mvn spring-boot:run
 
 ---
 
+## 🐳 Docker hóa toàn bộ hệ thống
+
+📁 Cấu trúc thư mục
+
+```yaml
+demoJob/
+├── Dockerfile
+├── docker-compose.yml
+├── ERD.png
+├── .env (hoặc cấu hình sẵn IDE)
+└── src/
+```
+
+📦 docker-compose.yml
+
+```yaml
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8
+    container_name: your_mysql_name
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: your_password
+      MYSQL_DATABASE: your_name
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:latest
+    container_name: your_redis_name
+    restart: always
+    ports:
+      - "6379:6379"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: your_app_name
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/your_db_name
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: your_password
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+      # Thêm biến bí mật ở IDE hoặc server
+      client-secret: ${client-secret}
+      password-email: ${password-email}
+      jwt.accessKey: your_access_key
+      jwt.refreshKey: your_refressh_key
+
+    restart: always
+
+volumes:
+  mysql_data:
+```
+
+🛠 Dockerfile
+
+```yaml
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+COPY . /app
+RUN ./mvnw clean package -DskipTests
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "target/demo-0.0.1-SNAPSHOT.jar"]
+```
+
+### ▶️ Chạy Docker
+
+```bash
+
+docker compose up --build
+```
+
+---
+
 ## 🧪 Một số API tiêu biểu
 
 | Method | Endpoint                         | Chức năng                     |
