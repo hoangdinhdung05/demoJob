@@ -1,7 +1,9 @@
 package com.demoJob.demo.exception;
 
-public class ResourceNotFoundException extends RuntimeException {
-    //custom exception for resource not found
+import org.springframework.http.HttpStatus;
+
+public class ResourceNotFoundException extends ApiException {
+
     public ResourceNotFoundException(String message) {
         super(message);
     }
@@ -10,4 +12,13 @@ public class ResourceNotFoundException extends RuntimeException {
         super(message, cause);
     }
 
+    @Override
+    public int getStatusCode() {
+        return HttpStatus.NOT_FOUND.value(); // 404
+    }
+
+    @Override
+    public String getErrorCode() {
+        return "RESOURCE_NOT_FOUND";
+    }
 }

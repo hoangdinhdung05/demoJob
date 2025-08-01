@@ -37,21 +37,25 @@ public class AuthController {
             String result = authService.logout(token);
             return ResponseEntity.ok(result);
         }
+        //TODO: Chuyển logic sang service
         return ResponseEntity.badRequest().body("Token not provided");
     }
 
 
+    //NOTE: đk => send OTP
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 
+    //TODO:
     @PostMapping("/login-otp")
     public ResponseEntity<?> loginWithOtp(@RequestBody LoginEmailRequest request) {
         authService.loginWithOtp(request);
         return ResponseEntity.ok("OTP đã được gửi đến email của bạn.");
     }
 
+    //
     @PostMapping("/verify-otp")
     public ResponseEntity<AuthResponse> verifyOtp(@RequestParam String email,
                                                   @RequestParam String code) {

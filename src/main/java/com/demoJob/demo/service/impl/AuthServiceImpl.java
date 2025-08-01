@@ -11,24 +11,30 @@ import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.response.VerifyOtpRequest;
 import com.demoJob.demo.entity.RefreshToken;
 import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.InvalidDataException;
+import com.demoJob.demo.exception.InvalidOtpException;
+import com.demoJob.demo.exception.TokenBlacklistedException;
+import com.demoJob.demo.mapper.AuthMapper;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
 import com.demoJob.demo.util.OtpType;
 import com.demoJob.demo.util.TokenBlacklistReason;
-import com.demoJob.demo.util.TokenType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.stream.Collectors;
+
+import static com.demoJob.demo.mapper.AuthMapper.toResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -46,26 +52,18 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse authenticateUser(LoginRequest request) {
-        log.info("Authenticating user: {}", request.getUsername());
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+        User user = authenticateAndGetUser(request.getUsername(), request.getPassword());
+        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        User user = userService.findByUsername(request.getUsername())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        return generateAuthResponse(user);
+        return toResponse(user, accessToken, refreshToken);
     }
 
     @Override
     public UserDTO register(RegisterRequest request) {
         return userService.createUser(request);
+
     }
 
     @Override
@@ -73,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
         String reqToken = refreshTokenRequest.getRefreshToken();
 
         RefreshToken refreshToken = refreshTokenService.findByToken(reqToken)
-                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+                .orElseThrow(() -> new TokenBlacklistedException("Invalid refresh token"));
 
         if (!refreshTokenService.isValid(refreshToken)) {
             throw new RuntimeException("Refresh token expired or revoked");
@@ -91,10 +89,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String logout(String accessToken) {
         String username = jwtTokenProvider.getUsernameFromAccessToken(accessToken);
-        if (username == null) throw new RuntimeException("Invalid access token");
+        if (username == null) throw new TokenBlacklistedException("Invalid access token");
 
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         refreshTokenService.revokeTokenByUser(user);
         Instant expiry = jwtTokenProvider.getAccessTokenExpiry(accessToken)
@@ -104,13 +102,14 @@ public class AuthServiceImpl implements AuthService {
         return "Logout successful";
     }
 
+    //
     @Override
     public void loginWithOtp(LoginEmailRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
+                .orElseThrow(() -> new InvalidDataException("User not found"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Mật khẩu không đúng");
+            throw new BadCredentialsException("Inc");
         }
 
         otpService.sendOtp(SendOtpRequest.builder()
@@ -119,6 +118,7 @@ public class AuthServiceImpl implements AuthService {
                 .build());
     }
 
+    //Active luôn email
     @Override
     public AuthResponse verifyOtpAndLogin(String email, String code) {
         boolean isValid = otpService.verifyOtp(VerifyOtpRequest.builder()
@@ -128,31 +128,31 @@ public class AuthServiceImpl implements AuthService {
                 .build());
 
         if (!isValid) {
-            throw new RuntimeException("OTP không hợp lệ hoặc đã hết hạn");
+            throw new InvalidOtpException("OTP không hợp lệ hoặc đã hết hạn");
         }
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
 
-        return generateAuthResponse(user);
-    }
-
-    private AuthResponse generateAuthResponse(User user) {
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
-
-        refreshTokenService.createRefreshToken(user, refreshToken, jwtTokenProvider.getRefreshTokenExpiryDate());
-
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType(TokenType.ACCESS_TOKEN)
-                .userId(user.getId())
-                .username(user.getUsername())
-                .roles(user.getUserHasRoles()
-                        .stream()
-                        .map(role -> role.getRole().getName())
-                        .collect(Collectors.toSet()))
-                .build();
+        return toResponse(user, accessToken, refreshToken);
     }
+
+    private User authenticateAndGetUser(String username, String password) {
+
+        log.info("Authenticate and get user with username={}", username);
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        username,
+                        password
+                )
+        );
+        //Sau khi check xong ok hett dung SecurityContext de luu lai thong tin nhu username, password, tokn
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        //tra ve thong tin user
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
 }

@@ -1,6 +1,8 @@
 package com.demoJob.demo.exception;
 
-public class InvalidDataException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+
+public class InvalidDataException extends ApiException {
 
     public InvalidDataException(String message) {
         super(message);
@@ -10,4 +12,13 @@ public class InvalidDataException extends RuntimeException {
         super(message, cause);
     }
 
+    @Override
+    public int getStatusCode() {
+        return HttpStatus.CONFLICT.value(); // 409
+    }
+
+    @Override
+    public String getErrorCode() {
+        return "INVALID_DATA";
+    }
 }
