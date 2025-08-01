@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: demo_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456789
+      MYSQL_DATABASE: chatapp
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:latest
+    container_name: demo_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: demo_app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/chatapp
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456789
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+      # Các biến nhạy cảm có thể setup ở IDE hoặc server
+      client-secret: ${client-secret}
+      password-email: ${password-email}
+      jwt.accessKey: p1zs6HE4bebUL6aVjJhSEtj/Bp4rhQPK3vUR2gpcA06muNhYO77Z9kzb3U5sDXBkdpEZwECJfm0tNuDRiVu29g==
+      jwt.refreshKey: vD/tpfdCt2JiqNX5VyXEx0SyxYFC06DjB9GoY6bER6lgyA2qlAGgCegeB9ZB+tfOf5yfw8ZX/SaZNkluZxtXZQ==
+
+    restart: always
+
+volumes:
+  mysql_data:
