@@ -1,24 +1,38 @@
 package com.demoJob.demo.service;
 
 import com.demoJob.demo.dto.UserDTO;
-import com.demoJob.demo.dto.request.LoginEmailRequest;
+import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
 import com.demoJob.demo.dto.request.LoginRequest;
 import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
+    //=======//LOGIN//=======//
     AuthResponse authenticateUser(LoginRequest request);
 
+    //=======//REGISTER//=======//
     UserDTO register(RegisterRequest request);
 
+    //=======//REFRESH TOKEN//=======//
     TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
 
-    String logout(String token);
+    //=======//LOGOUT//=======//
+    String logout(HttpServletRequest request);
 
-    void loginWithOtp(LoginEmailRequest request);
+    //=======//VERIFY EMAIL//=======//
+    String verifyEmail(String email, String code);
 
-    AuthResponse verifyOtpAndLogin(String email, String code);
+    void resendVerificationOtp(String email);
+
+    //=======//FORGOT PASSWORD//=======//
+
+    String resetPassword(ResetPasswordRequest request);
+
+    void resendResetPasswordOtp(String email);
+
+    void verifyForgotPasswordOtp(String email, String code);
 
 }

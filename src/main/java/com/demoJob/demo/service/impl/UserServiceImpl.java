@@ -61,6 +61,7 @@ public class UserServiceImpl implements UserService {
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .emailVerified(false)
                 .build();
 
         // 3. Tạo liên kết UserHasRole
