@@ -1,7 +1,6 @@
 package com.demoJob.demo.service.impl;
 
 import com.demoJob.demo.dto.UserDTO;
-import com.demoJob.demo.dto.request.LoginEmailRequest;
 import com.demoJob.demo.dto.request.LoginRequest;
 import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.RegisterRequest;
@@ -13,27 +12,25 @@ import com.demoJob.demo.entity.RefreshToken;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.exception.InvalidOtpException;
+import com.demoJob.demo.exception.InvalidTokenException;
 import com.demoJob.demo.exception.TokenBlacklistedException;
-import com.demoJob.demo.mapper.AuthMapper;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
 import com.demoJob.demo.util.OtpType;
 import com.demoJob.demo.util.TokenBlacklistReason;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.ZoneId;
-
 import static com.demoJob.demo.mapper.AuthMapper.toResponse;
 
 @Service
@@ -50,22 +47,51 @@ public class AuthServiceImpl implements AuthService {
     private final OtpService otpService;
     private final PasswordEncoder passwordEncoder;
 
+    //Done login
+    //Xử lí đăng nhập với username và password
+    // Kiểm tra email đã được xác minh hay chưa
+    // Tạo access token và refresh token
+    // Lưu refresh token vào cơ sở dữ liệu
     @Override
     public AuthResponse authenticateUser(LoginRequest request) {
 
         User user = authenticateAndGetUser(request.getUsername(), request.getPassword());
+
+        if (!user.getEmailVerified()) {
+            throw new InvalidDataException("Vui lòng xác minh email trước khi đăng nhập.");
+        }
+
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
+
+        // Lưu refresh token vào cơ sở dữ liệu
+        RefreshToken createdRefreshToken = refreshTokenService.createRefreshToken(
+                user, refreshToken, jwtTokenProvider.getRefreshTokenExpiryDate());
 
         return toResponse(user, accessToken, refreshToken);
     }
 
+    //Xử lí verify email khi đăng kí xong
+    //Xử lí trường hợp OTP hết hạn hoặc không hợp lệ
     @Override
     public UserDTO register(RegisterRequest request) {
-        return userService.createUser(request);
 
+        UserDTO createUser = userService.createUser(request);
+
+        User user = userRepository.findByEmail(createUser.getEmail())
+                        .orElseThrow(() -> new InvalidDataException("User not found"));
+
+        otpService.sendOtp(user, SendOtpRequest.builder()
+                        .email(user.getEmail())
+                        .type(OtpType.VERIFY_EMAIL)
+                .build());
+
+        return createUser;
     }
 
+
+    //Sinh access token mới từ refresh token
+    // Kiểm tra refresh token có hợp lệ không
     @Override
     public TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String reqToken = refreshTokenRequest.getRefreshToken();
@@ -77,6 +103,10 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Refresh token expired or revoked");
         }
 
+        if (blacklistService.isBlacklisted(reqToken)) {
+            throw new TokenBlacklistedException("Refresh token is blacklisted");
+        }
+
         User user = refreshToken.getUser();
         String accessToken = jwtTokenProvider.generateAccessToken(user);
 
@@ -86,8 +116,19 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    //Done logout
+    //Kiểm tra access token có hợp lệ không
+    //Lưu access token vào blacklist
+    //revoking refresh token
     @Override
-    public String logout(String accessToken) {
+    public String logout(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+
+        if (header == null || !header.startsWith("Bearer ")) {
+            throw new InvalidTokenException("Token not provided");
+        }
+
+        String accessToken = header.substring(7);
         String username = jwtTokenProvider.getUsernameFromAccessToken(accessToken);
         if (username == null) throw new TokenBlacklistedException("Invalid access token");
 
@@ -103,41 +144,57 @@ public class AuthServiceImpl implements AuthService {
     }
 
     //
-    @Override
-    public void loginWithOtp(LoginEmailRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new InvalidDataException("User not found"));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Inc");
-        }
-
-        otpService.sendOtp(SendOtpRequest.builder()
-                .email(user.getEmail())
-                .type(OtpType.LOGIN)
-                .build());
-    }
+//    @Override
+//    public void loginWithOtp(LoginEmailRequest request) {
+//        User user = userRepository.findByEmail(request.getEmail())
+//                .orElseThrow(() -> new InvalidDataException("User not found"));
+//
+//        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+//            throw new BadCredentialsException("Inc");
+//        }
+//
+//        otpService.sendOtp(user, SendOtpRequest.builder()
+//                .email(user.getEmail())
+//                .type(OtpType.LOGIN)
+//                .build());
+//    }
 
     //Active luôn email
+    //Kiểm tra OTP có hợp lệ không
+    //Nếu hợp lệ thì cập nhật trạng thái emailVerified của user
+    // Tạo access token và refresh token mới
     @Override
-    public AuthResponse verifyOtpAndLogin(String email, String code) {
+    public String verifyEmail(String email, String code) {
         boolean isValid = otpService.verifyOtp(VerifyOtpRequest.builder()
                 .email(email)
                 .code(code)
-                .type(OtpType.LOGIN)
+                .type(OtpType.VERIFY_EMAIL)
                 .build());
 
         if (!isValid) {
             throw new InvalidOtpException("OTP không hợp lệ hoặc đã hết hạn");
         }
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy user"));
-
-        String accessToken = jwtTokenProvider.generateAccessToken(user);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
-        return toResponse(user, accessToken, refreshToken);
+        return "Đã verify email thành công, vui lòng đăng nhập để tiếp tục";
     }
+
+    //Dùng gửi lại OTP xác minh
+    //Kiểm tra email đã được xác minh hay chưa
+    @Override
+    public void resendVerificationOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new InvalidDataException("User not found"));
+
+        if (user.getEmailVerified()) {
+            throw new InvalidDataException("Email đã được xác minh");
+        }
+
+        otpService.sendOtp(user, SendOtpRequest.builder()
+                .email(user.getEmail())
+                .type(OtpType.VERIFY_EMAIL)
+                .build());
+    }
+
 
     private User authenticateAndGetUser(String username, String password) {
 
@@ -148,9 +205,9 @@ public class AuthServiceImpl implements AuthService {
                         password
                 )
         );
-        //Sau khi check xong ok hett dung SecurityContext de luu lai thong tin nhu username, password, tokn
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        //tra ve thong tin user
+
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }

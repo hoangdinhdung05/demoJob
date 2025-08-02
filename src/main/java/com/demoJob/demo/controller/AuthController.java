@@ -24,6 +24,23 @@ public class AuthController {
         return ResponseEntity.ok(authService.authenticateUser(request));
     }
 
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(authService.register(request));
+    }
+
+    @PostMapping("/resend-verify-email")
+    public ResponseEntity<String> resendVerifyOtp(@RequestParam String email) {
+        authService.resendVerificationOtp(email);
+        return ResponseEntity.ok("OTP xác minh đã được gửi lại");
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<?> verifyOtp(@RequestParam String email,
+                                                  @RequestParam String code) {
+        return ResponseEntity.ok(authService.verifyEmail(email, code));
+    }
+
     @PostMapping("/refresh-token")
     public ResponseEntity<TokenRefreshResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authService.refreshToken(request));
@@ -31,36 +48,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
-            String result = authService.logout(token);
-            return ResponseEntity.ok(result);
-        }
-        //TODO: Chuyển logic sang service
-        return ResponseEntity.badRequest().body("Token not provided");
+        String result = authService.logout(request);
+        return ResponseEntity.ok(result);
     }
-
-
-    //NOTE: đk => send OTP
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
-    }
-
-    //TODO:
-    @PostMapping("/login-otp")
-    public ResponseEntity<?> loginWithOtp(@RequestBody LoginEmailRequest request) {
-        authService.loginWithOtp(request);
-        return ResponseEntity.ok("OTP đã được gửi đến email của bạn.");
-    }
-
-    //
-    @PostMapping("/verify-otp")
-    public ResponseEntity<AuthResponse> verifyOtp(@RequestParam String email,
-                                                  @RequestParam String code) {
-        AuthResponse response = authService.verifyOtpAndLogin(email, code);
-        return ResponseEntity.ok(response);
-    }
-
 }
