@@ -29,8 +29,8 @@ public class AuthController {
     /**
      * Đăng nhập người dùng
      * Trả về access token, refresh token và thông tin user
-     * @param request
-     * @return
+     * @param request chứa thông tin đăng nhập (username, password)
+     * @return trả về thông tin xác thực người dùng
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
@@ -44,8 +44,8 @@ public class AuthController {
     /**
      * Đăng ký người dùng
      * Tạo tài khoản và gửi OTP xác minh email
-     * @param request
-     * @return
+     * @param request chứa thông tin đăng ký
+     * @return trả về thông tin người dùng đã đăng ký
      */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
@@ -56,8 +56,8 @@ public class AuthController {
 
     /**
      * Resend OTP
-     * @param request
-     * @return
+     * @param request chứa email và loại OTP (REGISTER, FORGOT_PASSWORD)
+     * @return trả về thông báo gửi lại OTP thành công
      */
     @PostMapping("/resend-otp")
     public ResponseEntity<ResponseData<Void>> resendOtp(@RequestBody @Valid SendOtpRequest request) {
@@ -67,10 +67,22 @@ public class AuthController {
     }
 
     /**
+     * Verify OTP
+     * @param request chứa email và mã OTP
+     * @return trả về thông báo xác minh thành công hoặc thất bại
+     */
+    @PostMapping("/verify-otp")
+    public ResponseEntity<ResponseData<Void>> verifyOtp(@RequestBody @Valid VerifyOtpRequest request) {
+        log.info("[OTP] Verifying OTP for email: {}, type: {}", request.getEmail(), request.getType());
+        authService.verifyOtpOrThrow(request);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Xác minh OTP thành công"));
+    }
+
+    /**
      * Verify email bằng OTP code
-     * @param email
-     * @param code
-     * @return
+     * @param email người dùng cần xác minh email
+     * @param code mã OTP được gửi đến email
+     * @return trả về thông báo xác minh thành công hoặc thất bại
      */
     @PostMapping("/verify-email")
     public ResponseEntity<ResponseData<String>> verifyEmailOtp(@RequestParam String email,
@@ -82,8 +94,8 @@ public class AuthController {
 
     /**
      * Làm mới access token bằng refresh token
-     * @param request
-     * @return
+     * @param request gửi lên refresh token
+     * @return trả về access token và refresh token mới
      */
     @PostMapping("/refresh-token")
     public ResponseEntity<ResponseData<TokenRefreshResponse>> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
@@ -95,8 +107,8 @@ public class AuthController {
     /**
      * Đăng xuất người dùng
      * Xóa refresh token và blacklist access token
-     * @param request
-     * @return
+     * @param request lấy thông tin người dùng từ request
+     * @return trả về thông báo đăng xuất thành công
      */
     @PostMapping("/logout")
     public ResponseEntity<ResponseData<String>> logout(HttpServletRequest request) {

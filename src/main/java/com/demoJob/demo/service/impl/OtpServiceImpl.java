@@ -1,8 +1,7 @@
 package com.demoJob.demo.service.impl;
 
-import com.demoJob.demo.dto.OtpRedisData;
 import com.demoJob.demo.dto.request.SendOtpRequest;
-import com.demoJob.demo.dto.response.VerifyOtpRequest;
+import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.OtpCode;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.InvalidDataException;

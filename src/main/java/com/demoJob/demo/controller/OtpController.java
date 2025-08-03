@@ -1,11 +1,7 @@
 package com.demoJob.demo.controller;
 
-import com.demoJob.demo.dto.request.SendOtpRequest;
-import com.demoJob.demo.dto.response.VerifyOtpRequest;
 import com.demoJob.demo.service.OtpService;
-import com.demoJob.demo.util.OtpType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

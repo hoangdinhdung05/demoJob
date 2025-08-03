@@ -8,7 +8,7 @@ import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
-import com.demoJob.demo.dto.response.VerifyOtpRequest;
+import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.RefreshToken;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.*;
@@ -156,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public String resetPassword(ResetPasswordRequest request) {
-        validateOtp(request.getEmail(), request.getOtp(), OtpType.RESET_PASSWORD);
+//        validateOtp(request.getEmail(), request.getCode(), OtpType.RESET_PASSWORD);
 
         User user = getUserByEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -186,6 +186,19 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .type(type)
                 .build());
+    }
+
+    /**
+     * Xác minh mã OTP
+     * Nếu mã OTP không hợp lệ hoặc đã hết hạn, sẽ ném ra InvalidOtpException
+     * @param request đối tượng chứa thông tin xác minh OTP
+     */
+    @Override
+    public void verifyOtpOrThrow(VerifyOtpRequest request) {
+        boolean isValid = otpService.verifyOtp(request);
+        if (!isValid) {
+            throw new InvalidOtpException("OTP không hợp lệ hoặc đã hết hạn");
+        }
     }
 
 

@@ -6,6 +6,7 @@ import com.demoJob.demo.dto.request.LoginRequest;
 import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.request.SendOtpRequest;
+import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,5 +32,8 @@ public interface AuthService {
 
     //=======//RESEND OTP//=======//
     void resendOtp(SendOtpRequest request);
+
+    //=======//VERIFY OTP//=======//
+    void verifyOtpOrThrow(VerifyOtpRequest request);
 
 }

@@ -16,5 +16,5 @@ public class ResetPasswordRequest {
     private String newPassword;
 
     @NotBlank(message = "OTP không được để trống")
-    private String otp;
+    private String code;
 }
