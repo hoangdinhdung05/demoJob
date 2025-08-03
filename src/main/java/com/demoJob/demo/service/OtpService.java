@@ -8,8 +8,6 @@ import com.demoJob.demo.util.OtpType;
 public interface OtpService {
     void sendOtp(User user, SendOtpRequest request);
 
-    void sendOtp(String email, OtpType type);
-
     boolean verifyOtp(VerifyOtpRequest request);
 }
 

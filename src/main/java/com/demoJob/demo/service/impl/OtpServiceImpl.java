@@ -31,24 +31,29 @@ public class OtpServiceImpl implements OtpService {
 
     private static final int OTP_EXPIRY_MINUTES = 1;
 
+
+    /**
+     * Gửi OTP cho người dùng.
+     * Nếu OTP đã được gửi trong vòng 5 phút, sẽ ném ra InvalidOtpException.
+     * Nếu số lần gửi OTP vượt quá 5 lần trong vòng 5 phút, sẽ ném ra InvalidOtpException.
+     *
+     * @param user Người dùng nhận OTP
+     * @param request Thông tin yêu cầu gửi OTP
+     */
     @Override
     public void sendOtp(User user, SendOtpRequest request) {
+
         String email = user.getEmail();
         if (otpRedisService.getOtp(email, request.getType()) != null) {
             throw new InvalidOtpException("OTP đã được gửi, vui lòng kiểm tra email");
         }
 
-        //Xử lý rate limiting nếu cần
-//        if (otpRedisService.isRateLimited(email)) {
-//            throw new InvalidOtpException("Bạn đang gửi OTP quá nhiều lần. Vui lòng đợi trong giây lát");
-//        }
-
-        LocalDateTime limitWindow = LocalDateTime.now().minusMinutes(5);
+        LocalDateTime limitWindow = LocalDateTime.now().minusMinutes(5); // Sau 5 phút mới được gửi lại
         int count = otpRepo.countRecentOtpByUserAndType(
                 user.getId(), request.getType(), limitWindow
         );
 
-        if (count >= 3) {
+        if (count >= 5) {
             throw new InvalidOtpException("Bạn đã gửi OTP quá nhiều lần. Vui lòng thử lại sau.");
         }
 
@@ -64,6 +69,7 @@ public class OtpServiceImpl implements OtpService {
                 .build());
 
         mailService.sendOtpMail(email, otp, request.getType());
+
         log.info("Sent OTP {} for {} to {}", otp, request.getType(), email);
     }
 
@@ -101,18 +107,14 @@ public class OtpServiceImpl implements OtpService {
 //        return true;
 //    }
 
-    @Override
-    public void sendOtp(String email, OtpType type) {
-        User user = userRepo.findByEmail(email)
-                .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
-
-        sendOtp(user, SendOtpRequest.builder()
-                .email(email)
-                .type(type)
-                .build());
-    }
-
-
+    /**
+     * Xác minh OTP.
+     * Nếu OTP không tồn tại hoặc đã hết hạn, sẽ ném ra InvalidDataException.
+     * Nếu OTP đã được sử dụng, sẽ ném ra InvalidDataException.
+     *
+     * @param request Thông tin yêu cầu xác minh OTP
+     * @return true nếu xác minh thành công
+     */
     @Override
     public boolean verifyOtp(VerifyOtpRequest request) {
         String email = request.getEmail().trim().toLowerCase();
@@ -137,15 +139,6 @@ public class OtpServiceImpl implements OtpService {
             user.setEmailVerified(true);
             userRepo.save(user);
         }
-
         return true;
-    }
-
-
-    private void markEmailAsVerified(User user) {
-        if (!Boolean.TRUE.equals(user.getEmailVerified())) {
-            user.setEmailVerified(true);
-            userRepo.save(user);
-        }
     }
 }

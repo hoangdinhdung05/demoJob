@@ -9,96 +9,109 @@ import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Validated
 public class AuthController {
 
     private final AuthService authService;
 
     /**
-        * Đăng nhập với username và password
-        * Trả về access token và refresh token
+     * Đăng nhập người dùng
+     * Trả về access token, refresh token và thông tin user
+     * @param request
+     * @return
      */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+
+        log.info("[AUTH] Login request for username: {}", request.getUsername());
+
         AuthResponse response = authService.authenticateUser(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đăng nhập thành công", response));
     }
 
     /**
-        * Đăng ký tài khoản mới
-        * Trả về thông tin user và yêu cầu xác minh email
+     * Đăng ký người dùng
+     * Tạo tài khoản và gửi OTP xác minh email
+     * @param request
+     * @return
      */
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
+        log.info("[AUTH] Register request for email: {}", request.getEmail());
         UserDTO user = authService.register(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đăng ký thành công, vui lòng xác minh email", user));
     }
 
     /**
-        * Gửi OTP xác minh email trường hợp OTP đã hết hạn
+     * Resend OTP
+     * @param request
+     * @return
      */
-    @PostMapping("/verify-email/resend")
-    public ResponseEntity<ResponseData<Void>> resendVerifyOtp(@RequestParam String email) {
-        authService.resendVerificationOtp(email);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "OTP xác minh đã được gửi lại"));
+    @PostMapping("/resend-otp")
+    public ResponseEntity<ResponseData<Void>> resendOtp(@RequestBody @Valid SendOtpRequest request) {
+        log.info("[OTP] Resending OTP for email: {}, type: {}", request.getEmail(), request.getType());
+        authService.resendOtp(request);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "OTP đã được gửi lại"));
     }
 
     /**
-        * Xác minh email bằng OTP đã gửi
-        * Trả về thông báo thành công hoặc lỗi
+     * Verify email bằng OTP code
+     * @param email
+     * @param code
+     * @return
      */
     @PostMapping("/verify-email")
     public ResponseEntity<ResponseData<String>> verifyEmailOtp(@RequestParam String email,
                                                                @RequestParam String code) {
+        log.info("[VERIFY] Verifying email: {} with code: {}", email, code);
         String result = authService.verifyEmail(email, code);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), result));
     }
 
     /**
-        * Làm mới access token bằng refresh token
-        * Trả về access token mới
+     * Làm mới access token bằng refresh token
+     * @param request
+     * @return
      */
     @PostMapping("/refresh-token")
-    public ResponseEntity<ResponseData<TokenRefreshResponse>> refreshToken(@RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<ResponseData<TokenRefreshResponse>> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
+        log.info("[TOKEN] Refreshing token for refreshToken={}", request.getRefreshToken());
         TokenRefreshResponse token = authService.refreshToken(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Làm mới access token thành công", token));
     }
 
     /**
-        * Đăng xuất người dùng
-        * Trả về thông báo thành công
-        * Lưu access token vào blacklist
-        * Đánh dấu refresh token là đã sử dụng
+     * Đăng xuất người dùng
+     * Xóa refresh token và blacklist access token
+     * @param request
+     * @return
      */
     @PostMapping("/logout")
     public ResponseEntity<ResponseData<String>> logout(HttpServletRequest request) {
+        String username = request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "Unknown";
+        log.info("[AUTH] Logout request for user: {}", username);
         String result = authService.logout(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), result));
     }
 
-    // FORGOT PASSWORD
-
     /**
-     * Gửi OTP khôi phục mật khẩu
-     */
-    @PostMapping("/forgot-password/send-otp")
-    public ResponseEntity<ResponseData<Void>> sendForgotPasswordOtp(@RequestParam String email) {
-        authService.resendResetPasswordOtp(email);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đã gửi mã OTP khôi phục mật khẩu"));
-    }
-
-    /**
-     * Đặt lại mật khẩu sau khi xác minh OTP
+     * Xác minh OTP khôi phục mật khẩu
      */
     @PostMapping("/forgot-password/reset")
-    public ResponseEntity<ResponseData<String>> resetPassword(@RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<ResponseData<String>> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
+        log.info("[AUTH] Resetting password for email: {}", request.getEmail());
         String result = authService.resetPassword(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), result));
     }

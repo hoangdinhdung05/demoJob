@@ -11,10 +11,7 @@ import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.response.VerifyOtpRequest;
 import com.demoJob.demo.entity.RefreshToken;
 import com.demoJob.demo.entity.User;
-import com.demoJob.demo.exception.InvalidDataException;
-import com.demoJob.demo.exception.InvalidOtpException;
-import com.demoJob.demo.exception.InvalidTokenException;
-import com.demoJob.demo.exception.TokenBlacklistedException;
+import com.demoJob.demo.exception.*;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
@@ -30,10 +27,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.time.ZoneId;
-
 import static com.demoJob.demo.mapper.AuthMapper.toResponse;
 
 @Service
@@ -50,7 +45,12 @@ public class AuthServiceImpl implements AuthService {
     private final OtpService otpService;
     private final PasswordEncoder passwordEncoder;
 
-    // Đăng nhập bằng username & password, sinh access + refresh token
+
+    /**
+     * Xác thực người dùng và trả về thông tin đăng nhập
+     * @param request đối tượng chứa thông tin đăng nhập
+     * @return AuthResponse chứa access token, refresh token và thông tin người dùng
+     */
     @Override
     public AuthResponse authenticateUser(LoginRequest request) {
         User user = authenticateAndGetUser(request.getUsername(), request.getPassword());
@@ -58,9 +58,22 @@ public class AuthServiceImpl implements AuthService {
         return generateAuthResponse(user);
     }
 
-    // Đăng ký user và gửi OTP xác minh email
+    /**
+     * Đăng ký người dùng mới
+     * Tạo tài khoản và gửi OTP xác minh email
+     * @param request đối tượng chứa thông tin đăng ký
+     * @return UserDTO chứa thông tin người dùng đã đăng ký
+     */
     @Override
     public UserDTO register(RegisterRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new DuplicateResourceException("Email đã được sử dụng");
+        }
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new DuplicateResourceException("Tên đăng nhập đã được sử dụng");
+        }
+
         UserDTO createUser = userService.createUser(request);
         User user = getUserByEmail(createUser.getEmail());
 
@@ -72,7 +85,11 @@ public class AuthServiceImpl implements AuthService {
         return createUser;
     }
 
-    // Refresh access token từ refresh token
+    /**
+     * Làm mới access token bằng refresh token
+     * @param refreshTokenRequest đối tượng chứa refresh token
+     * @return TokenRefreshResponse chứa access token và refresh token mới
+     */
     @Override
     public TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String reqToken = refreshTokenRequest.getRefreshToken();
@@ -97,7 +114,12 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
-    // Logout: revoke refresh token và blacklist access token
+    /**
+     * Đăng xuất người dùng
+     * Đăng xuất bằng cách thu hồi refresh token và blacklist access token
+     * @param request đối tượng chứa thông tin yêu cầu HTTP
+     * @return Thông báo đăng xuất thành công
+     */
     @Override
     public String logout(HttpServletRequest request) {
         String accessToken = extractToken(request);
@@ -114,34 +136,24 @@ public class AuthServiceImpl implements AuthService {
         return "Logout successful";
     }
 
-    // Xác minh email sau khi đăng ký
+    /**
+     * Xác minh email bằng OTP code
+     * @param email địa chỉ email cần xác minh
+     * @param code mã OTP được gửi đến email
+     * @return Thông báo xác minh thành công
+     */
     @Override
     public String verifyEmail(String email, String code) {
         validateOtp(email, code, OtpType.VERIFY_EMAIL);
         return "Đã verify email thành công, vui lòng đăng nhập để tiếp tục";
     }
 
-    // Gửi lại mã xác minh email
-    @Override
-    public void resendVerificationOtp(String email) {
-        resendOtp(email, OtpType.VERIFY_EMAIL, true);
-        log.info("Resent verification OTP to email: {}", email);
-    }
-
-    // Gửi lại mã OTP reset password
-    @Override
-    public void resendResetPasswordOtp(String email) {
-        resendOtp(email, OtpType.RESET_PASSWORD, false);
-        log.info("Resent reset password OTP to email: {}", email);
-    }
-
-    // Xác minh mã OTP quên mật khẩu
-    @Override
-    public void verifyForgotPasswordOtp(String email, String code) {
-        validateOtp(email, code, OtpType.RESET_PASSWORD);
-    }
-
-    // Reset mật khẩu mới sau khi xác minh OTP
+    /**
+     * Đặt lại mật khẩu cho người dùng
+     * Xác minh OTP và cập nhật mật khẩu mới
+     * @param request đối tượng chứa thông tin yêu cầu đặt lại mật khẩu
+     * @return Thông báo cập nhật mật khẩu thành công
+     */
     @Override
     public String resetPassword(ResetPasswordRequest request) {
         validateOtp(request.getEmail(), request.getOtp(), OtpType.RESET_PASSWORD);
@@ -153,8 +165,38 @@ public class AuthServiceImpl implements AuthService {
         return "Mật khẩu đã được cập nhật thành công";
     }
 
+    /**
+     * Gửi lại OTP cho người dùng
+     * @param request đối tượng chứa thông tin yêu cầu gửi lại OTP
+     */
+    @Override
+    public void resendOtp(SendOtpRequest request) {
+        log.info("Resending OTP for email: {}, type: {}", request.getEmail(), request.getType());
+
+        User user = getUserByEmail(request.getEmail());
+        OtpType type = request.getType();
+
+        // Nếu là VERIFY_EMAIL mà đã xác minh rồi thì không cho gửi lại
+        if (type == OtpType.VERIFY_EMAIL && user.getEmailVerified()) {
+            throw new InvalidDataException("Email đã được xác minh, không cần gửi lại OTP");
+        }
+
+        // Gửi lại OTP
+        otpService.sendOtp(user, SendOtpRequest.builder()
+                .email(user.getEmail())
+                .type(type)
+                .build());
+    }
+
+
     //=====//=====//=====//=====//
 
+    /**
+     * Xác thực người dùng bằng tên đăng nhập và mật khẩu
+     * @param username tên đăng nhập của người dùng
+     * @param password mật khẩu của người dùng
+     * @return User đối tượng người dùng đã xác thực
+     */
     private User authenticateAndGetUser(String username, String password) {
         log.info("Authenticate and get user with username={}", username);
         Authentication authentication = authenticationManager.authenticate(
@@ -164,6 +206,12 @@ public class AuthServiceImpl implements AuthService {
         return getUserByUsername(username);
     }
 
+    /**
+     * Tạo AuthResponse chứa access token và refresh token
+     * và lưu refresh token vào cơ sở dữ liệu
+     * @param user đối tượng người dùng đã xác thực
+     * @return AuthResponse chứa thông tin đăng nhập
+     */
     private AuthResponse generateAuthResponse(User user) {
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
@@ -171,19 +219,13 @@ public class AuthServiceImpl implements AuthService {
         return toResponse(user, accessToken, refreshToken);
     }
 
-    private void resendOtp(String email, OtpType type, boolean skipVerifiedCheck) {
-        User user = getUserByEmail(email);
-
-        if (!skipVerifiedCheck && type != OtpType.RESET_PASSWORD && user.getEmailVerified()) {
-            throw new InvalidDataException("Email đã được xác minh");
-        }
-
-        otpService.sendOtp(user, SendOtpRequest.builder()
-                .email(user.getEmail())
-                .type(type)
-                .build());
-    }
-
+    /**
+     * Xác minh mã OTP
+     * Nếu mã OTP không hợp lệ hoặc đã hết hạn, sẽ ném ra InvalidOtpException
+     * @param email địa chỉ email của người dùng
+     * @param code mã OTP cần xác minh
+     * @param type loại OTP (VERIFY_EMAIL, RESET_PASSWORD, v.v.)
+     */
     private void validateOtp(String email, String code, OtpType type) {
         boolean isValid = otpService.verifyOtp(VerifyOtpRequest.builder()
                 .email(email)
@@ -196,28 +238,45 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    /**
+     * Kiểm tra xem người dùng đã xác minh email hay chưa
+     * Nếu chưa xác minh, sẽ ném ra InvalidDataException
+     * @param user đối tượng người dùng cần kiểm tra
+     */
     private void checkEmailVerifier(User user) {
         if (!user.getEmailVerified()) {
             throw new InvalidDataException("Vui lòng xác minh email trước khi đăng nhập.");
         }
     }
 
+    /**
+     * Lấy thông tin người dùng từ email
+     * Nếu email không tồn tại, sẽ ném ra InvalidDataException
+     * @param email địa chỉ email của người dùng
+     * @return User đối tượng người dùng tương ứng với email
+     */
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
     }
 
+    /**
+     * Lấy thông tin người dùng từ tên đăng nhập
+     * Nếu tên đăng nhập không tồn tại, sẽ ném ra UsernameNotFoundException
+     * @param username tên đăng nhập của người dùng
+     * @return User đối tượng người dùng tương ứng với tên đăng nhập
+     */
     private User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    private User getVerifiedUserByEmail(String email) {
-        User user = getUserByEmail(email);
-        checkEmailVerifier(user);
-        return user;
-    }
-
+    /**
+     * Trích xuất access token từ header Authorization
+     * Nếu không có token hoặc định dạng không hợp lệ, sẽ ném ra InvalidTokenException
+     * @param request đối tượng HttpServletRequest chứa header Authorization
+     * @return access token nếu hợp lệ
+     */
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {
