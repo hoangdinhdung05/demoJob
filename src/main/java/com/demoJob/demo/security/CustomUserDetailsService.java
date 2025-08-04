@@ -21,34 +21,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     
     private final UserRepository userRepository;
 
-//    @Override
-//    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-//        User user = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-//
-//        if (user.getUsername() == null || user.getUsername().isEmpty()) {
-//            throw new IllegalArgumentException("Username cannot be null or empty");
-//        }
-//
-//        String password = (user.getPassword() != null) ? user.getPassword() : "";
-//
-//        Set<GrantedAuthority> authorities = user.getUserHasRoles() != null ?
-//                user.getUserHasRoles().stream()
-//                        .map(UserHasRole::getRole)
-//                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName().toUpperCase()))
-//                        .collect(Collectors.toSet()) : Set.of();
-//
-//        if (authorities.isEmpty()) {
-//            // Gán quyền mặc định nếu cần thiết, hoặc throw exception nếu hệ thống yêu cầu
-//            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-//        }
-//
-//        return new org.springframework.security.core.userdetails.User(
-//                user.getUsername(),
-//                password,
-//                authorities
-//        );
-//    }
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
