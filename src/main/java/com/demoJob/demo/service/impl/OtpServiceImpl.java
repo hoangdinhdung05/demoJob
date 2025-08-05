@@ -16,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,118 +28,112 @@ public class OtpServiceImpl implements OtpService {
     private final OtpCodeRepository otpRepo;
     private final UserRepository userRepo;
     private final MailService mailService;
-    private final OtpRedisService otpRedisService;
 
-    private static final int OTP_EXPIRY_MINUTES = 1;
-
+    private static final int OTP_EXPIRY_MINUTES = 5;
+    private static final int OTP_RESEND_LIMIT_MINUTES = 5;
+    private static final int MAX_OTP_SEND_COUNT = 5;
 
     /**
      * Gửi OTP cho người dùng.
-     * Nếu OTP đã được gửi trong vòng 5 phút, sẽ ném ra InvalidOtpException.
-     * Nếu số lần gửi OTP vượt quá 5 lần trong vòng 5 phút, sẽ ném ra InvalidOtpException.
+     * Kiểm tra xem OTP đã tồn tại hay chưa, nếu có thì không gửi lại.
+     * Kiểm tra số lần gửi gần đây, nếu vượt quá giới hạn thì báo lỗi.
+     * Tạo OTP mới và lưu vào cơ sở dữ liệu, sau đó gửi email.
      *
-     * @param user Người dùng nhận OTP
+     * @param user Người dùng cần gửi OTP
      * @param request Thông tin yêu cầu gửi OTP
      */
     @Override
     public void sendOtp(User user, SendOtpRequest request) {
+        long userId = user.getId();
+        OtpType type = request.getType();
 
-        String email = user.getEmail();
-        if (otpRedisService.getOtp(email, request.getType()) != null) {
-            throw new InvalidOtpException("OTP đã được gửi, vui lòng kiểm tra email");
+        // Check OTP tồn tại
+        if (otpRepo.findValidOtp(userId, type, LocalDateTime.now()).isPresent()) {
+            throw new InvalidOtpException("OTP đã được gửi. Vui lòng kiểm tra email.");
         }
 
-        LocalDateTime limitWindow = LocalDateTime.now().minusMinutes(5); // Sau 5 phút mới được gửi lại
+        // Check số lần gửi gần đây
         int count = otpRepo.countRecentOtpByUserAndType(
-                user.getId(), request.getType(), limitWindow
-        );
-
-        if (count >= 5) {
-            throw new InvalidOtpException("Bạn đã gửi OTP quá nhiều lần. Vui lòng thử lại sau.");
+                userId, type, LocalDateTime.now().minusMinutes(OTP_RESEND_LIMIT_MINUTES));
+        if (count >= MAX_OTP_SEND_COUNT) {
+            throw new InvalidOtpException("Bạn đã gửi OTP quá nhiều lần. Thử lại sau.");
         }
 
+        // Tạo OTP
         String otp = String.format("%06d", new Random().nextInt(1_000_000));
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
 
         otpRepo.save(OtpCode.builder()
                 .user(user)
                 .code(otp)
-                .type(request.getType())
+                .type(type)
                 .expiryTime(expiry)
                 .used(false)
                 .build());
 
-        mailService.sendOtpMail(email, otp, request.getType());
+        // Gửi mail
+        mailService.sendOtpMail(user.getEmail(), otp, type);
 
-        log.info("Sent OTP {} for {} to {}", otp, request.getType(), email);
+        log.info("Sent OTP {} for {} to {}", otp, type, user.getEmail());
     }
-
-    //Logic redis phát triển lại sau
-    //Redis
-//    @Override
-//    public boolean verifyOtp(VerifyOtpRequest request) {
-//        OtpRedisData data = otpRedisService.getOtp(request.getEmail(), request.getType());
-//        if (data == null) {
-//            throw new RuntimeException("OTP không tồn tại hoặc đã hết hạn");
-//        }
-//
-//        if (!data.getCode().equals(request.getCode())) {
-//            throw new RuntimeException("OTP không chính xác");
-//        }
-//
-//        if (data.getExpiryTime().isBefore(LocalDateTime.now())) {
-//            throw new RuntimeException("OTP đã hết hạn");
-//        }
-//
-//        otpRedisService.deleteOtp(request.getEmail(), request.getType());
-//
-//        // Cập nhật trạng thái used = true trong DB nếu bạn dùng DB song song
-//        otpRepo.findByUserEmailAndCodeAndTypeAndUsedIsFalse(
-//                request.getEmail(), request.getCode(), request.getType()
-//        ).ifPresent(otp -> {
-//            otp.setUsed(true);
-//            otpRepo.save(otp);
-//        });
-//
-//        User user = userRepo.findByEmail(request.getEmail()).orElseThrow(()->new RuntimeException("sss"));
-//        user.setEmailVerified(true);
-//        userRepo.save(user);
-//
-//        return true;
-//    }
 
     /**
-     * Xác minh OTP.
-     * Nếu OTP không tồn tại hoặc đã hết hạn, sẽ ném ra InvalidDataException.
-     * Nếu OTP đã được sử dụng, sẽ ném ra InvalidDataException.
+     * Xác minh mã OTP.
+     * Kiểm tra xem mã OTP có hợp lệ và chưa sử dụng hay không.
+     * Nếu hợp lệ, đánh dấu là đã sử dụng và trả về verifyKey.
      *
      * @param request Thông tin yêu cầu xác minh OTP
-     * @return true nếu xác minh thành công
+     * @return verifyKey nếu xác minh thành công
      */
     @Override
-    public boolean verifyOtp(VerifyOtpRequest request) {
-        String email = request.getEmail().trim().toLowerCase();
-
-        User user = userRepo.findByEmail(email)
+    public String verifyOtp(VerifyOtpRequest request) {
+        User user = userRepo.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
 
-        log.info("Verifying OTP: {}, email: {}, userId: {}, type: {}", request.getCode(), email, user.getId(), request.getType());
-
-        OtpCode otpCode = otpRepo.findByUserIdAndCodeAndTypeAndUsedIsFalse(
+        OtpCode otp = otpRepo.findByUserIdAndCodeAndTypeAndUsedIsFalse(
                 user.getId(), request.getCode(), request.getType()
-        ).orElseThrow(() -> new InvalidDataException("OTP not found"));
+        ).orElseThrow(() -> new InvalidDataException("OTP không hợp lệ hoặc đã hết hạn"));
 
-        if (otpCode.getExpiryTime().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP đã hết hạn");
-        }
+        if (otp.getExpiryTime().isBefore(LocalDateTime.now()))
+            throw new InvalidDataException("OTP đã hết hạn");
 
-        otpCode.setUsed(true);
-        otpRepo.save(otpCode);
+        otp.setUsed(true);
+        String verifyKey = UUID.randomUUID().toString();
+        otp.setVerifyKey(verifyKey);
+        otpRepo.save(otp);
 
-        if (request.getType() == OtpType.VERIFY_EMAIL) {
+        log.info("Verified OTP, key={}, user={}", verifyKey, user.getId());
+
+        return verifyKey;
+    }
+
+    /**
+     * Xác minh verifyKey để lấy thông tin người dùng.
+     * @param verifyKey mã xác minh được gửi qua OTP
+     * @param type loại OTP (đăng ký, đăng nhập, v.v.)
+     * @return User nếu xác minh thành công
+     */
+    @Override
+    public User confirmVerifyKey(String verifyKey, OtpType type) {
+        OtpCode otp = otpRepo.findByVerifyKeyAndTypeAndUsedTrue(verifyKey, type)
+                .orElseThrow(() -> new InvalidDataException("Key không hợp lệ hoặc đã hết hạn"));
+
+        User user = otp.getUser();
+
+        //Nếu là xác minh email thì cập nhật trạng thái emailVerified
+        if (type == OtpType.VERIFY_EMAIL && Boolean.FALSE.equals(user.getEmailVerified())) {
             user.setEmailVerified(true);
             userRepo.save(user);
+            log.info("[OTP] Email verified for user: {}", user.getEmail());
         }
-        return true;
+
+        // Clear verifyKey
+        otp.setVerifyKey(null);
+        otpRepo.save(otp);
+
+        log.info("Confirmed verify key={}, user={}", verifyKey, user.getId());
+
+        return user;
     }
+
 }

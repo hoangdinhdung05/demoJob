@@ -42,18 +42,6 @@ public class JwtTokenProvider {
 
     // ===================== ACCESS TOKEN =====================
 
-    public String generateAccessToken(Authentication authentication) {
-//        var principal = (org.springframework.security.core.userdetails.User) authentication.getPrincipal();
-
-        CustomUserDetails principal = (CustomUserDetails) authentication.getPrincipal();
-
-        String roles = principal.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
-
-        return buildToken(principal.getUsername(), roles, accessKey, getAccessTokenExpiryDate());
-    }
-
     public String generateAccessToken(User user) {
         String roles = user.getUserHasRoles().stream()
                 .map(role -> "ROLE_" + role.getRole().getName().toUpperCase())
