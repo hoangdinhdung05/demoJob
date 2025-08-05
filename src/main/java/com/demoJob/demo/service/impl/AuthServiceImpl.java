@@ -17,6 +17,7 @@ import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
 import com.demoJob.demo.util.OtpType;
 import com.demoJob.demo.util.TokenBlacklistReason;
+import com.demoJob.demo.util.UserStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -137,68 +138,58 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * Xác minh email bằng OTP code
-     * @param email địa chỉ email cần xác minh
-     * @param code mã OTP được gửi đến email
-     * @return Thông báo xác minh thành công
-     */
-    @Override
-    public String verifyEmail(String email, String code) {
-        validateOtp(email, code, OtpType.VERIFY_EMAIL);
-        return "Đã verify email thành công, vui lòng đăng nhập để tiếp tục";
-    }
-
-    /**
-     * Đặt lại mật khẩu cho người dùng
-     * Xác minh OTP và cập nhật mật khẩu mới
-     * @param request đối tượng chứa thông tin yêu cầu đặt lại mật khẩu
-     * @return Thông báo cập nhật mật khẩu thành công
-     */
-    @Override
-    public String resetPassword(ResetPasswordRequest request) {
-//        validateOtp(request.getEmail(), request.getCode(), OtpType.RESET_PASSWORD);
-
-        User user = getUserByEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
-
-        return "Mật khẩu đã được cập nhật thành công";
-    }
-
-    /**
      * Gửi lại OTP cho người dùng
      * @param request đối tượng chứa thông tin yêu cầu gửi lại OTP
      */
-    @Override
-    public void resendOtp(SendOtpRequest request) {
-        log.info("Resending OTP for email: {}, type: {}", request.getEmail(), request.getType());
-
-        User user = getUserByEmail(request.getEmail());
-        OtpType type = request.getType();
-
-        // Nếu là VERIFY_EMAIL mà đã xác minh rồi thì không cho gửi lại
-        if (type == OtpType.VERIFY_EMAIL && user.getEmailVerified()) {
-            throw new InvalidDataException("Email đã được xác minh, không cần gửi lại OTP");
-        }
-
-        // Gửi lại OTP
-        otpService.sendOtp(user, SendOtpRequest.builder()
-                .email(user.getEmail())
-                .type(type)
-                .build());
-    }
+//    @Override
+//    public void resendOtp(SendOtpRequest request) {
+//        log.info("Resending OTP for email: {}, type: {}", request.getEmail(), request.getType());
+//
+//        User user = getUserByEmail(request.getEmail());
+//        OtpType type = request.getType();
+//
+//        // Nếu là VERIFY_EMAIL mà đã xác minh rồi thì không cho gửi lại
+//        if (type == OtpType.VERIFY_EMAIL && user.getEmailVerified()) {
+//            throw new InvalidDataException("Email đã được xác minh, không cần gửi lại OTP");
+//        }
+//
+//        // Gửi lại OTP
+//        otpService.sendOtp(user, SendOtpRequest.builder()
+//                .email(user.getEmail())
+//                .type(type)
+//                .build());
+//    }
 
     /**
      * Xác minh mã OTP
      * Nếu mã OTP không hợp lệ hoặc đã hết hạn, sẽ ném ra InvalidOtpException
      * @param request đối tượng chứa thông tin xác minh OTP
      */
+//    @Override
+//    public String verifyOtp(VerifyOtpRequest request) {
+//        return otpService.verifyOtp(request);
+//    }
+
     @Override
-    public void verifyOtpOrThrow(VerifyOtpRequest request) {
-        boolean isValid = otpService.verifyOtp(request);
-        if (!isValid) {
-            throw new InvalidOtpException("OTP không hợp lệ hoặc đã hết hạn");
-        }
+    public String confirmVerifyEmail(String verifyKey) {
+        User user = otpService.confirmVerifyKey(verifyKey, OtpType.VERIFY_EMAIL);
+
+        user.setEmailVerified(true);
+        user.setStatus(UserStatus.ACTIVE); // nếu dùng enum cho trạng thái
+        userRepository.save(user);
+
+        return "Email đã được xác minh thành công. Vui lòng đăng nhập để tiếp tục.";
+    }
+
+
+    @Override
+    public String resetPassword(ResetPasswordRequest request) {
+        User user = otpService.confirmVerifyKey(request.getVerifyKey(), OtpType.RESET_PASSWORD);
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return "Mật khẩu đã được đặt lại thành công.";
     }
 
 
@@ -230,25 +221,6 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
         refreshTokenService.createRefreshToken(user, refreshToken, jwtTokenProvider.getRefreshTokenExpiryDate());
         return toResponse(user, accessToken, refreshToken);
-    }
-
-    /**
-     * Xác minh mã OTP
-     * Nếu mã OTP không hợp lệ hoặc đã hết hạn, sẽ ném ra InvalidOtpException
-     * @param email địa chỉ email của người dùng
-     * @param code mã OTP cần xác minh
-     * @param type loại OTP (VERIFY_EMAIL, RESET_PASSWORD, v.v.)
-     */
-    private void validateOtp(String email, String code, OtpType type) {
-        boolean isValid = otpService.verifyOtp(VerifyOtpRequest.builder()
-                .email(email)
-                .code(code)
-                .type(type)
-                .build());
-
-        if (!isValid) {
-            throw new InvalidOtpException("OTP không hợp lệ hoặc đã hết hạn");
-        }
     }
 
     /**

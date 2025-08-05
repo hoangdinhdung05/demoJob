@@ -12,28 +12,47 @@ import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
-    //=======//LOGIN//=======//
+    /**
+     * Xác thực người dùng với thông tin đăng nhập
+     * @param request chứa thông tin đăng nhập (username, password)
+     * @return trả về thông tin xác thực người dùng bao gồm access token, refresh token và thông tin người dùng
+     */
     AuthResponse authenticateUser(LoginRequest request);
 
-    //=======//REGISTER//=======//
+    /**
+     * Đăng ký người dùng mới
+     * @param request chứa thông tin đăng ký (họ, tên, tên đăng nhập, email, mật khẩu)
+     * @return trả về thông tin người dùng đã đăng ký
+     */
     UserDTO register(RegisterRequest request);
 
-    //=======//REFRESH TOKEN//=======//
-    TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
 
-    //=======//LOGOUT//=======//
-    String logout(HttpServletRequest request);
+    /**
+     * Xác minh verifyKey để lấy thông tin người dùng
+     * @param verifyKey mã xác minh được gửi qua OTP
+     * @return UserDTO nếu xác minh thành công
+     */
+    String confirmVerifyEmail(String verifyKey);
 
-    //=======//VERIFY EMAIL//=======//
-    String verifyEmail(String email, String code);
-
-    //=======//FORGOT PASSWORD//=======//
+    /**
+     * Đặt lại mật khẩu cho người dùng
+     * @param request chứa thông tin đặt lại mật khẩu (verifyKey, mật khẩu mới)
+     * @return thông báo thành công
+     */
     String resetPassword(ResetPasswordRequest request);
 
-    //=======//RESEND OTP//=======//
-    void resendOtp(SendOtpRequest request);
+    /**
+     * Làm mới token truy cập bằng refresh token
+     * @param refreshTokenRequest chứa thông tin refresh token
+     * @return TokenRefreshResponse chứa access token mới
+     */
+    TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
 
-    //=======//VERIFY OTP//=======//
-    void verifyOtpOrThrow(VerifyOtpRequest request);
+    /**
+     * Đăng xuất người dùng
+     * @param request chứa thông tin yêu cầu đăng xuất
+     * @return thông báo đăng xuất thành công
+     */
+    String logout(HttpServletRequest request);
 
 }
