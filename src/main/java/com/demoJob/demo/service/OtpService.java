@@ -6,10 +6,33 @@ import com.demoJob.demo.entity.User;
 import com.demoJob.demo.util.OtpType;
 
 public interface OtpService {
+
+    /**
+     * Gửi OTP đến người dùng
+     * @param user Người dùng cần gửi OTP
+     * @param request Thông tin yêu cầu gửi OTP
+     */
     void sendOtp(User user, SendOtpRequest request);
 
+    /**
+     * verify key
+     * @param request
+     * @return
+     */
     String verifyOtp(VerifyOtpRequest request);
 
+    /**
+     * email và otp
+     * @param request
+     */
+    void verifyEmail(VerifyOtpRequest request);
+
+    /**
+     * Xác minh verifyKey để lấy thông tin người dùng
+     * @param verifyKey mã xác minh được gửi qua OTP
+     * @param type loại OTP (ví dụ: EMAIL, PHONE)
+     * @return User nếu xác minh thành công
+     */
     User confirmVerifyKey(String verifyKey, OtpType type);
 }
 

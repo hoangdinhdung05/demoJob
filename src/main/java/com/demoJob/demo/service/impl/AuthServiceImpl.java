@@ -30,6 +30,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Objects;
+
 import static com.demoJob.demo.mapper.AuthMapper.toResponse;
 
 @Service
@@ -138,53 +140,53 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * Gửi lại OTP cho người dùng
-     * @param request đối tượng chứa thông tin yêu cầu gửi lại OTP
+     * Xác minh email người dùng
+     * @param request đối tượng chứa thông tin xác minh email
      */
-//    @Override
-//    public void resendOtp(SendOtpRequest request) {
-//        log.info("Resending OTP for email: {}, type: {}", request.getEmail(), request.getType());
-//
-//        User user = getUserByEmail(request.getEmail());
-//        OtpType type = request.getType();
-//
-//        // Nếu là VERIFY_EMAIL mà đã xác minh rồi thì không cho gửi lại
-//        if (type == OtpType.VERIFY_EMAIL && user.getEmailVerified()) {
-//            throw new InvalidDataException("Email đã được xác minh, không cần gửi lại OTP");
-//        }
-//
-//        // Gửi lại OTP
-//        otpService.sendOtp(user, SendOtpRequest.builder()
-//                .email(user.getEmail())
-//                .type(type)
-//                .build());
-//    }
-
-    /**
-     * Xác minh mã OTP
-     * Nếu mã OTP không hợp lệ hoặc đã hết hạn, sẽ ném ra InvalidOtpException
-     * @param request đối tượng chứa thông tin xác minh OTP
-     */
-//    @Override
-//    public String verifyOtp(VerifyOtpRequest request) {
-//        return otpService.verifyOtp(request);
-//    }
-
+    //Xác minh email luôn bằng OTP mà không cần thông qua key
     @Override
-    public String confirmVerifyEmail(String verifyKey) {
-        User user = otpService.confirmVerifyKey(verifyKey, OtpType.VERIFY_EMAIL);
-
-        user.setEmailVerified(true);
-        user.setStatus(UserStatus.ACTIVE); // nếu dùng enum cho trạng thái
-        userRepository.save(user);
-
-        return "Email đã được xác minh thành công. Vui lòng đăng nhập để tiếp tục.";
+    public void active(VerifyOtpRequest request) {
+        otpService.verifyEmail(request);
     }
 
+    /**
+     * Gửi OTP đến email của người dùng để đặt lại mật khẩu
+     * Kiểm tra xem email có tồn tại trong hệ thống hay không
+     * Nếu tồn tại, gửi OTP và trả về thông báo thành công
+     * @param request đối tượng chứa thông tin gửi OTP
+     */
+    @Override
+    public void forgotPassword(SendOtpRequest request) {
+        User user = getUserByEmail(request.getEmail().trim().toLowerCase());
+        otpService.sendOtp(user, request);
+    }
 
+    /**
+     * Xác minh OTP được gửi đến email người dùng
+     *
+     * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
+     * @return verifyKey nếu xác minh thành công
+     */
+    @Override
+    public String verifyResetPassword(VerifyOtpRequest request) {
+        return otpService.verifyOtp(request);
+    }
+
+    /**
+     * Đặt lại mật khẩu cho người dùng
+     * Xác minh verifyKey và cập nhật mật khẩu mới
+     * @param request đối tượng chứa thông tin đặt lại mật khẩu
+     * @return Thông báo đặt lại mật khẩu thành công
+     */
     @Override
     public String resetPassword(ResetPasswordRequest request) {
+        //check verifyKey
         User user = otpService.confirmVerifyKey(request.getVerifyKey(), OtpType.RESET_PASSWORD);
+
+        //Validate password reset request
+        if (!Objects.equals(request.getConfirmPassword(), request.getNewPassword())) {
+            throw new InvalidDataException("Mật khẩu xác nhận không khớp");
+        }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
@@ -220,7 +222,7 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
         refreshTokenService.createRefreshToken(user, refreshToken, jwtTokenProvider.getRefreshTokenExpiryDate());
-        return toResponse(user, accessToken, refreshToken);
+        return toResponse(accessToken, refreshToken);
     }
 
     /**

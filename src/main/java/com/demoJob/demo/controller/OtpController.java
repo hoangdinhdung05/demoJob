@@ -34,7 +34,7 @@ public class OtpController {
      * @param request Thông tin yêu cầu gửi OTP
      * @return ResponseEntity chứa mã trạng thái và thông báo
      */
-    @PostMapping("/send")
+    @PostMapping("/resend")
     public ResponseEntity<ResponseData<Void>> sendOtp(@RequestBody @Valid SendOtpRequest request) {
         User user = userRepo.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
@@ -60,12 +60,11 @@ public class OtpController {
     }
 
     /**
-     * Xác minh verifyKey để hoàn tất quá trình xác minh OTP.
-     * Kiểm tra xem verifyKey có hợp lệ hay không.
-     * Nếu hợp lệ, trả về thông báo xác minh thành công.
+     * Xác minh verifyKey để hoàn tất quá trình xác minh.
+     * Nếu verifyKey hợp lệ, trả về thông báo xác minh thành công.
      *
-     * @param key Mã verifyKey để xác minh
-     * @param type Loại OTP (EMAIL hoặc PHONE)
+     * @param key Mã xác minh được gửi qua OTP
+     * @param type Loại OTP (EMAIL, PHONE, etc.)
      * @return ResponseEntity chứa mã trạng thái và thông báo
      */
     @GetMapping("/confirm")
@@ -74,5 +73,6 @@ public class OtpController {
         log.info("[OTP] Confirmed verify key for user: {}", user.getEmail());
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Xác minh thành công"));
     }
+
 }
 

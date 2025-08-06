@@ -85,19 +85,12 @@ public class OtpServiceImpl implements OtpService {
      * @param request Thông tin yêu cầu xác minh OTP
      * @return verifyKey nếu xác minh thành công
      */
+    //Giữ nguyên bổ sung api xác minh OTP mà không sinh ra verifyKey
     @Override
     public String verifyOtp(VerifyOtpRequest request) {
-        User user = userRepo.findByEmail(request.getEmail().trim().toLowerCase())
-                .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
+        User user = getUser(request.getEmail());
 
-        OtpCode otp = otpRepo.findByUserIdAndCodeAndTypeAndUsedIsFalse(
-                user.getId(), request.getCode(), request.getType()
-        ).orElseThrow(() -> new InvalidDataException("OTP không hợp lệ hoặc đã hết hạn"));
-
-        if (otp.getExpiryTime().isBefore(LocalDateTime.now()))
-            throw new InvalidDataException("OTP đã hết hạn");
-
-        otp.setUsed(true);
+        OtpCode otp = validateOtp(request.getEmail(), request.getCode(), request.getType());
         String verifyKey = UUID.randomUUID().toString();
         otp.setVerifyKey(verifyKey);
         otpRepo.save(otp);
@@ -105,6 +98,25 @@ public class OtpServiceImpl implements OtpService {
         log.info("Verified OTP, key={}, user={}", verifyKey, user.getId());
 
         return verifyKey;
+    }
+
+    /**
+     * Xác minh email người dùng.
+     * Kiểm tra xem email đã được xác minh hay chưa.
+     * Nếu chưa, xác minh email và cập nhật trạng thái.
+     * Dùng cho đăng kí lần đầu => chưa vần verify key
+     * @param request
+     */
+    @Override
+    public void verifyEmail(VerifyOtpRequest request) {
+        validateOtp(request.getEmail(), request.getCode(), OtpType.VERIFY_EMAIL);
+
+        User user = getUser(request.getEmail());
+
+        user.setEmailVerified(true);
+        userRepo.save(user);
+
+        log.info("User {} đã xác minh email thành công", user.getEmail());
     }
 
     /**
@@ -135,5 +147,34 @@ public class OtpServiceImpl implements OtpService {
 
         return user;
     }
+
+    /**
+     * Xác minh mã OTP và đánh dấu là đã sử dụng.
+     * @param email Email của người dùng
+     * @param code Mã OTP cần xác minh
+     * @param type Loại OTP (EMAIL, PHONE, v.v.)
+     * @return OtpCode nếu xác minh thành công
+     */
+    private OtpCode validateOtp(String email, String code, OtpType type) {
+        User user = getUser(email);
+
+        OtpCode otp = otpRepo.findByUserIdAndCodeAndTypeAndUsedIsFalse(user.getId(), code, type)
+                .orElseThrow(() -> new InvalidDataException("OTP không hợp lệ hoặc đã hết hạn"));
+
+        if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new InvalidDataException("OTP đã hết hạn");
+        }
+
+        otp.setUsed(true);
+        otpRepo.save(otp);
+        return otp;
+    }
+
+    private User getUser(String email) {
+        User user = userRepo.findByEmail(email.trim().toLowerCase())
+                .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
+        return user;
+    }
+
 
 }

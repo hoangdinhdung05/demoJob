@@ -9,6 +9,7 @@ import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
+import com.demoJob.demo.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuthService {
@@ -27,12 +28,12 @@ public interface AuthService {
     UserDTO register(RegisterRequest request);
 
 
-    /**
-     * Xác minh verifyKey để lấy thông tin người dùng
-     * @param verifyKey mã xác minh được gửi qua OTP
-     * @return UserDTO nếu xác minh thành công
-     */
-    String confirmVerifyEmail(String verifyKey);
+//    /**
+//     * Xác minh verifyKey để lấy thông tin người dùng
+//     * @param verifyKey mã xác minh được gửi qua OTP
+//     * @return UserDTO nếu xác minh thành công
+//     */
+//    String confirmVerifyEmail(String verifyKey);
 
     /**
      * Đặt lại mật khẩu cho người dùng
@@ -55,4 +56,22 @@ public interface AuthService {
      */
     String logout(HttpServletRequest request);
 
+    /**
+     * Xác minh email người dùng
+     * @param request chứa thông tin xác minh email (verifyKey, email)
+     */
+    void active(VerifyOtpRequest request);
+
+    /**
+     * Gửi OTP đến email người dùng để xác minh hoặc đặt lại mật khẩu
+     * @param request chứa thông tin gửi OTP (email, loại OTP)
+     */
+    void forgotPassword(SendOtpRequest request);
+
+    /**
+     * Xác minh OTP được gửi đến email người dùng
+     * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
+     * @return verifyKey nếu xác minh thành công
+     */
+    String verifyResetPassword(VerifyOtpRequest request);
 }
