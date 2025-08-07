@@ -9,14 +9,12 @@ import com.demoJob.demo.exception.InvalidOtpException;
 import com.demoJob.demo.repository.OtpCodeRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.MailService;
-import com.demoJob.demo.service.OtpRedisService;
 import com.demoJob.demo.service.OtpService;
 import com.demoJob.demo.util.OtpType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -39,11 +37,14 @@ public class OtpServiceImpl implements OtpService {
      * Kiểm tra số lần gửi gần đây, nếu vượt quá giới hạn thì báo lỗi.
      * Tạo OTP mới và lưu vào cơ sở dữ liệu, sau đó gửi email.
      *
-     * @param user Người dùng cần gửi OTP
      * @param request Thông tin yêu cầu gửi OTP
      */
     @Override
-    public void sendOtp(User user, SendOtpRequest request) {
+    public void sendOtp(SendOtpRequest request) {
+
+        User user = userRepo.findByEmail(request.getEmail().trim().toLowerCase())
+                .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
+
         long userId = user.getId();
         OtpType type = request.getType();
 
@@ -85,7 +86,6 @@ public class OtpServiceImpl implements OtpService {
      * @param request Thông tin yêu cầu xác minh OTP
      * @return verifyKey nếu xác minh thành công
      */
-    //Giữ nguyên bổ sung api xác minh OTP mà không sinh ra verifyKey
     @Override
     public String verifyOtp(VerifyOtpRequest request) {
         User user = getUser(request.getEmail());
@@ -105,7 +105,7 @@ public class OtpServiceImpl implements OtpService {
      * Kiểm tra xem email đã được xác minh hay chưa.
      * Nếu chưa, xác minh email và cập nhật trạng thái.
      * Dùng cho đăng kí lần đầu => chưa vần verify key
-     * @param request
+     * @param request Thông tin xác minh bao gồm email và mã OTP
      */
     @Override
     public void verifyEmail(VerifyOtpRequest request) {
@@ -171,9 +171,8 @@ public class OtpServiceImpl implements OtpService {
     }
 
     private User getUser(String email) {
-        User user = userRepo.findByEmail(email.trim().toLowerCase())
+        return userRepo.findByEmail(email.trim().toLowerCase())
                 .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
-        return user;
     }
 
 

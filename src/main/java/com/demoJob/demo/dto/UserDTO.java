@@ -7,6 +7,7 @@ import java.util.Set;
 @Data
 @Builder
 public class UserDTO {
+    //Sửa đổi chỉ cần response ra những thông tin cần thiết
     private Long id;
     private String username;
     private String email;

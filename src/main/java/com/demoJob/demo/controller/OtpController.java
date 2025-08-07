@@ -4,8 +4,6 @@ import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.entity.User;
-import com.demoJob.demo.exception.InvalidDataException;
-import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.OtpService;
 import com.demoJob.demo.util.OtpType;
 import jakarta.validation.Valid;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 public class OtpController {
 
     private final OtpService otpService;
-    private final UserRepository userRepo;
 
     /**
      * Gửi OTP đến email của người dùng.
@@ -36,11 +33,8 @@ public class OtpController {
      */
     @PostMapping("/resend")
     public ResponseEntity<ResponseData<Void>> sendOtp(@RequestBody @Valid SendOtpRequest request) {
-        User user = userRepo.findByEmail(request.getEmail().trim().toLowerCase())
-                .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
-
         log.info("[OTP] Sending OTP to email: {} - type: {}", request.getEmail(), request.getType());
-        otpService.sendOtp(user, request);
+        otpService.sendOtp(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "OTP đã được gửi"));
     }
 
@@ -67,6 +61,8 @@ public class OtpController {
      * @param type Loại OTP (EMAIL, PHONE, etc.)
      * @return ResponseEntity chứa mã trạng thái và thông báo
      */
+    //Cái này chắc là mình xóa đi thôi anh nhỉ
+    //Trước tạo ra để xác minh email, giờ mình có 1 api active bên Auth rồi
     @GetMapping("/confirm")
     public ResponseEntity<ResponseData<Void>> confirmVerifyKey(@RequestParam String key, @RequestParam OtpType type) {
         User user = otpService.confirmVerifyKey(key, type);

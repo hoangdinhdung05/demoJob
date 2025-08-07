@@ -1,12 +1,12 @@
 package com.demoJob.demo.service.impl;
 
-import com.demoJob.demo.dto.UserDTO;
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
 import com.demoJob.demo.dto.request.LoginRequest;
 import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
+import com.demoJob.demo.dto.response.RegisterResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.RefreshToken;
@@ -17,7 +17,6 @@ import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
 import com.demoJob.demo.util.OtpType;
 import com.demoJob.demo.util.TokenBlacklistReason;
-import com.demoJob.demo.util.UserStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +30,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Objects;
-
 import static com.demoJob.demo.mapper.AuthMapper.toResponse;
 
 @Service
@@ -68,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
      * @return UserDTO chứa thông tin người dùng đã đăng ký
      */
     @Override
-    public UserDTO register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email đã được sử dụng");
@@ -77,11 +75,10 @@ public class AuthServiceImpl implements AuthService {
             throw new DuplicateResourceException("Tên đăng nhập đã được sử dụng");
         }
 
-        UserDTO createUser = userService.createUser(request);
-        User user = getUserByEmail(createUser.getEmail());
+        RegisterResponse createUser = userService.createUser(request);
 
-        otpService.sendOtp(user, SendOtpRequest.builder()
-                .email(user.getEmail())
+        otpService.sendOtp(SendOtpRequest.builder()
+                .email(createUser.getEmail())
                 .type(OtpType.VERIFY_EMAIL)
                 .build());
 
@@ -157,19 +154,17 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public void forgotPassword(SendOtpRequest request) {
-        User user = getUserByEmail(request.getEmail().trim().toLowerCase());
-        otpService.sendOtp(user, request);
+        otpService.sendOtp(request);
     }
 
     /**
      * Xác minh OTP được gửi đến email người dùng
      *
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
-     * @return verifyKey nếu xác minh thành công
      */
     @Override
-    public String verifyResetPassword(VerifyOtpRequest request) {
-        return otpService.verifyOtp(request);
+    public void verifyResetPassword(VerifyOtpRequest request) {
+        otpService.verifyOtp(request);
     }
 
     /**
@@ -180,13 +175,14 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public String resetPassword(ResetPasswordRequest request) {
-        //check verifyKey
-        User user = otpService.confirmVerifyKey(request.getVerifyKey(), OtpType.RESET_PASSWORD);
 
         //Validate password reset request
         if (!Objects.equals(request.getConfirmPassword(), request.getNewPassword())) {
             throw new InvalidDataException("Mật khẩu xác nhận không khớp");
         }
+
+        //check verifyKey
+        User user = otpService.confirmVerifyKey(request.getVerifyKey(), OtpType.RESET_PASSWORD);
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);

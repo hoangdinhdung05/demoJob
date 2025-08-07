@@ -9,10 +9,9 @@ public interface OtpService {
 
     /**
      * Gửi OTP đến người dùng
-     * @param user Người dùng cần gửi OTP
      * @param request Thông tin yêu cầu gửi OTP
      */
-    void sendOtp(User user, SendOtpRequest request);
+    void sendOtp(SendOtpRequest request);
 
     /**
      * verify key

@@ -1,15 +1,12 @@
 package com.demoJob.demo.controller;
 
-import com.demoJob.demo.dto.UserDTO;
 import com.demoJob.demo.dto.request.*;
 import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
+import com.demoJob.demo.dto.response.RegisterResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
-import com.demoJob.demo.entity.User;
-import com.demoJob.demo.exception.InvalidDataException;
-import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -47,9 +44,9 @@ public class AuthController {
      * @return ResponseEntity chứa mã trạng thái và thông tin người dùng đã đăng ký.
      */
     @PostMapping("/register")
-    public ResponseEntity<ResponseData<UserDTO>> register(@RequestBody @Valid RegisterRequest request) {
+    public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
         log.info("[AUTH] Register request for email: {}", request.getEmail());
-        UserDTO user = authService.register(request);
+        RegisterResponse user = authService.register(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đăng ký thành công, vui lòng xác minh email", user));
     }
 
@@ -117,6 +114,14 @@ public class AuthController {
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Xác minh email thành công"));
     }
 
+    /**
+     * Xác minh mã OTP được gửi đến email người dùng để đặt lại mật khẩu.
+     * Kiểm tra xem mã OTP có hợp lệ hay không.
+     * Hợp lệ sẽ cho phép người dùng đặt lại mật khẩu.
+     *
+     * @param request Thông tin xác minh bao gồm email và mã OTP.
+     * @return ResponseEntity chứa mã trạng thái và thông báo xác minh thành công.
+     */
     @PostMapping("/reset-password/otp/verify")
     public ResponseEntity<ResponseData<Void>> verifyResetPassword(@RequestBody @Valid VerifyOtpRequest request) {
         authService.verifyResetPassword(request);
