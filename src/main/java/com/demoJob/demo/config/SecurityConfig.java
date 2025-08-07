@@ -39,7 +39,7 @@ public class SecurityConfig {
             "/api/auth/**",
             "/favicon.ico",
             "/ott/**",
-            "/otp/**"
+            "/api/otp/**"
     };
 
     @Bean

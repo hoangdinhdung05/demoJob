@@ -5,6 +5,7 @@ import com.demoJob.demo.dto.request.Admin.Users.UserRequest;
 import com.demoJob.demo.dto.request.Admin.Users.UserUpdateRequest;
 import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.response.Admin.User.AdminCreateUserResponse;
+import com.demoJob.demo.dto.response.RegisterResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.util.UserStatus;
@@ -18,7 +19,7 @@ public interface UserService {
 
     User findOrCreateUser(String email, String name);
 
-    UserDTO createUser(RegisterRequest request);
+    RegisterResponse createUser(RegisterRequest request);
 
     AdminCreateUserResponse adminCreateUser(UserRequest request);
 
