@@ -4,7 +4,6 @@ import com.demoJob.demo.dto.request.*;
 import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
-import com.demoJob.demo.dto.response.RegisterResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.service.AuthService;
@@ -34,8 +33,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ResponseData<AuthResponse>> login(@RequestBody @Valid LoginRequest request) {
         log.info("[AUTH] Login request for username: {}", request.getUsername());
-        AuthResponse response = authService.authenticateUser(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đăng nhập thành công", response));
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đăng nhập thành công", authService.authenticateUser(request)));
     }
 
     /**
@@ -46,8 +44,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
         log.info("[AUTH] Register request for email: {}", request.getEmail());
-        RegisterResponse user = authService.register(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đăng ký thành công, vui lòng xác minh email", user));
+         authService.register(request);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đăng ký thành công, vui lòng xác minh email"));
     }
 
     /**
@@ -58,8 +56,7 @@ public class AuthController {
     @PostMapping("/refresh-token")
     public ResponseEntity<ResponseData<TokenRefreshResponse>> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
         log.info("[TOKEN] Refreshing token");
-        TokenRefreshResponse token = authService.refreshToken(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Làm mới token thành công", token));
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Làm mới token thành công", authService.refreshToken(request)));
     }
 
     /**
@@ -70,8 +67,7 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<ResponseData<String>> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
         log.info("[AUTH] Reset password request for verifyKey: {}", request.getVerifyKey());
-        String result = authService.resetPassword(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đặt lại mật khẩu thành công", result));
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đặt lại mật khẩu thành công", authService.resetPassword(request)));
     }
 
     /**
@@ -95,8 +91,7 @@ public class AuthController {
     public ResponseEntity<ResponseData<String>> logout(HttpServletRequest request) {
         String username = request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "Unknown";
         log.info("[AUTH] Logout request for user: {}", username);
-        String result = authService.logout(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), result));
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), authService.logout(request)));
     }
 
     /**
@@ -123,8 +118,10 @@ public class AuthController {
      * @return ResponseEntity chứa mã trạng thái và thông báo xác minh thành công.
      */
     @PostMapping("/reset-password/otp/verify")
-    public ResponseEntity<ResponseData<Void>> verifyResetPassword(@RequestBody @Valid VerifyOtpRequest request) {
-        authService.verifyResetPassword(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Xác minh OTP thành công"));
+    public ResponseEntity<ResponseData<String>> verifyResetPassword(@RequestBody @Valid VerifyOtpRequest request) {
+        log.info("[AUTH] Verifying OTP for reset password for email: {}", request.getEmail());
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "Xác minh OTP thành công",
+                authService.verifyResetPassword(request)));
     }
 }

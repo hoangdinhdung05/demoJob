@@ -22,9 +22,8 @@ public interface AuthService {
     /**
      * Đăng ký người dùng mới
      * @param request chứa thông tin đăng ký (họ, tên, tên đăng nhập, email, mật khẩu)
-     * @return trả về thông tin người dùng đã đăng ký
      */
-    RegisterResponse register(RegisterRequest request);
+    void register(RegisterRequest request);
 
 
     /**
@@ -65,5 +64,5 @@ public interface AuthService {
      *
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
      */
-    void verifyResetPassword(VerifyOtpRequest request);
+    String verifyResetPassword(VerifyOtpRequest request);
 }

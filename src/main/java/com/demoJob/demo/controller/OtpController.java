@@ -1,11 +1,8 @@
 package com.demoJob.demo.controller;
 
 import com.demoJob.demo.dto.request.SendOtpRequest;
-import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.dto.response.system.ResponseData;
-import com.demoJob.demo.entity.User;
 import com.demoJob.demo.service.OtpService;
-import com.demoJob.demo.util.OtpType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,38 +34,5 @@ public class OtpController {
         otpService.sendOtp(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "OTP đã được gửi"));
     }
-
-    /**
-     * Xác minh OTP được gửi đến email của người dùng.
-     * Kiểm tra xem OTP có hợp lệ hay không.
-     * Nếu hợp lệ, trả về verifyKey để xác minh tiếp.
-     *
-     * @param request Thông tin yêu cầu xác minh OTP
-     * @return ResponseEntity chứa mã trạng thái và verifyKey
-     */
-    @PostMapping("/verify")
-    public ResponseEntity<ResponseData<String>> verifyOtp(@RequestBody @Valid VerifyOtpRequest request) {
-        log.info("[OTP] Verifying OTP for email: {} - type: {}", request.getEmail(), request.getType());
-        String verifyKey = otpService.verifyOtp(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Xác minh OTP thành công", verifyKey));
-    }
-
-    /**
-     * Xác minh verifyKey để hoàn tất quá trình xác minh.
-     * Nếu verifyKey hợp lệ, trả về thông báo xác minh thành công.
-     *
-     * @param key Mã xác minh được gửi qua OTP
-     * @param type Loại OTP (EMAIL, PHONE, etc.)
-     * @return ResponseEntity chứa mã trạng thái và thông báo
-     */
-    //Cái này chắc là mình xóa đi thôi anh nhỉ
-    //Trước tạo ra để xác minh email, giờ mình có 1 api active bên Auth rồi
-    @GetMapping("/confirm")
-    public ResponseEntity<ResponseData<Void>> confirmVerifyKey(@RequestParam String key, @RequestParam OtpType type) {
-        User user = otpService.confirmVerifyKey(key, type);
-        log.info("[OTP] Confirmed verify key for user: {}", user.getEmail());
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Xác minh thành công"));
-    }
-
 }
 

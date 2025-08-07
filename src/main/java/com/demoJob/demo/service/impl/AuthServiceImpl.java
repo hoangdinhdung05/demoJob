@@ -63,10 +63,9 @@ public class AuthServiceImpl implements AuthService {
      * Đăng ký người dùng mới
      * Tạo tài khoản và gửi OTP xác minh email
      * @param request đối tượng chứa thông tin đăng ký
-     * @return UserDTO chứa thông tin người dùng đã đăng ký
      */
     @Override
-    public RegisterResponse register(RegisterRequest request) {
+    public void register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email đã được sử dụng");
@@ -81,8 +80,6 @@ public class AuthServiceImpl implements AuthService {
                 .email(createUser.getEmail())
                 .type(OtpType.VERIFY_EMAIL)
                 .build());
-
-        return createUser;
     }
 
     /**
@@ -163,8 +160,8 @@ public class AuthServiceImpl implements AuthService {
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
      */
     @Override
-    public void verifyResetPassword(VerifyOtpRequest request) {
-        otpService.verifyOtp(request);
+    public String verifyResetPassword(VerifyOtpRequest request) {
+        return otpService.verifyOtp(request);
     }
 
     /**
