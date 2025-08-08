@@ -1,6 +1,5 @@
 package com.demoJob.demo.dto.response.User;
 
-import com.demoJob.demo.util.Gender;
 import lombok.*;
 
 @Getter
@@ -8,7 +7,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserBasicInfoResponse {
+public class UserInfoResponse implements com.demoJob.demo.dto.response.UserInfoResponse {
     private Long id;
     private String username;
     private String email;

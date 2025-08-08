@@ -1,12 +1,11 @@
 package com.demoJob.demo.controller.User;
 
+import com.demoJob.demo.dto.request.User.Client.UserAccountUpdateRequest;
+import com.demoJob.demo.dto.request.User.Client.UserProfileUpdateRequest;
 import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
-import com.demoJob.demo.dto.request.User.Client.UserUpdateRequest;
-import com.demoJob.demo.dto.response.User.UserBasicInfoResponse;
-import com.demoJob.demo.dto.response.User.UserFullInfoResponse;
-import com.demoJob.demo.dto.response.User.UserUpdateResponse;
+import com.demoJob.demo.dto.response.User.UserInfoResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
-import com.demoJob.demo.service.UserService1.UserClientService;
+import com.demoJob.demo.service.UserService.UserClientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,57 +17,55 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/users/me")
 @RequiredArgsConstructor
 @Slf4j
+@Valid
 public class UserClientController {
 
     private final UserClientService userClientService;
 
-    /**
-     * Lấy thông tin cơ bản
-     */
-    @GetMapping("/basic-info")
-    public ResponseEntity<ResponseData<UserBasicInfoResponse>> getMyBasicInfo() {
-        log.info("[Client-User] Lấy thông tin cơ bản của người dùng hiện tại");
-        UserBasicInfoResponse response = userClientService.getMyBasicInfo();
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Lấy thông tin cơ bản thành công", response));
+    @GetMapping("/info")
+    public ResponseEntity<?> getInfo() {
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "User info retrieved successfully", userClientService.getInfo()));
     }
 
-    /**
-     * Lấy thông tin đầy đủ
-     */
-    @GetMapping("/full-info")
-    public ResponseEntity<ResponseData<UserFullInfoResponse>> getMyFullInfo() {
-        log.info("[Client-User] Lấy thông tin đầy đủ của người dùng hiện tại");
-        UserFullInfoResponse response = userClientService.getMyFullInfo();
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Lấy thông tin đầy đủ thành công", response));
+    @GetMapping("/profile")
+    public ResponseEntity<?> getInfoDetails() {
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "User details retrieved successfully", userClientService.getInfoDetails()));
     }
 
-    /**
-     * Cập nhật thông tin cá nhân
-     */
-    @PutMapping("/update")
-    public ResponseEntity<ResponseData<UserUpdateResponse>> updateMyInfo(@RequestBody @Valid UserUpdateRequest request) {
-        log.info("[Client-User] Cập nhật thông tin người dùng hiện tại");
-        UserUpdateResponse response = userClientService.updateMyInfo(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Cập nhật thông tin thành công", response));
+    @PatchMapping("/account")
+    public ResponseEntity<?> updateAccountInfo(@RequestBody @Valid UserAccountUpdateRequest request) {
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "User account info updated successfully",
+                userClientService.updateAccountInfo(request)));
     }
 
-    /**
-     * Đổi mật khẩu
-     */
-    @PutMapping("/change-password")
-    public ResponseEntity<ResponseData<Void>> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
-        log.info("[Client-User] Đổi mật khẩu người dùng hiện tại");
-        userClientService.changeMyPassword(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Đổi mật khẩu thành công"));
+    @PatchMapping("/profile")
+    public ResponseEntity<?> updateProfileInfo(@RequestBody @Valid UserProfileUpdateRequest request) {
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "User profile info updated successfully",
+                userClientService.updateProfileInfo(request)));
     }
 
-    /**
-     * Xóa mềm tài khoản
-     */
-    @DeleteMapping("/delete")
-    public ResponseEntity<ResponseData<Void>> deleteMyAccount() {
-        log.info("[Client-User] Đánh dấu tài khoản người dùng hiện tại là đã xóa");
+    @PatchMapping("/")
+    public ResponseEntity<?> softDeleteMyAccount() {
         userClientService.softDeleteMyAccount();
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Tài khoản đã được đánh dấu là đã xóa"));
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "User account deleted successfully", null));
+    }
+
+    @PatchMapping("/password")
+    public ResponseEntity<?> changeMyPassword(@RequestBody @Valid ChangePasswordRequest request) {
+        userClientService.changeMyPassword(request);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "User password changed successfully", null));
+    }
+
+    @GetMapping("/{userId}/info")
+    public ResponseEntity<?> getUserInfo(@PathVariable Long userId) {
+        UserInfoResponse userInfo = userClientService.getPublicInfo(userId);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "User info retrieved successfully", userInfo));
     }
 }

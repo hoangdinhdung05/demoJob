@@ -1,17 +1,18 @@
 package com.demoJob.demo.mapper;
 
-import com.demoJob.demo.dto.response.User.UserBasicInfoResponse;
-import com.demoJob.demo.dto.response.User.UserFullInfoResponse;
+import com.demoJob.demo.dto.response.User.UserInfoResponse;
+import com.demoJob.demo.dto.response.User.UserDetailResponse;
 import com.demoJob.demo.dto.response.User.UserUpdateResponse;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.entity.UserProfile;
 
 public class UserMapper {
-    public static UserBasicInfoResponse toResponse(User user) {
+
+    public static UserInfoResponse toResponse(User user) {
         if (user == null) {
             return null;
         }
-        return UserBasicInfoResponse.builder()
+        return UserInfoResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
@@ -20,10 +21,10 @@ public class UserMapper {
                 .build();
     }
 
-    public static UserFullInfoResponse toResponseFullData(User user) {
+    public static UserDetailResponse toResponseFullData(User user) {
         UserProfile profile = user.getUserProfile();
 
-        return UserFullInfoResponse.builder()
+        return UserDetailResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())

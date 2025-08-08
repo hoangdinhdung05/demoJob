@@ -1,7 +1,7 @@
 package com.demoJob.demo.security;
 
 import com.demoJob.demo.entity.User;
-import com.demoJob.demo.service.UserService;
+import com.demoJob.demo.service.UserService.UserClientService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,7 +17,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
-    private final UserService userService;
+    private final UserClientService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final ObjectMapper objectMapper;
 
@@ -32,7 +32,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
 
-        User user = userService.findOrCreateUser(email, name);
+        User user = userService.findOrCreateUserBySocial(email, name);
 
         String token = jwtTokenProvider.generateAccessToken(user);
 

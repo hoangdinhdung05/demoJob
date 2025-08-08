@@ -14,4 +14,8 @@ public class ChangePasswordRequest {
     @NotBlank
     @Size(min = 6, max = 20, message = "New password must be between 8 and 20 characters")
     private String newPassword;
+
+    @NotBlank
+    @Size(min = 6, max = 20, message = "Confirm password must be between 8 and 20 characters")
+    private String confirmPassword;
 }

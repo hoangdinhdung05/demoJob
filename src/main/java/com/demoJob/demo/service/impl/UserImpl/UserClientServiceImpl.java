@@ -1,20 +1,24 @@
 package com.demoJob.demo.service.impl.UserImpl;
 
+import com.demoJob.demo.dto.request.User.Client.UserAccountUpdateRequest;
+import com.demoJob.demo.dto.request.User.Client.UserProfileUpdateRequest;
+import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
-import com.demoJob.demo.dto.request.User.Client.UserUpdateRequest;
-import com.demoJob.demo.dto.response.User.UserBasicInfoResponse;
-import com.demoJob.demo.dto.response.User.UserFullInfoResponse;
+import com.demoJob.demo.dto.response.User.UserInfoResponse;
+import com.demoJob.demo.dto.response.User.UserDetailResponse;
 import com.demoJob.demo.dto.response.User.UserUpdateResponse;
 import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.SecurityUtils;
-import com.demoJob.demo.service.UserService1.UserClientService;
+import com.demoJob.demo.service.UserService.UserClientService;
+import com.demoJob.demo.service.UserService.UserCreationService;
 import com.demoJob.demo.util.UserStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import java.util.Set;
 import static com.demoJob.demo.mapper.UserMapper.*;
 
 @Service
@@ -24,59 +28,45 @@ public class UserClientServiceImpl implements UserClientService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserCreationService userCreationService;
 
-    /**
-     * User lấy thông tin cơ bản của chính mình.
-     *
-     * @return thông tin cơ bản của người dùng
-     */
     @Override
-    public UserBasicInfoResponse getMyBasicInfo() {
-
-        long userId = SecurityUtils.getCurrentUserId();
-        log.info("Fetching basic info for user with ID: {}", userId);
-
-        // Tìm kiếm người dùng theo ID
-        User user = findUserById(userId);
-        log.info("User found: {}", user);
-        return toResponse(user);
+    public User createUser(RegisterRequest request) {
+        return userCreationService.createUserEntity(request, Set.of("user"));
     }
 
-    /**
-     * User lấy thông tin đầy đủ của chính mình.
-     *
-     * @return thông tin đầy đủ của người dùng
-     */
     @Override
-    public UserFullInfoResponse getMyFullInfo() {
-        long userId = SecurityUtils.getCurrentUserId();
-        log.info("Fetching full info for user with ID: {}", userId);
-        // Tìm kiếm người dùng theo ID
-        User user = findUserById(userId);
-        log.info("User found: {}", user);
-        return toResponseFullData(user);
+    public User findOrCreateUserBySocial(String email, String name) {
+        return userRepository.findByEmail(email)
+                .orElseGet(() -> userCreationService.createSocialUser(email, name, Set.of("user")));
     }
 
-    /**
-     * User cập nhật thông tin cá nhân của chính mình.
-     *
-     * @param request thông tin cập nhật
-     * @return thông tin cập nhật sau khi thực hiện
-     */
     @Override
-    public UserUpdateResponse updateMyInfo(UserUpdateRequest request) {
-        long userId = SecurityUtils.getCurrentUserId();
-        log.info("Updating info for user with ID: {}", userId);
-        // Tìm kiếm người dùng theo ID
-        User user = findUserById(userId);
-        log.info("User found: {}", user);
-        // Cập nhật thông tin người dùng
+    public UserInfoResponse getInfo() {
+        return toResponse(getCurrentActiveUser("Fetching basic info"));
+    }
+
+    @Override
+    public UserDetailResponse getInfoDetails() {
+        return toResponseFullData(getCurrentActiveUser("Fetching full info"));
+    }
+
+    @Override
+    public UserUpdateResponse updateAccountInfo(UserAccountUpdateRequest request) {
+        User user = getCurrentActiveUser("Updating account info");
         if (request.getFirstName() != null) {
             user.setFirstName(request.getFirstName());
         }
         if (request.getLastName() != null) {
             user.setLastName(request.getLastName());
         }
+        return toResponseUpdate(userRepository.save(user));
+    }
+
+    @Override
+    public UserUpdateResponse updateProfileInfo(UserProfileUpdateRequest request) {
+        User user = getCurrentActiveUser("Updating profile info");
+
         if (request.getPhone() != null) {
             user.getUserProfile().setPhone(request.getPhone());
         }
@@ -96,54 +86,53 @@ public class UserClientServiceImpl implements UserClientService {
             user.getUserProfile().setWebsite(request.getWebsite());
         }
 
-        User updatedUser = userRepository.save(user);
-        log.info("User updated successfully: {}", updatedUser.getUsername());
-
-        return toResponseUpdate(updatedUser);
+        return toResponseUpdate(userRepository.save(user));
     }
 
-    /**
-     * User xóa tài khoản của chính mình.
-     * Tài khoản sẽ được đánh dấu là đã xóa (soft delete).
-     */
     @Override
     public void softDeleteMyAccount() {
-        long userId = SecurityUtils.getCurrentUserId();
-        log.info("Soft deleting user with ID: {}", userId);
-
-        User user = findUserById(userId);
-
+        User user = getCurrentActiveUser("Soft deleting account");
+        if (user.getStatus() == UserStatus.DELETE) {
+            throw new InvalidDataException("User account is already deleted.");
+        }
         user.setStatus(UserStatus.DELETE);
         userRepository.save(user);
-
-        log.info("User marked as deleted successfully: {}", userId);
+        log.info("User {} marked as deleted", user.getId());
     }
 
-    /**
-     * User thay đổi mật khẩu của chính mình.
-     *
-     * @param request thông tin thay đổi mật khẩu
-     */
     @Override
     public void changeMyPassword(ChangePasswordRequest request) {
-        long userId = SecurityUtils.getCurrentUserId();
-        log.info("Changing password for user with ID: {}", userId);
-
-        User user = findUserById(userId);
+        User user = getCurrentActiveUser("Changing password");
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Current password is incorrect.");
+            throw new InvalidDataException("Current password is incorrect.");
+        }
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new InvalidDataException("New password and confirm password do not match.");
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
-
-        log.info("Password updated successfully for user: {}", user.getUsername());
+        log.info("Password updated for user {}", user.getId());
     }
 
-    //=====//=====//
-    private User findUserById(long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+    @Override
+    public UserInfoResponse getPublicInfo(Long userId) {
+        return toResponse(getActiveUserById(userId));
+    }
+
+    //================ Private Helpers ================//
+
+    private User getCurrentActiveUser(String action) {
+        long userId = SecurityUtils.getCurrentUserId();
+        log.info("{} for userId: {}", action, userId);
+        return getActiveUserById(userId);
+    }
+
+    private User getActiveUserById(long userId) {
+        return userRepository.findByIdAndStatusNot(userId, UserStatus.DELETE)
+                .orElseThrow(() -> new InvalidDataException(
+                        String.format("User not found or deleted (ID: %d)", userId)
+                ));
     }
 }
