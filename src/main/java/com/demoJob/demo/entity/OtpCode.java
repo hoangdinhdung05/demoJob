@@ -24,8 +24,5 @@ public class OtpCode extends AbstractEntity<Long> {
     private LocalDateTime expiryTime;
 
     private boolean used;
-
-    @Column(name = "verify_key")
-    private String verifyKey;
 }
 

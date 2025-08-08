@@ -9,7 +9,6 @@ import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.response.Admin.User.AdminCreateUserResponse;
 import com.demoJob.demo.dto.response.Admin.User.AdminUserProfileResponse;
 import com.demoJob.demo.dto.response.Admin.User.RoleUseResponse;
-import com.demoJob.demo.dto.response.RegisterResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.*;
 import com.demoJob.demo.repository.*;
@@ -50,7 +49,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public RegisterResponse createUser(RegisterRequest request) {
+    public UserDTO createUser(RegisterRequest request) {
         // 1. Tìm role mặc định
         Role defaultRole = roleRepository.findByName("user") // hoặc "ROLE_USER"
                 .orElseThrow(() -> new RuntimeException("Default role not found"));
@@ -77,7 +76,7 @@ public class UserServiceImpl implements UserService {
         // 5. Lưu User (sẽ cascade luôn UserHasRole nếu bạn cấu hình đúng)
         user = userRepository.save(user);
 
-        return toResponse(user);
+        return convertUserDTO(user);
     }
 
     @Override
@@ -244,15 +243,15 @@ public class UserServiceImpl implements UserService {
     public PageResponse<?> adminGetListUser(int page, int size) {
         Page<User> userPages = userRepository.findAll(PageRequest.of(page, size));
 
-        List<RegisterResponse> responses = userPages.stream()
-                .map(this::toResponse)
+        List<UserDTO> responseList = userPages.stream()
+                .map(this::convertUserDTO)
                 .toList();
 
         return PageResponse.<UserDTO>builder()
                 .page(userPages.getNumber() + 1)
                 .size(userPages.getSize())
                 .total(userPages.getTotalElements())
-//                .items(responses)
+                .items(responseList)
                 .build();
     }
 
@@ -316,11 +315,17 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    private RegisterResponse toResponse(User user) {
-        return RegisterResponse.builder()
-                .email(user.getEmail())
+    private UserDTO convertUserDTO(User user) {
+        return  UserDTO.builder()
+                .id(user.getId())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .roles(user.getUserHasRoles().stream()
+                        .map(u -> u.getRole().getName())
+                        .collect(Collectors.toSet())
+                )
                 .build();
     }
 

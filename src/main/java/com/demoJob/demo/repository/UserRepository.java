@@ -1,6 +1,8 @@
 package com.demoJob.demo.repository;
 
+import com.demoJob.demo.util.UserStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import com.demoJob.demo.entity.User;
 import java.util.Optional;
@@ -35,4 +37,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return true nếu tồn tại, false nếu không tồn tại
      */
     boolean existsByUsername(String username);
+
+    @Query("""
+            SELECT u FROM User u
+            WHERE u.id = :id
+            AND u.status <> :status
+            """)
+    Optional<User> findByIdAndStatusNot(Long id, UserStatus status);
 }
