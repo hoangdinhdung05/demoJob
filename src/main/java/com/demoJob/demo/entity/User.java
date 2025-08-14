@@ -4,6 +4,8 @@ import com.demoJob.demo.util.UserStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -54,6 +56,9 @@ public class User extends AbstractEntity<Long> {
             orphanRemoval = true
     )
     private Set<UserHasRole> userHasRoles = new HashSet<>();
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
