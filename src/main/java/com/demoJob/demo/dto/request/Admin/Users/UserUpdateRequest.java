@@ -18,8 +18,6 @@ public class UserUpdateRequest {
     @Size(min = 6)
     private String password;
 
-    private UserProfileRequest userProfile;
-
     private UserCompanyRequest companyInfo;
 
     private Set<String> roles;
