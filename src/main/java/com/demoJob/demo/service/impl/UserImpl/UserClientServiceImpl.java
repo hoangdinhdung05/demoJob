@@ -11,7 +11,6 @@ import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.SecurityUtils;
-import com.demoJob.demo.service.AuthService;
 import com.demoJob.demo.service.UserService.UserClientService;
 import com.demoJob.demo.service.UserService.UserCreationService;
 import com.demoJob.demo.util.UserStatus;
@@ -33,12 +32,12 @@ public class UserClientServiceImpl implements UserClientService {
     private final UserCreationService userCreationService;
 
     @Override
-    public User createUser(RegisterRequest request) {
-        return userCreationService.createUserEntity(request, Set.of("user"));
+    public void createUser(RegisterRequest request) {
+        userCreationService.createUserEntity(request, Set.of("user"));
     }
 
     @Override
-    public User findOrCreateUserBySocial(String email, String name) {
+    public User loadOrCreateOAuth2User(String email, String name) {
         return userRepository.findByEmail(email)
                 .orElseGet(() -> userCreationService.createSocialUser(email, name, Set.of("user")));
     }
@@ -54,7 +53,7 @@ public class UserClientServiceImpl implements UserClientService {
     }
 
     @Override
-    public UserUpdateResponse updateAccountInfo(UserAccountUpdateRequest request) {
+    public UserUpdateResponse updateCurrentUserAccountInfo(UserAccountUpdateRequest request) {
         User user = getCurrentActiveUser("Updating account info");
 
         if (request.getFirstName() != null) {
@@ -75,7 +74,7 @@ public class UserClientServiceImpl implements UserClientService {
     }
 
     @Override
-    public UserUpdateResponse updateProfileInfo(UserProfileUpdateRequest request) {
+    public UserUpdateResponse updateCurrentUserProfileInfo(UserProfileUpdateRequest request) {
         User user = getCurrentActiveUser("Updating profile info");
 
         if (request.getPhone() != null) {
@@ -101,7 +100,7 @@ public class UserClientServiceImpl implements UserClientService {
     }
 
     @Override
-    public void softDeleteMyAccount() {
+    public void deactivateMyAccount() {
         User user = getCurrentActiveUser("Soft deleting account");
         if (user.getStatus() == UserStatus.DELETE) {
             throw new InvalidDataException("User account is already deleted.");

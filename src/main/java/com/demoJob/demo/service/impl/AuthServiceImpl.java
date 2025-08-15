@@ -5,6 +5,7 @@ import com.demoJob.demo.dto.request.LoginRequest;
 import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.request.SendOtpRequest;
+import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
@@ -76,10 +77,11 @@ public class AuthServiceImpl implements AuthService {
             throw new DuplicateResourceException("Tên đăng nhập đã được sử dụng");
         }
 
-        User createUser = userService.createUser(request);
+        //Tạo người dùng mới
+        userService.createUser(request);
 
         otpService.sendOtp(SendOtpRequest.builder()
-                .email(createUser.getEmail())
+                .email(request.getEmail())
                 .type(OtpType.VERIFY_EMAIL)
                 .build());
     }
@@ -155,6 +157,16 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(SendOtpRequest request) {
         otpService.sendOtp(request);
     }
+
+    /**
+     * User thay đổi mật khẩu của chính mình.
+     *
+     * @param request thông tin thay đổi mật khẩu
+     */
+    @Override
+    public void changeMyPassword(ChangePasswordRequest request) {
+        log.info("AuthService - Forwarding change password request");
+        userService.changeMyPassword(request);    }
 
     /**
      * Xác minh OTP được gửi đến email người dùng

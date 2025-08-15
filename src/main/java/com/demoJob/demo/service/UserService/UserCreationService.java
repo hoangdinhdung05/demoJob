@@ -23,7 +23,7 @@ public class UserCreationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public User createUserEntity(RegisterRequest request, Set<String> roleNames) {
+    public void createUserEntity(RegisterRequest request, Set<String> roleNames) {
         validateUserUniqueFields(request.getEmail(), request.getUsername());
         Set<Role> roles = getRoles(roleNames);
 
@@ -39,7 +39,7 @@ public class UserCreationService {
 
         defaultProfile(user);
         defaultRoles(user, roles);
-        return userRepository.save(user);
+        userRepository.save(user);
     }
 
     public User createSocialUser(String email, String name, Set<String> roleNames) {

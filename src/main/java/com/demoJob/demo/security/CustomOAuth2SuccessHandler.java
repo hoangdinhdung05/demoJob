@@ -30,7 +30,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
 
-        User user = userService.findOrCreateUserBySocial(email, name);
+        User user = userService.loadOrCreateOAuth2User(email, name);
 
         String token = jwtTokenProvider.generateAccessToken(user);
 

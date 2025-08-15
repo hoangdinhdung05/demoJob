@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/users/me")
+@RequestMapping("/api/users/")
 @RequiredArgsConstructor
 @Slf4j
 @Valid
@@ -21,6 +21,11 @@ public class UserController {
 
     private final UserClientService userClientService;
 
+    /**
+     * Lấy thông tin công khai của người dùng theo ID.
+     * @param userId ID của người dùng cần lấy thông tin
+     * @return ResponseEntity chứa mã trạng thái và thông tin người dùng
+     */
     @GetMapping("/{userId}/info")
     public ResponseEntity<?> getUserInfo(@PathVariable Long userId) {
         log.info("Fetching public info for user with ID: {}", userId);

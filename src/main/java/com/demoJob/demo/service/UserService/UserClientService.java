@@ -14,10 +14,10 @@ public interface UserClientService {
     /**
      * Tạo người dùng mới từ thông tin đăng ký.
      * Sử dụng cho việc đăng ký người dùng mới.
+     *
      * @param request thông tin đăng ký người dùng
-     * @return thông tin phản hồi đăng ký
      */
-    User createUser(RegisterRequest request);
+    void createUser(RegisterRequest request);
 
 
     /**
@@ -27,7 +27,7 @@ public interface UserClientService {
      * @param name tên của người dùng
      * @return thông tin người dùng
      */
-    User findOrCreateUserBySocial(String email, String name);
+    User loadOrCreateOAuth2User(String email, String name);
 
     /**
      * User lấy thông tin cơ bản của chính mình.
@@ -49,7 +49,7 @@ public interface UserClientService {
      * @param request thông tin cập nhật
      * @return thông tin cập nhật sau khi thực hiện
      */
-    UserUpdateResponse updateAccountInfo(UserAccountUpdateRequest request);
+    UserUpdateResponse updateCurrentUserAccountInfo(UserAccountUpdateRequest request);
 
     /**
      * User cập nhật thông tin hồ sơ cá nhân của chính mình.
@@ -57,13 +57,13 @@ public interface UserClientService {
      * @param request thông tin cập nhật
      * @return thông tin cập nhật sau khi thực hiện
      */
-    UserUpdateResponse updateProfileInfo(UserProfileUpdateRequest request);
+    UserUpdateResponse updateCurrentUserProfileInfo(UserProfileUpdateRequest request);
 
     /**
      * User xóa tài khoản của chính mình.
      * Tài khoản sẽ được đánh dấu là đã xóa (soft delete).
      */
-    void softDeleteMyAccount();
+    void deactivateMyAccount();
 
     /**
      * User thay đổi mật khẩu của chính mình.
