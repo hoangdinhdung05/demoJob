@@ -3,6 +3,8 @@ package com.demoJob.demo.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "tbl_user_company")
 @Getter
@@ -20,4 +22,6 @@ public class UserCompany extends AbstractEntity<Long> {
     private Company company;
 
     private String position;
+    private LocalDate startDate;
+    private LocalDate endDate;
 }

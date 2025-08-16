@@ -1,8 +1,6 @@
 package com.demoJob.demo.controller.User;
 
-import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
-import com.demoJob.demo.dto.request.User.Client.UserAccountUpdateRequest;
-import com.demoJob.demo.dto.request.User.Client.UserProfileUpdateRequest;
+import com.demoJob.demo.dto.request.User.Client.UserUpdateRequest;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.service.UserService.UserClientService;
 import jakarta.validation.Valid;
@@ -25,7 +23,7 @@ public class UserClientController {
      * Lấy thông tin cơ bản của người dùng hiện tại.
      * @return ResponseEntity chứa mã trạng thái và thông tin người dùng.
      */
-    @GetMapping("/account")
+    @GetMapping("/info")
     public ResponseEntity<?> getInfo() {
         log.info("Fetching user account info");
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
@@ -36,7 +34,7 @@ public class UserClientController {
      * Lấy thông tin chi tiết của người dùng hiện tại.
      * @return ResponseEntity chứa mã trạng thái và thông tin chi tiết người dùng.
      */
-    @GetMapping("/profile")
+    @GetMapping("/details")
     public ResponseEntity<?> getInfoDetails() {
         log.info("Fetching user profile details");
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
@@ -44,53 +42,14 @@ public class UserClientController {
     }
 
     /**
-     * Cập nhật thông tin tài khoản người dùng.
-     * @param request chứa thông tin cập nhật tài khoản người dùng như tên, email, v.v.
-     * @return ResponseEntity chứa mã trạng thái và thông tin cập nhật thành công.
+     * Cập nhật một phần thông tin tài khoản người dùng hiện tại.
+     * @param request thông tin cập nhật (chỉ gửi field cần thay đổi).
+     * @return ResponseEntity chứa mã trạng thái và thông tin cập nhật.
      */
-    @PatchMapping("/account")
-    public ResponseEntity<?> updateAccountInfo(@RequestBody @Valid UserAccountUpdateRequest request) {
-        log.info("Updating user account info: {}", request);
+    @PutMapping("/account")
+    public ResponseEntity<?> updateAccount(@Valid @RequestBody UserUpdateRequest request) {
+        log.info("Partially updating current user account information");
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
-                "User account info updated successfully",
-                userClientService.updateCurrentUserAccountInfo(request)));
-    }
-
-    /**
-     * Cập nhật thông tin hồ sơ người dùng.
-     * @param request chứa thông tin cập nhật hồ sơ người dùng như ảnh đại diện, mô tả, v.v.
-     * @return ResponseEntity chứa mã trạng thái và thông tin cập nhật thành công.
-     */
-    @PatchMapping("/profile")
-    public ResponseEntity<?> updateProfileInfo(@RequestBody @Valid UserProfileUpdateRequest request) {
-        log.info("Updating user profile info: {}", request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
-                "User profile info updated successfully",
-                userClientService.updateCurrentUserProfileInfo(request)));
-    }
-
-    /**
-     * Xóa tài khoản người dùng hiện tại (soft delete).
-     * @return ResponseEntity chứa mã trạng thái và thông báo xóa thành công.
-     */
-    @DeleteMapping
-    public ResponseEntity<?> deactivateMyAccount() {
-        log.info("Soft deleting user account");
-        userClientService.deactivateMyAccount();
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
-                "User account deleted successfully", null));
-    }
-
-    /**
-     * Thay đổi mật khẩu của người dùng hiện tại.
-     * @param request chứa thông tin thay đổi mật khẩu bao gồm mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới.
-     * @return ResponseEntity chứa mã trạng thái và thông báo thay đổi mật khẩu thành công.
-     */
-    @PatchMapping("/password")
-    public ResponseEntity<?> changeMyPassword(@RequestBody @Valid ChangePasswordRequest request) {
-        log.info("Changing user password: {}", request);
-        userClientService.changeMyPassword(request);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
-                "User password changed successfully", null));
+                "User account updated successfully", userClientService.updateCurrentUserInfo(request)));
     }
 }

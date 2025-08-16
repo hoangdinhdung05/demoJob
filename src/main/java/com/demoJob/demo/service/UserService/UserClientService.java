@@ -2,8 +2,7 @@ package com.demoJob.demo.service.UserService;
 
 import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
-import com.demoJob.demo.dto.request.User.Client.UserAccountUpdateRequest;
-import com.demoJob.demo.dto.request.User.Client.UserProfileUpdateRequest;
+import com.demoJob.demo.dto.request.User.Client.UserUpdateRequest;
 import com.demoJob.demo.dto.response.User.UserDetailResponse;
 import com.demoJob.demo.dto.response.User.UserInfoResponse;
 import com.demoJob.demo.dto.response.User.UserUpdateResponse;
@@ -44,26 +43,11 @@ public interface UserClientService {
     UserDetailResponse getInfoDetails();
 
     /**
-     * User cập nhật thông tin cá nhân của chính mình.
-     *
+     * User cập nhật thông tin chung của chính mình.
      * @param request thông tin cập nhật
      * @return thông tin cập nhật sau khi thực hiện
      */
-    UserUpdateResponse updateCurrentUserAccountInfo(UserAccountUpdateRequest request);
-
-    /**
-     * User cập nhật thông tin hồ sơ cá nhân của chính mình.
-     *
-     * @param request thông tin cập nhật
-     * @return thông tin cập nhật sau khi thực hiện
-     */
-    UserUpdateResponse updateCurrentUserProfileInfo(UserProfileUpdateRequest request);
-
-    /**
-     * User xóa tài khoản của chính mình.
-     * Tài khoản sẽ được đánh dấu là đã xóa (soft delete).
-     */
-    void deactivateMyAccount();
+    UserUpdateResponse updateCurrentUserInfo(UserUpdateRequest request);
 
     /**
      * User thay đổi mật khẩu của chính mình.

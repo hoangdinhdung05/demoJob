@@ -27,4 +27,7 @@ public class UserUpdateResponse {
 
     private String website;
 
+    private Long companyId;
+    private String companyName;
+
 }

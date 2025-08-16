@@ -41,6 +41,4 @@ public class Company extends AbstractEntity<Long> {
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UserCompany> userCompanies = new HashSet<>();
-
-
 }

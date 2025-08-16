@@ -19,4 +19,6 @@ public class UserDetailResponse {
     private Gender gender;
     private LocalDate birthDate;
     private String website;
+
+    private CompanyResponse company; // Thêm thông tin công ty nếu cần
 }
