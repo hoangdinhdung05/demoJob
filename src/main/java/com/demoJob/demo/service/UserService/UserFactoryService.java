@@ -21,6 +21,13 @@ public class UserFactoryService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    /**
+     * Tạo người dùng mới từ yêu cầu đăng ký.
+     * Phương thức này được sử dụng khi người dùng đăng ký tài khoản mới.
+     *
+     * @param request thông tin đăng ký
+     * @param roleNames tập hợp tên vai trò để gán cho người dùng
+     */
     public void createUserEntity(RegisterRequest request, Set<String> roleNames) {
         validateUserUniqueFields(request.getEmail(), request.getUsername());
         Set<Role> roles = userRoleUtil.getRoles(roleNames);
@@ -40,7 +47,16 @@ public class UserFactoryService {
         userRepository.save(user);
     }
 
-    public User createSocialUser(String email, String name, Set<String> roleNames) {
+    /**
+     * Tạo người dùng mới từ thông tin đăng nhập OAuth2.
+     * Phương thức này được sử dụng khi người dùng đăng nhập qua mạng xã hội.
+     *
+     * @param email email của người dùng
+     * @param name tên của người dùng
+     * @param roleNames tập hợp tên vai trò để gán cho người dùng
+     * @return đối tượng User đã được tạo mới
+     */
+    public User createOAuth2User(String email, String name, Set<String> roleNames) {
         validateUserUniqueFields(email, null);
         Set<Role> roles = userRoleUtil.getRoles(roleNames);
 

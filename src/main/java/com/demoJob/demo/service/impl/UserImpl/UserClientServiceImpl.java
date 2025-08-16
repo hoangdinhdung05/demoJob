@@ -54,9 +54,9 @@ public class UserClientServiceImpl implements UserClientService {
      * @return thông tin người dùng
      */
     @Override
-    public User loadOrCreateOAuth2User(String email, String name) {
+    public User getOrCreateOAuth2User(String email, String name) {
         return userRepository.findByEmail(email)
-                .orElseGet(() -> userCreationService.createSocialUser(email, name, Set.of("user")));
+                .orElseGet(() -> userCreationService.createOAuth2User(email, name, Set.of("user")));
     }
 
     /**
@@ -92,7 +92,6 @@ public class UserClientServiceImpl implements UserClientService {
         User user = getCurrentActiveUser("Updating user info");
 
         updateBasicInfo(user, request);
-        updateProfileInfo(user, request);
         updateCompanyInfo(user, request);
 
         return toResponseUpdate(userRepository.save(user));
@@ -163,9 +162,7 @@ public class UserClientServiceImpl implements UserClientService {
             }
             user.setEmail(request.getEmail());
         }
-    }
 
-    private void updateProfileInfo(User user, UserUpdateRequest request) {
         UserProfile profile = user.getUserProfile();
 
         if (request.getPhone() != null) {
@@ -184,53 +181,48 @@ public class UserClientServiceImpl implements UserClientService {
         }
     }
 
-
     private void updateCompanyInfo(User user, UserUpdateRequest request) {
-        //Update khi xoa cty
-        if (request.getCompanyId() == null) {
-            user.getUserCompanies().stream()
-                    .filter(uc -> uc.getEndDate() == null)
-                    .findFirst()
-                    .ifPresent(currentCompany -> currentCompany
-                            .setEndDate(LocalDate.now()));
+        UserCompany currentCompany = getCurrentCompany(user);
 
-            return;
+        // 1. Nếu request không có companyId → kết thúc công ty hiện tại
+        if (request.getCompanyId() == null) {
+            endCurrentCompany(currentCompany);
+            return; // không cần xử lý thêm công ty mới
         }
 
-        //Update khi thêm cty mới
+        // 2. Xử lý thêm hoặc đổi công ty mới
         Company company = companyRepository.findById(request.getCompanyId())
                 .orElseThrow(() -> new InvalidDataException("Company not found."));
 
         if (company.getStatus() != CompanyStatus.ACTIVE) {
-            throw new InvalidDataException("Company is not active");
+            throw new InvalidDataException("Company is not active.");
         }
 
-        UserCompany currentCompany = user.getUserCompanies().stream()
+        // Nếu công ty mới khác công ty hiện tại → kết thúc công ty cũ và thêm công ty mới
+        if (currentCompany == null || !currentCompany.getCompany().getId().equals(company.getId())) {
+            endCurrentCompany(currentCompany);
+            user.getUserCompanies().add(createUserCompany(user, company));
+        }
+    }
+
+    private void endCurrentCompany(UserCompany currentCompany) {
+        if (currentCompany != null) {
+            currentCompany.setEndDate(LocalDate.now());
+        }
+    }
+
+    private UserCompany getCurrentCompany(User user) {
+        return user.getUserCompanies().stream()
                 .filter(uc -> uc.getEndDate() == null)
                 .findFirst()
                 .orElse(null);
+    }
 
-        if (currentCompany != null) {
-            if (!currentCompany.getCompany().getId().equals(company.getId())) {
-                // kết thúc công ty cũ
-                currentCompany.setEndDate(LocalDate.now());
-
-                // thêm bản ghi mới cho công ty mới
-                UserCompany newCompany = UserCompany.builder()
-                        .user(user)
-                        .company(company)
-                        .startDate(LocalDate.now())
-                        .build();
-                user.getUserCompanies().add(newCompany);
-            }
-        } else {
-            // chưa có công ty nào thì thêm mới
-            UserCompany newCompany = UserCompany.builder()
-                    .user(user)
-                    .company(company)
-                    .startDate(LocalDate.now())
-                    .build();
-            user.getUserCompanies().add(newCompany);
-        }
+    private UserCompany createUserCompany(User user, Company company) {
+        return UserCompany.builder()
+                .user(user)
+                .company(company)
+                .startDate(LocalDate.now())
+                .build();
     }
 }

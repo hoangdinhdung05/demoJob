@@ -26,7 +26,7 @@ public interface UserClientService {
      * @param name tên của người dùng
      * @return thông tin người dùng
      */
-    User loadOrCreateOAuth2User(String email, String name);
+    User getOrCreateOAuth2User(String email, String name);
 
     /**
      * User lấy thông tin cơ bản của chính mình.

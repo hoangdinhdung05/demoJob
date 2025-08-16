@@ -31,14 +31,7 @@ public class UserMapper {
 
         Set<UserCompany> userCompanies = user.getUserCompanies();
 
-        CompanyResponse companyResponse = userCompanies.stream()
-                .filter(uc -> uc.getEndDate() == null) // công ty hiện tại (chưa có endDate)
-                .findFirst()
-                .map(company -> CompanyResponse.builder()
-                        .id(company.getCompany().getId())
-                        .name(company.getCompany().getName())
-                        .build())
-                .orElse(null);
+        CompanyResponse companyResponse = getCompanyResponse(userCompanies);
 
         return UserDetailResponse.builder()
                 .id(user.getId())
@@ -81,5 +74,17 @@ public class UserMapper {
                 .companyId(currentCompany != null ? currentCompany.getId() : null)
                 .companyName(currentCompany != null ? currentCompany.getName() : null)
                 .build();
+    }
+
+    private static CompanyResponse getCompanyResponse(Set<UserCompany> userCompanies) {
+        // công ty hiện tại (chưa có endDate)
+        return userCompanies.stream()
+                .filter(uc -> uc.getEndDate() == null) // công ty hiện tại (chưa có endDate)
+                .findFirst()
+                .map(company -> CompanyResponse.builder()
+                        .id(company.getCompany().getId())
+                        .name(company.getCompany().getName())
+                        .build())
+                .orElse(null);
     }
 }
