@@ -5,8 +5,8 @@ import com.demoJob.demo.dto.request.LoginRequest;
 import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.request.SendOtpRequest;
+import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
-import com.demoJob.demo.dto.response.RegisterResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.RefreshToken;
@@ -15,8 +15,10 @@ import com.demoJob.demo.exception.*;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
+import com.demoJob.demo.service.UserService.UserClientService;
 import com.demoJob.demo.util.OtpType;
 import com.demoJob.demo.util.TokenBlacklistReason;
+import com.demoJob.demo.util.UserStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
     private final BlacklistService blacklistService;
     private final AuthenticationManager authenticationManager;
-    private final UserService userService;
+    private final UserClientService userService;
     private final UserRepository userRepository;
     private final OtpService otpService;
     private final PasswordEncoder passwordEncoder;
@@ -56,6 +58,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse authenticateUser(LoginRequest request) {
         User user = authenticateAndGetUser(request.getUsername(), request.getPassword());
         checkEmailVerifier(user);
+        checkUserStatus(user);
         return generateAuthResponse(user);
     }
 
@@ -74,10 +77,11 @@ public class AuthServiceImpl implements AuthService {
             throw new DuplicateResourceException("Tên đăng nhập đã được sử dụng");
         }
 
-        RegisterResponse createUser = userService.createUser(request);
+        //Tạo người dùng mới
+        userService.createUser(request);
 
         otpService.sendOtp(SendOtpRequest.builder()
-                .email(createUser.getEmail())
+                .email(request.getEmail())
                 .type(OtpType.VERIFY_EMAIL)
                 .build());
     }
@@ -155,6 +159,16 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
+     * User thay đổi mật khẩu của chính mình.
+     *
+     * @param request thông tin thay đổi mật khẩu
+     */
+    @Override
+    public void changeMyPassword(ChangePasswordRequest request) {
+        log.info("AuthService - Forwarding change password request");
+        userService.changeMyPassword(request);    }
+
+    /**
      * Xác minh OTP được gửi đến email người dùng
      *
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
@@ -229,15 +243,10 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    /**
-     * Lấy thông tin người dùng từ email
-     * Nếu email không tồn tại, sẽ ném ra InvalidDataException
-     * @param email địa chỉ email của người dùng
-     * @return User đối tượng người dùng tương ứng với email
-     */
-    private User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
+    private void checkUserStatus(User user) {
+        if (user.getStatus() == UserStatus.DELETE) {
+            throw new InvalidDataException("Tài khoản không tồn tại hoặc đã bị xóa.");
+        }
     }
 
     /**

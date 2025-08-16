@@ -22,7 +22,6 @@ public class UserProfile extends AbstractEntity<Long> {
     private String address;
 
     @Column(name = "phone")
-    @PhoneNumber
     private String phone;
 
     private LocalDate birthDate;

@@ -3,6 +3,7 @@ package com.demoJob.demo.controller;
 import com.demoJob.demo.dto.request.*;
 import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
+import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
@@ -123,5 +124,18 @@ public class AuthController {
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
                 "Xác minh OTP thành công",
                 authService.verifyResetPassword(request)));
+    }
+
+    /**
+     * Thay đổi mật khẩu của người dùng hiện tại.
+     * @param request Thông tin thay đổi mật khẩu bao gồm mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu mới.
+     * @return ResponseEntity chứa mã trạng thái và thông báo thay đổi mật khẩu thành công.
+     */
+    @PatchMapping("/password")
+    public ResponseEntity<?> changeMyPassword(@RequestBody @Valid ChangePasswordRequest request) {
+        log.info("Changing user password: {}", request);
+        authService.changeMyPassword(request);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "User password changed successfully", null));
     }
 }

@@ -1,5 +1,6 @@
 package com.demoJob.demo.dto.request.Admin.Users;
 
+import com.demoJob.demo.dto.request.User.Client.UserProfileRequest;
 import com.demoJob.demo.util.UserStatus;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
