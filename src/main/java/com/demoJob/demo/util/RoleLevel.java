@@ -5,8 +5,8 @@ import lombok.Getter;
 @Getter
 public enum RoleLevel {
     ADMIN(4),
-    HR(3),
-    EMPLOYER(2),
+    MANAGER(3),
+    HR(2),
     USER(1);
 
     private final int level;

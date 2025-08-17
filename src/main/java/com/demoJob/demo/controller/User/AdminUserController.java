@@ -10,13 +10,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('ROLE_HR')")
+@Validated
+@PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN')")
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
