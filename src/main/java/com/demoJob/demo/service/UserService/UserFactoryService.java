@@ -1,6 +1,7 @@
 package com.demoJob.demo.service.UserService;
 
 import com.demoJob.demo.dto.request.RegisterRequest;
+import com.demoJob.demo.dto.request.User.Admin.AdminCreateUserRequest;
 import com.demoJob.demo.entity.Role;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.entity.UserProfile;
@@ -30,6 +31,7 @@ public class UserFactoryService {
      */
     public void createUserEntity(RegisterRequest request, Set<String> roleNames) {
         validateUserUniqueFields(request.getEmail(), request.getUsername());
+
         Set<Role> roles = userRoleUtil.getRoles(roleNames);
 
         User user = User.builder()
@@ -40,6 +42,31 @@ public class UserFactoryService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .status(UserStatus.ACTIVE)
                 .emailVerified(false)
+                .build();
+
+        defaultProfile(user);
+        userRoleUtil.assignRolesToUser(user, roles);
+        userRepository.save(user);
+    }
+
+    /**
+     * Tạo người dùng mới từ yêu cầu của quản trị viên.
+     *
+     * @param request thông tin tạo mới người dùng
+     */
+    public void adminCreateUserEntity(AdminCreateUserRequest request) {
+        validateUserUniqueFields(request.getEmail(), request.getUsername());
+
+        Set<Role> roles = userRoleUtil.getRoles(request.getRoles());
+
+        User user = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .status(UserStatus.ACTIVE)
+                .emailVerified(true)
                 .build();
 
         defaultProfile(user);
