@@ -26,6 +26,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 import static com.demoJob.demo.mapper.UserMapper.toResponseFullData;
 
 @Service
@@ -38,7 +39,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final UserFactoryService userFactoryService;
 
     /**
-     * Admin tạo mới user (khác với user tự đăng ký).
+     * Admin tạo mới user.
      */
     @Override
     public void createUser(AdminCreateUserRequest request) {
@@ -54,14 +55,13 @@ public class AdminUserServiceImpl implements AdminUserService {
     public UserDetailResponse updateUser(Long userId, UserAdminUpdateRequest request) {
         log.info("Admin updating user with id={}", userId);
 
-        User user = findUserByIdOrThrow(userId);
+        User targetUser = findUserByIdWithRolesOrThrow(userId);
+        validateUserPermission(targetUser);
 
-        //Validate
-        validateUserActionPermission(user, "UPDATE");
-        validateUpdateRequest(request, user);
+        validateRequest(request, targetUser);
+        userRepository.save(targetUser);
 
-        User updatedUser = userRepository.save(user);
-        return toResponseFullData(updatedUser);
+        return toResponseFullData(targetUser);
     }
 
     /**
@@ -93,83 +93,45 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     /**
-     * Admin xóa (soft delete) user.
+     * Admin soft-delete user.
      */
     @Override
     public void deleteUser(Long userId) {
         log.info("Admin deleting user with id={}", userId);
-        User user = findUserByIdOrThrow(userId);
 
-        //Validate
-        if (user.getStatus() == UserStatus.DELETE) {
+        User targetUser = findUserByIdWithRolesOrThrow(userId);
+        validateUserPermission(targetUser);
+
+        if (targetUser.getStatus() == UserStatus.DELETE) {
             throw new InvalidDataException("User account is already deleted.");
         }
-        validateUserActionPermission(user, "DELETE");
 
-        user.setStatus(UserStatus.DELETE);
-        user.setDeletedAt(LocalDateTime.now());
-        userRepository.save(user);
+        targetUser.setStatus(UserStatus.DELETE);
+        targetUser.setDeletedAt(LocalDateTime.now());
+        userRepository.save(targetUser);
 
-        log.info("User {} marked as deleted", user.getId());
+        log.info("User {} marked as deleted", targetUser.getId());
     }
 
     // ==================== Private Helpers ==================== //
 
-    /**
-     * Tìm User thông qua userId
-     *
-     * @param userId userId cần tìm
-     * @return trả ra thông tin User
-     */
     private User findUserByIdOrThrow(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
     }
 
-    /**
-     * Lấy ra role của người dùng
-     *
-     * @param action hành động
-     * @return trả ra role của user
-     */
-    private User getCurrentUserWithRoles(String action) {
-        long userId = SecurityUtils.getCurrentUserId();
-        log.info("{} for userId: {}", action, userId);
+    private User findUserByIdWithRolesOrThrow(Long userId) {
         return userRepository.findByIdWithRoles(userId)
-                .orElseThrow(() -> new NotFoundException("Current user not found with ID: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with ID: " + userId));
     }
 
-    /**
-     * Validate permission cho các action cơ bản (UPDATE, DELETE)
-     * Logic: chỉ cho phép thao tác trên user có level thấp hơn
-     */
-    private void validateUserActionPermission(User targetUser, String action) {
-        User currentUser = getCurrentUserWithRoles("Validating permission: " + action);
-
-        // Không cho phép thao tác trên chính mình
-        if (currentUser.getId().equals(targetUser.getId())) {
-            throw new InvalidDataException("Bạn không thể " + action.toLowerCase() + " chính mình");
-        }
-
-        // Load target user với roles
-        User targetUserWithRoles = userRepository.findByIdWithRoles(targetUser.getId())
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + targetUser.getId()));
-
-        int currentUserLevel = getCurrentUserMaxLevel(currentUser);
-        int targetUserLevel = getTargetUserMaxLevel(targetUserWithRoles);
-
-        // Chỉ cho phép thao tác trên user có level thấp hơn
-        if (currentUserLevel <= targetUserLevel) {
-            throw new InvalidDataException(
-                    "Bạn không đủ quyền để " + action.toLowerCase() + " user có quyền cao hơn hoặc bằng quyền của bạn"
-            );
-        }
-
-        log.info("Permission validated: user {} (level {}) can {} user {} (level {})",
-                currentUser.getId(), currentUserLevel, action, targetUser.getId(), targetUserLevel);
+    private User getCurrentUserWithRoles() {
+        long currentUserId = SecurityUtils.getCurrentUserId();
+        return userRepository.findByIdWithRoles(currentUserId)
+                .orElseThrow(() -> new NotFoundException("Current user not found with ID: " + currentUserId));
     }
 
-    private void validateUpdateRequest(UserAdminUpdateRequest request, User user) {
+    private void validateRequest(UserAdminUpdateRequest request, User user) {
         if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
             user.setFirstName(request.getFirstName().trim());
         }
@@ -191,7 +153,6 @@ public class AdminUserServiceImpl implements AdminUserService {
             user.setStatus(request.getStatus());
         }
 
-        // Cập nhật roles (có validate riêng cho roles)
         updateUserRoles(request, user);
     }
 
@@ -201,80 +162,97 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
     }
 
-    private void updateUserRoles(UserAdminUpdateRequest request, User user) {
-        if (request.getRoles() == null || request.getRoles().isEmpty()) {
-            return; // Không có roles để update
+    /**
+     * Validate quyền cơ bản: chỉ cho thao tác trên user có level thấp hơn.
+     */
+    private void validateUserPermission(User targetUser) {
+        User currentUser = getCurrentUserWithRoles();
+
+        validateNotSelf(currentUser, targetUser);
+
+        int currentUserLevel = getUserMaxLevel(currentUser);
+        int targetUserLevel = getUserMaxLevel(targetUser);
+
+        if (currentUserLevel <= targetUserLevel) {
+            throw new InvalidDataException("Bạn không đủ quyền để thao tác với user có quyền cao hơn hoặc bằng quyền của bạn");
         }
+    }
+
+    /**
+     * Update role mới sau khi validate
+     * @param request Thông tin request
+     * @param user user được thay đổi
+     */
+    private void updateUserRoles(UserAdminUpdateRequest request, User user) {
+        if (request.getRoles() == null || request.getRoles().isEmpty()) return;
 
         Set<Role> newRoles = roleRepository.findByNameIn(request.getRoles())
                 .orElseThrow(() -> new InvalidDataException("Invalid roles: " + request.getRoles()));
 
-        // Load target user kèm roles để tính level chính xác
-        User targetUser = userRepository.findByIdWithRoles(user.getId())
-                .orElseThrow(() -> new NotFoundException("User not found with ID: " + user.getId()));
+        validateRoleUpdatePermission(user, newRoles);
 
-        // Validate đặc biệt cho role update
-        validateRoleUpdatePermission(targetUser, newRoles);
-
-        // Clear roles cũ và set roles mới
-        targetUser.getUserHasRoles().clear();
-        newRoles.forEach(role -> targetUser.getUserHasRoles().add(new UserHasRole(targetUser, role)));
-
-        userRepository.save(targetUser);
+        user.getUserHasRoles().clear();
+        newRoles.forEach(role -> user.getUserHasRoles().add(new UserHasRole(user, role)));
     }
 
     /**
-     * Validate đặc biệt cho role update - logic ok hơn
-     * Logic: chỉ được gán role có level thấp hơn
+     * Check role mà thay đổi xem có phù hợp không
+     *
+     * @param targetUser user được thay đổi
+     * @param newRoles Roles mới
      */
     private void validateRoleUpdatePermission(User targetUser, Set<Role> newRoles) {
-        User currentUser = getCurrentUserWithRoles("Update roles");
+        User currentUser = getCurrentUserWithRoles();
+        validateNotSelf(currentUser, targetUser);
 
-        // Không cho phép tự update role của mình
-        if (currentUser.getId().equals(targetUser.getId())) {
-            throw new InvalidDataException("Bạn không thể thay đổi role của chính mình");
-        }
+        int currentUserLevel = getUserMaxLevel(currentUser);
+        int targetCurrentLevel = getUserMaxLevel(targetUser);
+        int newRolesMaxLevel = getMaxLevel(newRoles);
 
-        int currentUserLevel = getCurrentUserMaxLevel(currentUser);
-        int targetCurrentLevel = getTargetUserMaxLevel(targetUser);
-        int newRolesMaxLevel = getNewRolesMaxLevel(newRoles);
-
-        // Chỉ được thay đổi role của user có level thấp hơn
         if (currentUserLevel <= targetCurrentLevel) {
-            throw new InvalidDataException(
-                    "Bạn không đủ quyền để thay đổi role của user có quyền cao hơn hoặc bằng quyền của bạn"
-            );
+            throw new InvalidDataException("Bạn không đủ quyền để thay đổi role của user có quyền cao hơn hoặc bằng quyền của bạn");
         }
 
-        // Chỉ được gán role có level thấp hơn mình
-        if (currentUserLevel <= newRolesMaxLevel) {
-            throw new InvalidDataException(
-                    "Bạn không đủ quyền để gán role cao hơn hoặc bằng quyền của mình"
-            );
+        if (currentUserLevel < newRolesMaxLevel) {
+            throw new InvalidDataException("Bạn không đủ quyền để gán role cao quyền của mình");
         }
 
-        log.info("Role update permission validated: user {} (level {}) can assign roles (max level {}) to user {} (current level {})",
+        log.info("Role update validated: user {} (level {}) can assign roles (max level {}) to user {} (current level {})",
                 currentUser.getId(), currentUserLevel, newRolesMaxLevel, targetUser.getId(), targetCurrentLevel);
     }
 
-    private int getCurrentUserMaxLevel(User currentUser) {
-        return currentUser.getUserHasRoles().stream()
-                .mapToInt(r -> RoleLevel.fromRoleName(r.getRole().getName()).getLevel())
-                .max()
-                .orElse(0);
+    /**
+     * Không thể thao tác với mình
+     * @param currentUser user đang thao tác
+     * @param targetUser user được thao tác
+     */
+    private void validateNotSelf(User currentUser, User targetUser) {
+        if (currentUser.getId().equals(targetUser.getId())) {
+            throw new InvalidDataException("Bạn không thể thao tác với chính mình");
+        }
     }
 
-    private int getTargetUserMaxLevel(User targetUser) {
-        return targetUser.getUserHasRoles().stream()
-                .mapToInt(r -> RoleLevel.fromRoleName(r.getRole().getName()).getLevel())
-                .max()
-                .orElse(0);
-    }
-
-    private int getNewRolesMaxLevel(Set<Role> newRoles) {
-        return newRoles.stream()
+    /**
+     * Trả ra role cao nhất
+     * @param roles List role
+     * @return trả role cao nhất
+     */
+    private int getMaxLevel(Collection<Role> roles) {
+        return roles.stream()
                 .mapToInt(r -> RoleLevel.fromRoleName(r.getName()).getLevel())
-                .max()
-                .orElse(0);
+                .max().orElse(0);
+    }
+
+    /**
+     * Trả về level cao nhất của user
+     * @param user user cần tìm
+     * @return trả ra level
+     */
+    private int getUserMaxLevel(User user) {
+        return getMaxLevel(
+                user.getUserHasRoles().stream()
+                        .map(UserHasRole::getRole)
+                        .collect(Collectors.toSet())
+        );
     }
 }
