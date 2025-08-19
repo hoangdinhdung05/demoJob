@@ -1,6 +1,6 @@
 package com.demoJob.demo.dto.request.User.Admin;
 
-import com.demoJob.demo.util.UserStatus;
+import com.demoJob.demo.util.enums.UserStatus;
 import lombok.Data;
 import java.util.Set;
 

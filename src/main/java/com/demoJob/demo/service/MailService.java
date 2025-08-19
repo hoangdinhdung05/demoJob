@@ -1,7 +1,7 @@
 package com.demoJob.demo.service;
 
 import com.demoJob.demo.entity.User;
-import com.demoJob.demo.util.OtpType;
+import com.demoJob.demo.util.enums.OtpType;
 import java.util.Map;
 
 public interface MailService {

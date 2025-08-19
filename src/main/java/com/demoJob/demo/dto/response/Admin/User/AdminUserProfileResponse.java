@@ -1,6 +1,6 @@
 package com.demoJob.demo.dto.response.Admin.User;
 
-import com.demoJob.demo.util.Gender;
+import com.demoJob.demo.util.enums.Gender;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

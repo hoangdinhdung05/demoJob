@@ -1,9 +1,7 @@
 package com.demoJob.demo.mapper;
 
 import com.demoJob.demo.dto.response.AuthResponse;
-import com.demoJob.demo.entity.User;
-import com.demoJob.demo.util.TokenType;
-import java.util.stream.Collectors;
+import com.demoJob.demo.util.enums.TokenType;
 
 public class AuthMapper {
 

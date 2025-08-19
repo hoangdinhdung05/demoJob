@@ -1,6 +1,6 @@
 package com.demoJob.demo.dto.response.Admin.Company;
 
-import com.demoJob.demo.util.CompanyStatus;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import lombok.Builder;
 import lombok.Getter;
 

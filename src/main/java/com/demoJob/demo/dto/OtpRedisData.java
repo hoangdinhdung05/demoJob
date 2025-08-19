@@ -1,6 +1,6 @@
 package com.demoJob.demo.dto;
 
-import com.demoJob.demo.util.OtpType;
+import com.demoJob.demo.util.enums.OtpType;
 import lombok.*;
 import java.time.LocalDateTime;
 

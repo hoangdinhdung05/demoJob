@@ -1,6 +1,6 @@
 package com.demoJob.demo.dto.response.User;
 
-import com.demoJob.demo.util.Gender;
+import com.demoJob.demo.util.enums.Gender;
 import lombok.Builder;
 import lombok.Getter;
 import java.time.LocalDate;

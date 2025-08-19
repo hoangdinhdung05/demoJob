@@ -1,6 +1,6 @@
 package com.demoJob.demo.entity;
 
-import com.demoJob.demo.util.OtpType;
+import com.demoJob.demo.util.enums.OtpType;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

@@ -3,7 +3,7 @@ package com.demoJob.demo.service.impl;
 import com.demoJob.demo.dto.HtmlEmailTask;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.service.MailService;
-import com.demoJob.demo.util.OtpType;
+import com.demoJob.demo.util.enums.OtpType;
 import jakarta.annotation.PostConstruct;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;

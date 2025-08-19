@@ -1,6 +1,6 @@
 package com.demoJob.demo.entity;
 
-import com.demoJob.demo.util.TokenTypeVerify;
+import com.demoJob.demo.util.enums.TokenTypeVerify;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;

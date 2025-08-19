@@ -1,6 +1,6 @@
 package com.demoJob.demo.dto.request.User.Client;
 
-import com.demoJob.demo.util.Gender;
+import com.demoJob.demo.util.enums.Gender;
 import com.demoJob.demo.util.validator.PhoneNumber;
 import lombok.Getter;
 import java.time.LocalDate;

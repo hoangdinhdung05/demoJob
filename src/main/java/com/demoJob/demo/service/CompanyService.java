@@ -3,7 +3,7 @@ package com.demoJob.demo.service;
 import com.demoJob.demo.dto.request.Admin.Company.CompanyRequest;
 import com.demoJob.demo.dto.response.Admin.Company.CompanyResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
-import com.demoJob.demo.util.CompanyStatus;
+import com.demoJob.demo.util.enums.CompanyStatus;
 
 import java.util.List;
 

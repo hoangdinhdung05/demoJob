@@ -1,7 +1,7 @@
 package com.demoJob.demo.service;
 
 import com.demoJob.demo.dto.OtpRedisData;
-import com.demoJob.demo.util.OtpType;
+import com.demoJob.demo.util.enums.OtpType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;

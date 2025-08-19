@@ -16,7 +16,7 @@ import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.UserService.UserClientService;
 import com.demoJob.demo.service.UserService.UserFactoryService;
-import com.demoJob.demo.util.CompanyStatus;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.Set;
 import static com.demoJob.demo.mapper.UserMapper.*;
-import static com.demoJob.demo.util.UserStatus.*;
+import static com.demoJob.demo.util.enums.UserStatus.*;
 
 @Service
 @RequiredArgsConstructor

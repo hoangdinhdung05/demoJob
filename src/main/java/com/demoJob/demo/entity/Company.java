@@ -1,6 +1,6 @@
 package com.demoJob.demo.entity;
 
-import com.demoJob.demo.util.CompanyStatus;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.validator.PhoneNumber;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

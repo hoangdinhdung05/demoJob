@@ -1,6 +1,6 @@
 package com.demoJob.demo.entity;
 
-import com.demoJob.demo.util.ResumeStatus;
+import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

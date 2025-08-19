@@ -1,7 +1,7 @@
 package com.demoJob.demo.dto.request.Admin.Job;
 
-import com.demoJob.demo.util.JobStatus;
-import com.demoJob.demo.util.LevelEnum;
+import com.demoJob.demo.util.enums.JobStatus;
+import com.demoJob.demo.util.enums.LevelEnum;
 import lombok.Getter;
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;

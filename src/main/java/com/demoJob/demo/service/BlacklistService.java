@@ -1,6 +1,6 @@
 package com.demoJob.demo.service;
 
-import com.demoJob.demo.util.TokenBlacklistReason;
+import com.demoJob.demo.util.enums.TokenBlacklistReason;
 import java.time.Instant;
 
 public interface BlacklistService {

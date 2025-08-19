@@ -1,6 +1,6 @@
 package com.demoJob.demo.dto.request.User.Client;
 
-import com.demoJob.demo.util.Gender;
+import com.demoJob.demo.util.enums.Gender;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;

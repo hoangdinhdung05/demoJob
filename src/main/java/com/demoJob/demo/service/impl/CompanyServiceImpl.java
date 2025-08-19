@@ -11,7 +11,7 @@ import com.demoJob.demo.repository.CompanyProfileRepository;
 import com.demoJob.demo.repository.CompanyRepository;
 import com.demoJob.demo.repository.UserCompanyRepository;
 import com.demoJob.demo.service.CompanyService;
-import com.demoJob.demo.util.CompanyStatus;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
