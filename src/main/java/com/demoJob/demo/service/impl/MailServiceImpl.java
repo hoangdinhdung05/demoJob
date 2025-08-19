@@ -1,6 +1,7 @@
 package com.demoJob.demo.service.impl;
 
 import com.demoJob.demo.dto.HtmlEmailTask;
+import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.service.MailService;
 import com.demoJob.demo.util.enums.OtpType;
@@ -15,6 +16,9 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -33,6 +37,12 @@ public class MailServiceImpl implements MailService {
 
     @Value("${app.backend.url}")
     private String backendUrl;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
+    @Value("${app.admin.email}")
+    private String adminEmail;
 
     @PostConstruct
     private void initWorker() {
@@ -77,57 +87,6 @@ public class MailServiceImpl implements MailService {
         log.error("Gave up sending email to {} after {} attempts", task.getTo(), MAX_RETRIES);
     }
 
-//    @Override
-//    public void sendMail(String to, String subject, String template, Map<String, Object> model) {
-//        try {
-//            MimeMessage message = mailSender.createMimeMessage();
-//            MimeMessageHelper helper = new MimeMessageHelper(message, "utf-8");
-//            Context context = new Context();
-//            context.setVariables(model);
-//            String html = templateEngine.process(template, context);
-//
-//            helper.setTo(to);
-//            helper.setSubject(subject);
-//            helper.setText(html, true);
-//
-//            mailSender.send(message);
-//        } catch (Exception e) {
-//            log.error("Lỗi gửi email: {}", e.getMessage(), e);
-//            throw new RuntimeException("Không thể gửi email");
-//        }
-//    }
-//
-//    @Override
-//    public void sendResetPasswordMail(User user, String token) {
-//        String url = backendUrl + "/ott/reset-password?token=" + token;
-//        Map<String, Object> model = Map.of(
-//                "username", user.getUsername(),
-//                "resetUrl", url
-//        );
-//        sendMail(user.getEmail(), "Khôi phục mật khẩu", "reset-password-template.html", model);
-//    }
-//
-//    @Override
-//    public void sendVerificationEmail(User user, String token) {
-//        String url = backendUrl + "/ott/verify-email?token=" + token;
-//        Map<String, Object> model = Map.of(
-//                "username", user.getUsername(),
-//                "verifyUrl", url
-//        );
-//        sendMail(user.getEmail(), "Xác minh tài khoản", "verify-email-template.html", model);
-//    }
-//
-//    @Override
-//    public void sendOtpMail(String to, String code, OtpType type) {
-//        Map<String, Object> model = Map.of(
-//                "otp", code,
-//                "type", type.name()
-//        );
-//
-//        sendMail(to, "[OTP] Xác thực hành động " + type.name(), "otp-template.html", model);
-//    }
-//
-
     private void sendHtmlEmail(String to, String subject, String template, Map<String, Object> model) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -163,26 +122,6 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    public void sendResetPasswordMail(User user, String token) {
-        String url = backendUrl + "/ott/reset-password?token=" + token;
-        Map<String, Object> model = Map.of(
-                "username", user.getUsername(),
-                "resetUrl", url
-        );
-        sendMail(user.getEmail(), "Khôi phục mật khẩu", "reset-password-template.html", model);
-    }
-
-    @Override
-    public void sendVerificationEmail(User user, String token) {
-        String url = backendUrl + "/ott/verify-email?token=" + token;
-        Map<String, Object> model = Map.of(
-                "username", user.getUsername(),
-                "verifyUrl", url
-        );
-        sendMail(user.getEmail(), "Xác minh tài khoản", "verify-email-template.html", model);
-    }
-
-    @Override
     public void sendOtpMail(String to, String code, OtpType type) {
         Map<String, Object> model = Map.of(
                 "otp", code,
@@ -191,5 +130,104 @@ public class MailServiceImpl implements MailService {
         sendMail(to, "[OTP] Xác thực hành động " + type.name(), "otp-template.html", model);
     }
 
-}
+    /**
+     * Send notification to admin when new company registered
+     */
+    @Override
+    public void sendCompanyRegistrationNotification(Company company, User creator) {
+        try {
+            Map<String, Object> model = buildCompanyNotificationModel(company, creator);
 
+            String subject = "[ACTION REQUIRED] New Company Registration - " + company.getName();
+            String template = "company-registration-admin.html";
+
+            sendMail(adminEmail, subject, template, model);
+            log.info("Company registration notification queued for admin - Company: {}", company.getName());
+
+        } catch (Exception e) {
+            log.error("Failed to send company registration notification for company: {}", company.getId(), e);
+        }
+    }
+
+    /**
+     * Send approval notification to company owner
+     */
+    @Override
+    public void sendCompanyApprovalNotification(Company company, User owner) {
+        try {
+            Map<String, Object> model = buildCompanyApprovalModel(company, owner);
+
+            String subject = "[APPROVED] Your Company Registration - " + company.getName();
+
+            sendMail(owner.getEmail(), subject, "company-approved-owner.html", model);
+            log.info("Company approval notification queued for: {} - Company: {}", owner.getEmail(), company.getName());
+
+        } catch (Exception e) {
+            log.error("Failed to send company approval notification for company: {}", company.getId(), e);
+        }
+    }
+
+    /**
+     * Send rejection notification to company owner
+     */
+    @Override
+    public void sendCompanyRejectionNotification(Company company, User owner, String reason) {
+        try {
+            Map<String, Object> model = buildCompanyRejectionModel(company, owner, reason);
+
+            String subject = "[REJECTED] Your Company Registration - " + company.getName();
+
+            sendMail(owner.getEmail(), subject, "company-approved-owner.html", model);
+            log.info("Company rejection notification queued for: {} - Company: {}", owner.getEmail(), company.getName());
+
+        } catch (Exception e) {
+            log.error("Failed to send company rejection notification for company: {}", company.getId(), e);
+        }
+    }
+
+    // ========== PRIVATE HELPER METHODS ==========
+
+    private Map<String, Object> buildCompanyNotificationModel(Company company, User creator) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("companyId", company.getId());
+        model.put("companyName", company.getName());
+        model.put("companyEmail", company.getEmail());
+        model.put("companyPhone", company.getPhone() != null ? company.getPhone() : "N/A");
+        model.put("companyWebsite", company.getWebsite() != null ? company.getWebsite() : "N/A");
+        model.put("createDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        model.put("creatorName", getDisplayName(creator));
+        model.put("creatorEmail", creator.getEmail());
+        model.put("approveUrl", frontendUrl + "/admin/companies/" + company.getId() + "/approve");
+        model.put("rejectUrl", frontendUrl + "/admin/companies/" + company.getId() + "/reject");
+        model.put("dashboardUrl", frontendUrl + "/admin/companies");
+        return model;
+    }
+
+    private Map<String, Object> buildCompanyApprovalModel(Company company, User owner) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("companyName", company.getName());
+        model.put("ownerName", getDisplayName(owner));
+        model.put("loginUrl", frontendUrl + "/login");
+        model.put("dashboardUrl", frontendUrl + "/company/dashboard");
+        model.put("supportEmail", adminEmail);
+        return model;
+    }
+
+    private Map<String, Object> buildCompanyRejectionModel(Company company, User owner, String reason) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("companyName", company.getName());
+        model.put("ownerName", getDisplayName(owner));
+        model.put("rejectionReason", reason != null && !reason.trim().isEmpty()
+                ? reason : "Please contact support for more details about the rejection.");
+        model.put("supportEmail", adminEmail);
+        model.put("reapplyUrl", frontendUrl + "/company/register");
+        return model;
+    }
+
+    private String getDisplayName(User user) {
+        if (user.getFirstName() != null && !user.getLastName().trim().isEmpty()) {
+            return user.getFirstName() + user.getLastName();
+        }
+        return user.getUsername() != null ? user.getUsername() : user.getEmail();
+    }
+}

@@ -1,4 +1,4 @@
-package com.demoJob.demo.dto.response.Admin.Company;
+package com.demoJob.demo.dto.response.Company;
 
 import com.demoJob.demo.util.enums.CompanyStatus;
 import lombok.Builder;

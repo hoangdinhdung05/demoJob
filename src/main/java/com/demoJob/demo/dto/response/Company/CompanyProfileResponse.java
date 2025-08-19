@@ -1,9 +1,11 @@
-package com.demoJob.demo.dto.request.Admin.Company;
+package com.demoJob.demo.dto.response.Company;
 
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class CompanyProfileRequest {
+@Builder
+public class CompanyProfileResponse {
 
     private String description;
 

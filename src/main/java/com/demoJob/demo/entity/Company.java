@@ -18,6 +18,7 @@ import java.util.Set;
 @Setter
 public class Company extends AbstractEntity<Long> {
 
+    @Column(unique = true)
     private String name;
 
     private String logo;
@@ -30,6 +31,7 @@ public class Company extends AbstractEntity<Long> {
     private String website;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private CompanyStatus status;
 
     @OneToMany( mappedBy = "company", fetch = FetchType.LAZY)
