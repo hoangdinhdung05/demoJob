@@ -177,7 +177,7 @@ public class MailServiceImpl implements MailService {
 
             String subject = "[REJECTED] Your Company Registration - " + company.getName();
 
-            sendMail(owner.getEmail(), subject, "company-approved-owner.html", model);
+            sendMail(owner.getEmail(), subject, "company-rejected-owner.html", model);
             log.info("Company rejection notification queued for: {} - Company: {}", owner.getEmail(), company.getName());
 
         } catch (Exception e) {

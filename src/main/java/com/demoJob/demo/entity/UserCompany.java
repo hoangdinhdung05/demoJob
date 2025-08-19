@@ -1,5 +1,6 @@
 package com.demoJob.demo.entity;
 
+import com.demoJob.demo.util.enums.UserCompanyStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,6 +23,14 @@ public class UserCompany extends AbstractEntity<Long> {
     private Company company;
 
     private String position;
-    private LocalDate startDate;
+
+    private boolean isOwner;
+
+    @Enumerated(EnumType.STRING)
+    private UserCompanyStatus status;
+
+    private LocalDate joinedAt;
+
     private LocalDate endDate;
+    private LocalDate startDate;
 }
