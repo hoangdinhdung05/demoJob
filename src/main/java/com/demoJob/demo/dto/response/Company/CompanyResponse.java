@@ -21,11 +21,4 @@ public class CompanyResponse {
     private String website;
 
     private CompanyStatus status;
-
-    private CompanyProfileResponse companyProfile;
-
-    private String createdBy;
-
-    private String updatedBy;
-
 }

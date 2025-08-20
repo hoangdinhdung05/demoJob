@@ -1,9 +1,24 @@
 package com.demoJob.demo.dto.request.Company;
 
+import com.demoJob.demo.util.enums.CompanyStatus;
 import lombok.Getter;
 
 @Getter
-public class CompanyProfileRequest {
+public class CompanyUpdateRequest {
+
+    private Long id;
+
+    private String name;
+
+    private String logo;
+
+    private String email;
+
+    private String phone;
+
+    private String website;
+
+    private CompanyStatus status;
 
     private String description;
 
@@ -21,10 +36,5 @@ public class CompanyProfileRequest {
 
     private String workingTime;
 
-    private String culture;
-
-    private String benefits;
-
     private String mapLocation;
-
 }

@@ -1,13 +1,13 @@
 package com.demoJob.demo.dto.request.Company;
 
 import com.demoJob.demo.util.enums.CompanyStatus;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 @Getter
 public class UpdateCompanyStatusRequest {
 
-    @NotBlank(message = "Status not null")
+    @NotNull(message = "Status not null")
     private CompanyStatus status;
 
     private String reason;
