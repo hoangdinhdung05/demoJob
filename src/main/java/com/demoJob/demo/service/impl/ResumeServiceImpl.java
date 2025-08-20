@@ -12,7 +12,7 @@ import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.ResumeRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.ResumeService;
-import com.demoJob.demo.util.ResumeStatus;
+import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

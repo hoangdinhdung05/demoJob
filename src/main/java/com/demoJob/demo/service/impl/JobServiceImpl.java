@@ -12,7 +12,7 @@ import com.demoJob.demo.repository.CompanyRepository;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SkillRepository;
 import com.demoJob.demo.service.JobService;
-import com.demoJob.demo.util.JobStatus;
+import com.demoJob.demo.util.enums.JobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

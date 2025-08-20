@@ -1,6 +1,6 @@
-package com.demoJob.demo.dto.response.Admin.Company;
+package com.demoJob.demo.dto.response.Company;
 
-import com.demoJob.demo.util.CompanyStatus;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -21,11 +21,4 @@ public class CompanyResponse {
     private String website;
 
     private CompanyStatus status;
-
-    private CompanyProfileResponse companyProfile;
-
-    private String createdBy;
-
-    private String updatedBy;
-
 }

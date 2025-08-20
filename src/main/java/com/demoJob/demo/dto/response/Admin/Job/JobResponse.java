@@ -1,8 +1,8 @@
 package com.demoJob.demo.dto.response.Admin.Job;
 
 import com.demoJob.demo.dto.response.Admin.SkillResponse;
-import com.demoJob.demo.util.JobStatus;
-import com.demoJob.demo.util.LevelEnum;
+import com.demoJob.demo.util.enums.JobStatus;
+import com.demoJob.demo.util.enums.LevelEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

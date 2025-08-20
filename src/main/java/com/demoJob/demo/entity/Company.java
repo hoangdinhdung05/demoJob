@@ -1,6 +1,6 @@
 package com.demoJob.demo.entity;
 
-import com.demoJob.demo.util.CompanyStatus;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.validator.PhoneNumber;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -18,6 +18,7 @@ import java.util.Set;
 @Setter
 public class Company extends AbstractEntity<Long> {
 
+    @Column(unique = true)
     private String name;
 
     private String logo;
@@ -30,6 +31,7 @@ public class Company extends AbstractEntity<Long> {
     private String website;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private CompanyStatus status;
 
     @OneToMany( mappedBy = "company", fetch = FetchType.LAZY)

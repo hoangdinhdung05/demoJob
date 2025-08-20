@@ -1,6 +1,6 @@
 package com.demoJob.demo.dto.response.Admin.Resume;
 
-import com.demoJob.demo.util.ResumeStatus;
+import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;

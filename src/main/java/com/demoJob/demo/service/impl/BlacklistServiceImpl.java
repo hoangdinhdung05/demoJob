@@ -3,7 +3,7 @@ package com.demoJob.demo.service.impl;
 import com.demoJob.demo.entity.BlacklistedToken;
 import com.demoJob.demo.repository.BlacklistedTokenRepository;
 import com.demoJob.demo.service.BlacklistService;
-import com.demoJob.demo.util.TokenBlacklistReason;
+import com.demoJob.demo.util.enums.TokenBlacklistReason;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -6,7 +6,7 @@ import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.service.JobService;
-import com.demoJob.demo.util.JobStatus;
+import com.demoJob.demo.util.enums.JobStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;

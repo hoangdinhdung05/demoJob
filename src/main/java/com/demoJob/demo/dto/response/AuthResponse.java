@@ -1,9 +1,8 @@
 package com.demoJob.demo.dto.response;
 
-import com.demoJob.demo.util.TokenType;
+import com.demoJob.demo.util.enums.TokenType;
 import lombok.Builder;
 import lombok.Data;
-import java.util.Set;
 
 @Data
 @Builder

@@ -1,7 +1,7 @@
 package com.demoJob.demo.entity;
 
-import com.demoJob.demo.util.JobStatus;
-import com.demoJob.demo.util.LevelEnum;
+import com.demoJob.demo.util.enums.JobStatus;
+import com.demoJob.demo.util.enums.LevelEnum;
 import com.demoJob.demo.util.validator.ValidDateRange;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

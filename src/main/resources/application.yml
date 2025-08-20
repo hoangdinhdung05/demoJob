@@ -73,6 +73,10 @@ jwt:
 app:
   backend:
     url: http://localhost:8080
+  frontend:
+    url: http://localhost:3000
+  admin:
+    email: hoangdinhdung0205@gmail.com
 
 
 

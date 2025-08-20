@@ -8,7 +8,7 @@ import com.demoJob.demo.entity.UserProfile;
 import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.util.UserRoleUtil;
-import com.demoJob.demo.util.UserStatus;
+import com.demoJob.demo.util.enums.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

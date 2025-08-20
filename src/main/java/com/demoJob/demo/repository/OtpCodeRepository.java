@@ -1,7 +1,7 @@
 package com.demoJob.demo.repository;
 
 import com.demoJob.demo.entity.OtpCode;
-import com.demoJob.demo.util.OtpType;
+import com.demoJob.demo.util.enums.OtpType;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

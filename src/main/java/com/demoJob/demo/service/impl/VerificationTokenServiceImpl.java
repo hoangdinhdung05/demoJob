@@ -4,7 +4,7 @@ import com.demoJob.demo.entity.User;
 import com.demoJob.demo.entity.VerificationToken;
 import com.demoJob.demo.repository.VerificationTokenRepository;
 import com.demoJob.demo.service.VerificationTokenService;
-import com.demoJob.demo.util.TokenTypeVerify;
+import com.demoJob.demo.util.enums.TokenTypeVerify;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

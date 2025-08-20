@@ -2,7 +2,7 @@ package com.demoJob.demo.service;
 
 import java.sql.Date;
 import org.springframework.security.core.userdetails.UserDetails;
-import com.demoJob.demo.util.TokenType;
+import com.demoJob.demo.util.enums.TokenType;
 import io.jsonwebtoken.Claims;
 
 public interface JwtService {

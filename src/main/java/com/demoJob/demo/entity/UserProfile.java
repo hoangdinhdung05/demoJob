@@ -1,7 +1,6 @@
 package com.demoJob.demo.entity;
 
-import com.demoJob.demo.util.Gender;
-import com.demoJob.demo.util.validator.PhoneNumber;
+import com.demoJob.demo.util.enums.Gender;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;

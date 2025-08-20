@@ -1,11 +1,24 @@
-package com.demoJob.demo.dto.response.Admin.Company;
+package com.demoJob.demo.dto.response.Company;
 
+import com.demoJob.demo.util.enums.CompanyStatus;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-public class CompanyProfileResponse {
+public class CompanyDetailResponse {
+
+    private String name;
+
+    private String logo;
+
+    private String email;
+
+    private String phone;
+
+    private String website;
+
+    private CompanyStatus status;
 
     private String description;
 
@@ -23,10 +36,5 @@ public class CompanyProfileResponse {
 
     private String workingTime;
 
-    private String culture;
-
-    private String benefits;
-
     private String mapLocation;
-
 }

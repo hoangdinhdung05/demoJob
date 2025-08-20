@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Status Updated - Back to Pending</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 0;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .alert {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+        .company-info {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .company-info h3 {
+            color: #ffc107;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-label {
+            font-weight: bold;
+            width: 130px;
+            color: #555;
+        }
+        .info-value {
+            flex: 1;
+            color: #333;
+        }
+        .status-badge {
+            display: inline-block;
+            background-color: #ffc107;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .owner-info {
+            background-color: #e8f4f8;
+            border: 1px solid #b3d9f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .warning-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        .warning-box h4 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .warning-box ul {
+            color: #856404;
+            padding-left: 20px;
+        }
+        .warning-box li {
+            margin-bottom: 8px;
+        }
+        .btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            background-color: #ffc107;
+            color: white;
+        }
+        .btn:hover {
+            background-color: #e0a800;
+            color: white;
+            text-decoration: none;
+        }
+        .support-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 25px;
+        }
+        .support-section h4 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        .support-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        .support-section li {
+            margin-bottom: 8px;
+            color: #6c757d;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🔄 Cập nhật trạng thái công ty</h1>
+        <p>Công ty của bạn đã được chuyển về trạng thái chờ duyệt</p>
+    </div>
+
+    <div class="content">
+        <div class="alert">
+            <strong>📢 Thông báo:</strong> Trạng thái công ty của bạn đã được cập nhật và cần được xem xét lại.
+        </div>
+
+        <p>Xin chào <strong th:text="${ownerName}">Tên người dùng</strong>,</p>
+        <p style="margin-bottom: 20px;">Chúng tôi xin thông báo rằng công ty của bạn đã được chuyển về trạng thái <strong>Chờ duyệt</strong> để xem xét lại.</p>
+
+        <div class="company-info">
+            <h3>📋 Thông tin công ty</h3>
+            <div class="info-row">
+                <span class="info-label">Tên công ty:</span>
+                <span class="info-value" th:text="${companyName}">Tên công ty</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value" th:text="${companyEmail}">email@company.com</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Số điện thoại:</span>
+                <span class="info-value" th:text="${companyPhone ?: 'Chưa cập nhật'}">+84 xxx xxx xxx</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Website:</span>
+                <span class="info-value" th:text="${companyWebsite ?: 'Chưa cập nhật'}">www.company.com</span>
+            </div>
+
+            <div class="info-row">
+                <span class="info-label">Trạng thái hiện tại:</span>
+                <span class="info-value">
+                    <span class="status-badge">Chờ duyệt</span>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Thời gian cập nhật:</span>
+                <span class="info-value" th:text="${updateDate}">01/01/2024 10:30</span>
+            </div>
+        </div>
+
+        <div class="owner-info">
+            <h4>👤 Chủ sở hữu:</h4>
+            <p><strong th:text="${ownerName}">Tên chủ sở hữu</strong> (<span th:text="${ownerEmail}">owner@example.com</span>)</p>
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ Lưu ý quan trọng:</h4>
+            <ul>
+                <li>Trong thời gian chờ duyệt, một số tính năng của công ty có thể bị hạn chế</li>
+                <li>Vui lòng kiểm tra lại thông tin công ty và cập nhật nếu cần thiết</li>
+                <li>Chúng tôi sẽ thông báo kết quả xem xét trong thời gian sớm nhất</li>
+                <li>Bạn vẫn có thể truy cập vào trang quản lý để xem chi tiết</li>
+            </ul>
+        </div>
+
+        <div class="btn-container">
+            <a href="#" class="btn" th:href="${dashboardUrl}">
+                🏢 Quản lý công ty
+            </a>
+        </div>
+
+        <div class="support-section">
+            <h4>📞 Cần hỗ trợ?</h4>
+            <ul>
+                <li>📧 Email: <span th:text="${supportEmail}">support@company.com</span></li>
+                <li>📞 Hotline: <span th:text="${supportPhone}">1900-xxxx</span></li>
+                <li>💬 Hoặc liên hệ trực tiếp qua trang quản lý</li>
+            </ul>
+        </div>
+
+        <p style="margin-top: 30px; color: #666;">
+            Trân trọng,<br>
+            <strong>Đội ngũ hỗ trợ</strong>
+        </p>
+    </div>
+
+    <div class="footer">
+        <p>© 2024 Demo Job Platform - Hệ thống thông báo tự động</p>
+        <p>Email này được gửi tự động, vui lòng không reply trực tiếp.</p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,19 +1,20 @@
-package com.demoJob.demo.dto.request.Admin.Company;
+package com.demoJob.demo.dto.request.Company;
 
-import com.demoJob.demo.util.CompanyStatus;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.validator.PhoneNumber;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 @Getter
 public class CompanyRequest {
 
-    @NotNull(message = "Name company not null")
+    @NotBlank(message = "Name company not null")
     private String name;
 
     private String logo;
 
-    @NotNull(message = "Company email not null")
+    @NotBlank(message = "Company email not null")
     private String email;
 
     @PhoneNumber
@@ -22,7 +23,4 @@ public class CompanyRequest {
     private String website;
 
     private CompanyStatus status;
-
-    private CompanyProfileRequest companyProfileRequest;
-
 }
