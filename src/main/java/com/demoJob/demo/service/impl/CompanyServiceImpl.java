@@ -175,9 +175,16 @@ public class CompanyServiceImpl implements CompanyService {
     public void updateCompanyStatus(Long companyId, CompanyStatus newStatus, String reason) {
         Company company = getCompanyByIdOrThrow(companyId);
 
-        // Chỉ cho phép update khi đang PENDING
-        if (company.getStatus() != CompanyStatus.PENDING) {
-            throw new InvalidDataException("Company is not in pending status");
+        boolean validTransition = switch (company.getStatus()) {
+            case PENDING -> (newStatus == CompanyStatus.ACTIVE || newStatus == CompanyStatus.REJECTED);
+            case ACTIVE -> (newStatus == CompanyStatus.PENDING);
+            default -> false;
+        };
+
+        if (!validTransition) {
+            throw new InvalidDataException(
+                    String.format("Cannot change company status from %s to %s", company.getStatus(), newStatus)
+            );
         }
 
         company.setStatus(newStatus);
@@ -189,6 +196,7 @@ public class CompanyServiceImpl implements CompanyService {
         switch (newStatus) {
             case ACTIVE -> mailService.sendCompanyApprovalNotification(company, owner.getUser());
             case REJECTED -> mailService.sendCompanyRejectionNotification(company, owner.getUser(), reason);
+            case PENDING -> mailService.sendCompanyBackToPendingNotification(company, owner.getUser());
             default -> log.warn("Unhandled company status update: {}", newStatus);
         }
 

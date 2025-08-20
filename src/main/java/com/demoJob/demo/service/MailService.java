@@ -30,4 +30,9 @@ public interface MailService {
      * Send rejection notification to company owner
      */
     void sendCompanyRejectionNotification(Company company, User owner, String reason);
+
+    /**
+     * Send pending notification to company owner
+     */
+    void sendCompanyBackToPendingNotification(Company company, User owner);
 }

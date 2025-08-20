@@ -185,6 +185,21 @@ public class MailServiceImpl implements MailService {
         }
     }
 
+    @Override
+    public void sendCompanyBackToPendingNotification(Company company, User owner) {
+        try {
+            Map<String, Object> model = buildCompanyBackToPendingModel(company, owner);
+
+            String subject = "[UPDATE] Company Status Changed - " + company.getName();
+
+            sendMail(owner.getEmail(), subject, "company-back-to-pending.html", model);
+            log.info("Company back-to-pending notification queued for: {} - Company: {}", owner.getEmail(), company.getName());
+
+        } catch (Exception e) {
+            log.error("Failed to send company back-to-pending notification for company: {}", company.getId(), e);
+        }
+    }
+
     // ========== PRIVATE HELPER METHODS ==========
 
     private Map<String, Object> buildCompanyNotificationModel(Company company, User creator) {
@@ -221,6 +236,21 @@ public class MailServiceImpl implements MailService {
                 ? reason : "Please contact support for more details about the rejection.");
         model.put("supportEmail", adminEmail);
         model.put("reapplyUrl", frontendUrl + "/company/register");
+        return model;
+    }
+
+    private Map<String, Object> buildCompanyBackToPendingModel(Company company, User owner) {
+        Map<String, Object> model = new HashMap<>();
+        model.put("companyName", company.getName());
+        model.put("companyEmail", company.getEmail());
+        model.put("companyPhone", company.getPhone() != null ? company.getPhone() : "Chưa cập nhật");
+        model.put("companyWebsite", company.getWebsite() != null ? company.getWebsite() : "Chưa cập nhật");
+        model.put("ownerName", getDisplayName(owner));
+        model.put("ownerEmail", owner.getEmail());
+        model.put("updateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        model.put("dashboardUrl", frontendUrl + "/company/dashboard");
+        model.put("supportEmail", adminEmail);
+        model.put("supportPhone", "1900-9099");
         return model;
     }
 
