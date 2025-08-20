@@ -289,11 +289,13 @@ public class CompanyServiceImpl implements CompanyService {
     private Company checkActiveCompany(Long companyId) {
         Company company = getCompanyByIdOrThrow(companyId);
 
-        if (!SecurityUtils.hasRole("ADMIN") &&
-                !SecurityUtils.hasRole("MANAGER") &&
-                company.getStatus() != CompanyStatus.ACTIVE) {
-            throw new NotFoundException("Company not found with id: " + companyId);
-        }
-        return company;
+        if (company.getStatus() == CompanyStatus.ACTIVE) return company;
+        if (SecurityUtils.hasRole("ADMIN") || SecurityUtils.hasRole("MANAGER")) return company;
+
+        //check pending => user create company vẫn xem được
+        User user = SecurityUtils.getCurrentUserDetails().getUser();
+        if (isOwner(user, company)) return company;
+
+        throw new NotFoundException("Company not found with id: " + companyId);
     }
 }
