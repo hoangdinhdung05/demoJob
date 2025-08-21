@@ -1,240 +1,221 @@
 package com.demoJob.demo.service.impl;
 
-import com.demoJob.demo.dto.request.Admin.Job.JobRequest;
-import com.demoJob.demo.dto.response.Admin.Job.CompanyJobResponse;
+import com.demoJob.demo.dto.request.Job.JobRequest;
+import com.demoJob.demo.dto.request.Job.JobUpdateRequest;
 import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
-import com.demoJob.demo.dto.response.Admin.SkillResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
-import com.demoJob.demo.entity.Company;
-import com.demoJob.demo.entity.Job;
-import com.demoJob.demo.entity.Skill;
-import com.demoJob.demo.repository.CompanyRepository;
-import com.demoJob.demo.repository.JobRepository;
-import com.demoJob.demo.repository.SkillRepository;
+import com.demoJob.demo.entity.*;
+import com.demoJob.demo.exception.InvalidDataException;
+import com.demoJob.demo.exception.NotFoundException;
+import com.demoJob.demo.repository.*;
+import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
+import com.demoJob.demo.service.MailService;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.enums.JobStatus;
+import com.demoJob.demo.util.enums.UserCompanyStatus;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.demoJob.demo.mapper.JobMapper.buildJob;
+import static com.demoJob.demo.mapper.JobMapper.toResponse;
+
 @Service
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
-    private final SkillRepository skillRepository;
     private final CompanyRepository companyRepository;
+    private final SkillRepository skillRepository;
+    private final MailService mailService;
+    private final UserRepository userRepository;
+    private final UserCompanyRepository userCompanyRepository;
 
+    /**
+     * Admin và người tạo Job có thể tạo Job
+     * Admin tạo job => ACTIVE luôn
+     * User tạo Job => sendmail => Admin check => ACTIVE || REJECT
+     *
+     * @param request thông tin Job cần tạo
+     */
     @Override
     public JobResponse createJob(JobRequest request) {
 
-        log.info("Create a job with name={}", request.getName());
+        // Get current user and get active company
+        User user = getCurrentUser();
+        boolean isAdmin = SecurityUtils.hasRole("ADMIN");
+        Company company = getCompanyAndCheckActive(request);
 
-        //check cty
-        Company company = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+        // Validate permission
+        checkPermissionCreateJob(user, company, isAdmin);
 
-        List<Skill> skills = fetchSkillsByIds(request.getSkillIds());
+        // Get and validate skills
+        List<Skill> skillList = getAllSkillById(request.getSkillIds());
 
-        Job job = Job.builder()
-                .name(request.getName())
-                .location(request.getLocation())
-                .salary(request.getSalary())
-                .quantity(request.getQuantity())
-                .level(request.getLevel())
-                .description(request.getDescription())
-                .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
-                .status(request.getStatus())
-                .company(company)
-                .skills(skills)
-                .build();
+        //save in DB
+        Job job = buildJob(request, company, skillList, isAdmin);
+        try {
+            job = jobRepository.save(job);
+        } catch (Exception e) {
+            log.error("Failed to save job: {}", e.getMessage());
+            throw new RuntimeException("Failed to create job", e);
+        }
 
-        job = jobRepository.save(job);
+        // Send notification to admin
+        if (!isAdmin) {
+            try {
+                mailService.sendJobRegistrationNotification(job, user);
+                log.info("Notification sent to admin for job creation - jobName: {}, jobId: {}",
+                        job.getName(), job.getId());
+            } catch (Exception e) {
+                log.error("Failed to send job registration notification for jobId: {}", job.getId(), e);
+            }
+        }
 
-        log.info("Create a job successfully with job id={}", job.getId());
+        log.info("Job created successfully - jobId: {}, status: {}, created by: {}",
+                job.getId(), job.getStatus(), user.getEmail());
 
-        return convertToJob(job);
-
+        return toResponse(job);
     }
 
+    /**
+     * Admin và người tạo Job có thể update Job
+     *
+     * @param request thông tin cần update
+     */
     @Override
-    public JobResponse updateJob(long jobId, JobRequest request) {
-
-        log.info("Updating job: {}", request.getName());
-
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-
-        Company company = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-
-        List<Skill> skills = fetchSkillsByIds(request.getSkillIds());
-
-        job.setName(request.getName());
-        job.setLocation(request.getLocation());
-        job.setSalary(request.getSalary());
-        job.setQuantity(request.getQuantity());
-        job.setLevel(request.getLevel());
-        job.setDescription(request.getDescription());
-        job.setStartDate(request.getStartDate());
-        job.setEndDate(request.getEndDate());
-        job.setStatus(request.getStatus());
-        job.setCompany(company);
-        job.setSkills(skills);
-
-        Job jobUpdate = jobRepository.save(job);
-
-        log.info("Update a job successfully with job id={}", jobId);
-
-        return convertToJob(jobUpdate);
+    public JobResponse updateJob(JobUpdateRequest request) {
+        return null;
     }
 
+    /**
+     * Dùng chung cho Admin và nguời tạo Job
+     * Soft delete
+     *
+     * @param jobId id Job cần xóa
+     */
     @Override
     public void deleteJob(long jobId) {
 
-        log.warn("Deleting job ID: {}", jobId);
-
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-
-        job.setStatus(JobStatus.INACTIVE);
-
-        jobRepository.save(job);
     }
 
+    /**
+     * Admin xem xét đổi status của Job khi người tạo job sendmail đến
+     * Có thể thay đổi mọi trạng thái
+     *
+     * @param jobId id Job cần thay đổi status
+     * @param jobStatus status cần đổi
+     */
     @Override
     public JobResponse changJobStatus(long jobId, JobStatus jobStatus) {
-
-        log.warn("Change job status with job ID: {}", jobId);
-
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-
-        job.setStatus(jobStatus);
-
-        job = jobRepository.save(job);
-
-        return convertToJob(job);
+        return null;
     }
 
+    /**
+     * Dùng chung logic cho cả User, Admin và người có Owner trong CTY
+     * Nhưng User chỉ xem được những Job đã ACTIVE
+     * Còn Admin và Owner(người tạo Job thì xem job)
+     *
+     * @param id id Job cần lấy
+     */
     @Override
-    public JobResponse getById(Long id) {
-
-        log.info("Fetching job by ID: {}", id);
-
-        Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-        return convertToJob(job);
+    public JobResponse getJobById(Long id) {
+        return null;
     }
 
-    @Override
-    public List<JobResponse> getByCompanyId(Long companyId) {
-
-        log.info("Getting jobs for company ID: {}", companyId);
-
-        List<Job> jobs = jobRepository.findAll()
-                .stream()
-                .filter(job -> job.getCompany().getId().equals(companyId))
-                .toList();
-
-        return jobs.stream().map(this::convertToJob).toList();
-    }
-
-    @Override
-    public List<JobResponse> getBySkillId(Long skillId) {
-
-        log.info("Getting jobs for skill ID: {}", skillId);
-
-        List<Job> jobs = jobRepository.findAll()
-                .stream()
-                .filter(job -> job.getSkills().stream().anyMatch(skill -> skill.getId().equals(skillId)))
-                .toList();
-
-        return jobs.stream().map(this::convertToJob).toList();
-    }
-
-    @Override
-    public List<JobResponse> searchByName(String keyword) {
-
-        log.info("Searching jobs by name containing: {}", keyword);
-
-        return jobRepository.findAll()
-                .stream()
-                .filter(job -> job.getName().toLowerCase().contains(keyword.toLowerCase()))
-                .map(this::convertToJob)
-                .toList();
-    }
-
-    @Override
-    public List<JobResponse> getAlls() {
-
-        log.info("Fetching all jobs");
-
-        return jobRepository.findAll()
-                .stream()
-                .map(this::convertToJob)
-                .toList();
-    }
-
+    /**
+     * Dùng chung logic cho cả User, Admin và người có Owner trong CTY
+     * Nhưng User chỉ xem được những Job đã ACTIVE
+     * Còn Admin và Owner(người tạo Job thì xem all job)
+     *
+     */
     @Override
     public PageResponse<?> getAllPage(int page, int size) {
-
-        Page<Job> jobPage = jobRepository.findAll(PageRequest.of(page, size));
-
-        List<JobResponse> list = jobPage.stream()
-                .map(this::convertToJob)
-                .toList();
-
-        return PageResponse.<JobResponse>builder()
-                .page(jobPage.getNumber() + 1)
-                .size(jobPage.getSize())
-                .total(jobPage.getTotalElements())
-                .items(list)
-                .build();
+        return null;
     }
 
-    //================//==================//
+    //========== PRIVATE METHOD ==========//
 
-    private JobResponse convertToJob(Job job) {
-        return JobResponse.builder()
-                .id(job.getId())
-                .name(job.getName())
-                .location(job.getLocation())
-                .salary(job.getSalary())
-                .quantity(job.getQuantity())
-                .level(job.getLevel())
-                .description(job.getDescription())
-                .startDate(job.getStartDate())
-                .endDate(job.getEndDate())
-                .status(job.getStatus())
-                .company(CompanyJobResponse.builder()
-                        .id(job.getCompany().getId())
-                        .name(job.getCompany().getName())
-                        .build())
-                .skills(job.getSkills().stream()
-                        .map(skill -> SkillResponse.builder()
-                                .id(skill.getId())
-                                .name(skill.getName())
-                                .description(skill.getDescription())
-                                .build())
-                        .collect(Collectors.toSet()))
-                .build();
+    private void checkPermissionCreateJob(User user, Company company, boolean isAdmin) {
+        if (isAdmin) {
+            log.debug("Admin user {} creating job for company {}", user.getEmail(), company.getName());
+            return;
+        }
+
+        Optional<UserCompany> userCompanyOpt = userCompanyRepository
+                .findByCompanyIdAndIsOwnerTrueAndStatus(company.getId(), UserCompanyStatus.ACTIVE);
+
+        if (userCompanyOpt.isEmpty()) {
+            throw new InvalidDataException("Company does not have an active owner");
+        }
+
+        UserCompany userCompany = userCompanyOpt.get();
+        if (!userCompany.getUser().getId().equals(user.getId())) {
+            throw new InvalidDataException("Bạn không có quyền tạo Job cho công ty này. Chỉ owner của công ty mới có thể tạo Job");
+        }
+
+        log.debug("User {} verified as owner of company {}", user.getEmail(), company.getName());
     }
 
-    private List<Skill> fetchSkillsByIds(List<Long> skillIds) {
-        if (skillIds == null || skillIds.isEmpty()) return List.of();
+    private Company getCompanyAndCheckActive(JobRequest request) {
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new NotFoundException("Company not found"));
 
-        List<Skill> skills = skillRepository.findAllById(skillIds);
-        if (skills.size() != skillIds.size()) {
-            throw new RuntimeException("Some skill don`t exists");
+        if (company.getStatus() != CompanyStatus.ACTIVE) {
+            throw new InvalidDataException("Không thể tạo Job khi Company chưa được ACTIVE. Vui lòng đợi Admin duyệt Company");
+        }
+        return company;
+    }
+
+    private List<Skill> getAllSkillById(List<Long> skillIds) {
+        if (skillIds == null || skillIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Long> uniqueSkillIds = skillIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (uniqueSkillIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Skill> skills = skillRepository.findAllById(uniqueSkillIds);
+
+        if (skills.size() != uniqueSkillIds.size()) {
+            List<Long> foundSkillIds = skills.stream()
+                    .map(Skill::getId)
+                    .toList();
+            List<Long> missingSkillIds = uniqueSkillIds.stream()
+                    .filter(id -> !foundSkillIds.contains(id))
+                    .toList();
+
+            throw new InvalidDataException("Skills not found: " + missingSkillIds);
         }
 
         return skills;
+    }
+
+    //Em thấy cái này dủng nhiều => chắc tách riêng sang utils
+    private User getCurrentUser() {
+        try {
+            long userId = SecurityUtils.getCurrentUserId();
+            return userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("Current user not found with ID: " + userId));
+        } catch (NumberFormatException e) {
+            throw new SecurityException("Invalid user ID format", e);
+        } catch (Exception e) {
+            throw new SecurityException("Authentication error: " + e.getMessage(), e);
+        }
     }
 }

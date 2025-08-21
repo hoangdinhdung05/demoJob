@@ -7,7 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -19,7 +19,7 @@ public class JobResponse {
     private Long id;
     private String name;
     private String location;
-    private double salary;
+    private BigDecimal salary;
     private int quantity;
     private LevelEnum level;
     private String description;

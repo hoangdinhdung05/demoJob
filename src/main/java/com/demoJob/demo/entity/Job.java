@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -30,7 +30,7 @@ public class Job extends AbstractEntity<Long> {
     private String location;
 
     @Min(value = 0, message = "Lương không được âm")
-    private double salary;
+    private BigDecimal salary;
 
     @Min(value = 1, message = "Số lượng phải lớn hơn 0")
     private int quantity;
