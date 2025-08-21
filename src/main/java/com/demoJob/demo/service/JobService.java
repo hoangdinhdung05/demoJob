@@ -16,7 +16,12 @@ public interface JobService {
 
     JobResponse changJobStatus(long jobId, JobStatus jobStatus);
 
-    JobResponse getById(Long id);
+    /**
+     * Dùng chung logic cho cả User, Admin và người có Owner trong CTY
+     * Nhưng User chỉ xem được những Job đã ACTIVE
+     * Còn Admin và Owner(người tạo Job thì xem job)
+     */
+    JobResponse getJobById(Long id);
 
     List<JobResponse> getByCompanyId(Long companyId);
 
@@ -26,6 +31,11 @@ public interface JobService {
 
     List<JobResponse> getAlls();
 
+    /**
+     * Dùng chung logic cho cả User, Admin và người có Owner trong CTY
+     * Nhưng User chỉ xem được những Job đã ACTIVE
+     * Còn Admin và Owner(người tạo Job thì xem all job)
+     */
     PageResponse<?> getAllPage(int page, int size);
 
 }
