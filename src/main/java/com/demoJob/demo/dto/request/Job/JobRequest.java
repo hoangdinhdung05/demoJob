@@ -18,7 +18,7 @@ public class JobRequest {
     private String location;
 
     @Min(value = 0, message = "Lương không được âm")
-    private BigDecimal salary;
+    private double salary;
 
     @Min(value = 1, message = "Số lượng phải lớn hơn 0")
     @Max(value = 50, message = "Số lượng phải bé hơn 50")

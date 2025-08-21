@@ -19,7 +19,7 @@ public class JobResponse {
     private Long id;
     private String name;
     private String location;
-    private BigDecimal salary;
+    private double salary;
     private int quantity;
     private LevelEnum level;
     private String description;

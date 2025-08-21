@@ -10,21 +10,17 @@ import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.repository.*;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
-import com.demoJob.demo.service.MailService;
+import com.demoJob.demo.util.UserUtil;
 import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.enums.JobStatus;
 import com.demoJob.demo.util.enums.UserCompanyStatus;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
-
 import static com.demoJob.demo.mapper.JobMapper.buildJob;
 import static com.demoJob.demo.mapper.JobMapper.toResponse;
 
@@ -36,9 +32,8 @@ public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final CompanyRepository companyRepository;
     private final SkillRepository skillRepository;
-    private final MailService mailService;
-    private final UserRepository userRepository;
     private final UserCompanyRepository userCompanyRepository;
+    private final UserUtil userUtil;
 
     /**
      * Admin và người tạo Job có thể tạo Job
@@ -51,7 +46,7 @@ public class JobServiceImpl implements JobService {
     public JobResponse createJob(JobRequest request) {
 
         // Get current user and get active company
-        User user = getCurrentUser();
+        User user = userUtil.getCurrentUser();
         boolean isAdmin = SecurityUtils.hasRole("ADMIN");
         Company company = getCompanyAndCheckActive(request);
 
@@ -68,17 +63,6 @@ public class JobServiceImpl implements JobService {
         } catch (Exception e) {
             log.error("Failed to save job: {}", e.getMessage());
             throw new RuntimeException("Failed to create job", e);
-        }
-
-        // Send notification to admin
-        if (!isAdmin) {
-            try {
-                mailService.sendJobRegistrationNotification(job, user);
-                log.info("Notification sent to admin for job creation - jobName: {}, jobId: {}",
-                        job.getName(), job.getId());
-            } catch (Exception e) {
-                log.error("Failed to send job registration notification for jobId: {}", job.getId(), e);
-            }
         }
 
         log.info("Job created successfully - jobId: {}, status: {}, created by: {}",
@@ -151,14 +135,10 @@ public class JobServiceImpl implements JobService {
             return;
         }
 
-        Optional<UserCompany> userCompanyOpt = userCompanyRepository
-                .findByCompanyIdAndIsOwnerTrueAndStatus(company.getId(), UserCompanyStatus.ACTIVE);
+        UserCompany userCompany = userCompanyRepository
+                .findByCompanyIdAndIsOwnerTrueAndStatus(company.getId(), UserCompanyStatus.ACTIVE)
+                .orElseThrow(() -> new InvalidDataException("Company does not have an active owner"));
 
-        if (userCompanyOpt.isEmpty()) {
-            throw new InvalidDataException("Company does not have an active owner");
-        }
-
-        UserCompany userCompany = userCompanyOpt.get();
         if (!userCompany.getUser().getId().equals(user.getId())) {
             throw new InvalidDataException("Bạn không có quyền tạo Job cho công ty này. Chỉ owner của công ty mới có thể tạo Job");
         }
@@ -204,18 +184,5 @@ public class JobServiceImpl implements JobService {
         }
 
         return skills;
-    }
-
-    //Em thấy cái này dủng nhiều => chắc tách riêng sang utils
-    private User getCurrentUser() {
-        try {
-            long userId = SecurityUtils.getCurrentUserId();
-            return userRepository.findById(userId)
-                    .orElseThrow(() -> new EntityNotFoundException("Current user not found with ID: " + userId));
-        } catch (NumberFormatException e) {
-            throw new SecurityException("Invalid user ID format", e);
-        } catch (Exception e) {
-            throw new SecurityException("Authentication error: " + e.getMessage(), e);
-        }
     }
 }
