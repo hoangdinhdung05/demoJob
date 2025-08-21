@@ -33,21 +33,4 @@ public class JobController {
                 .body(new ResponseData<>(HttpStatus.CREATED.value(),
                         "API create job successfully", jobService.createJob(request)));
     }
-
-    @GetMapping("/{jobId}")
-    public ResponseEntity<?> getJobById(@PathVariable Long jobId) {
-        log.info("API get info job by id");
-        return ResponseEntity.ok(
-                new ResponseData<>(HttpStatus.OK.value(),
-                        "API get info job by id successfully", jobService.getJobById(jobId)));
-    }
-
-    @GetMapping
-    public ResponseEntity<?> getAllJobs(@RequestParam(defaultValue = "0") int page,
-                                        @RequestParam(defaultValue = "10") int size) {
-        log.info("API get list job");
-        return ResponseEntity.ok(
-                new ResponseData<>(HttpStatus.OK.value(),
-                        "API get list job successfully", jobService.getAllPage(page, size)));
-    }
 }

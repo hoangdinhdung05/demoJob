@@ -7,7 +7,6 @@ import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.*;
 import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.exception.NotFoundException;
-import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.*;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
@@ -18,14 +17,14 @@ import com.demoJob.demo.util.enums.UserCompanyStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import static com.demoJob.demo.mapper.JobMapper.buildJob;
 import static com.demoJob.demo.mapper.JobMapper.toResponse;
 
@@ -130,9 +129,7 @@ public class JobServiceImpl implements JobService {
      */
     @Override
     public JobResponse getJobById(Long id) {
-        Job job = checkAvtiveJob(id);
-        log.info("Get info job successfully with jobId={}", id);
-        return toResponse(job);
+        return null;
     }
 
     /**
@@ -143,26 +140,7 @@ public class JobServiceImpl implements JobService {
      */
     @Override
     public PageResponse<?> getAllPage(int page, int size) {
-        Page<Job> jobPage;
-
-        if (checkRole()) {
-            jobPage = jobRepository.findAll(PageRequest.of(page, size));
-        } else {
-            jobPage = jobRepository.findByStatus(JobStatus.ACTIVE, PageRequest.of(page, size));
-        }
-
-        List<JobResponse> responses = jobPage.stream()
-                .map(JobMapper::toResponse)
-                .toList();
-
-        log.info("Get alls job successfully");
-
-        return PageResponse.<JobResponse>builder()
-                .page(jobPage.getNumber())
-                .size(jobPage.getSize())
-                .total(jobPage.getTotalElements())
-                .items(responses)
-                .build();
+        return null;
     }
 
     //========== PRIVATE METHOD ==========//
@@ -239,25 +217,5 @@ public class JobServiceImpl implements JobService {
         } catch (Exception e) {
             throw new SecurityException("Authentication error: " + e.getMessage(), e);
         }
-    }
-
-    private boolean checkRole() {
-        return SecurityUtils.hasRole("ADMIN") || SecurityUtils.hasRole("MANAGER");
-    }
-
-    private Job getJobByIdOrThrow(Long jobId) {
-        return jobRepository.findById(jobId)
-                .orElseThrow(() -> new NotFoundException("Job not found with id: " + jobId));
-    }
-
-    private Job checkAvtiveJob(Long jobId) {
-        Job job = getJobByIdOrThrow(jobId);
-
-        if (job.getStatus() == JobStatus.ACTIVE) return job;
-        if ((checkRole())) return job;
-        User user = SecurityUtils.getCurrentUserDetails().getUser();
-        if (user.getUsername().equals(job.getCreatedBy())) return job;
-
-        throw new NotFoundException("Job not found");
     }
 }
