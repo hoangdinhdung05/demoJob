@@ -5,8 +5,6 @@ import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
 import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Skill;
-import com.demoJob.demo.util.enums.JobStatus;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,17 +29,17 @@ public class JobMapper {
                 .build();
     }
 
-    public static Job buildJob(JobRequest request, Company company, List<Skill> skillList, boolean isAdmin) {
+    public static Job buildJob(JobRequest request, Company company, List<Skill> skillList) {
         return Job.builder()
-                .name(request.getName().trim())
-                .location(request.getLocation() != null ? request.getLocation().trim() : null)
+                .name(request.getName())
+                .location(request.getLocation())
                 .salary(request.getSalary())
                 .quantity(request.getQuantity())
                 .level(request.getLevel())
-                .description(request.getDescription() != null ? request.getDescription().trim() : null)
+                .description(request.getDescription())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
-                .status(isAdmin ? JobStatus.ACTIVE : JobStatus.PENDING)
+                .status(request.getStatus())
                 .company(company)
                 .skills(skillList)
                 .build();
