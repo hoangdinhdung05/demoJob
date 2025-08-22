@@ -2,7 +2,6 @@ package com.demoJob.demo.controller;
 
 import com.demoJob.demo.dto.request.Job.JobRequest;
 import com.demoJob.demo.dto.response.Job.JobResponse;
-import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.service.JobService;
