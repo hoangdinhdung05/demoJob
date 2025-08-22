@@ -1,16 +1,16 @@
 package com.demoJob.demo.service.impl;
 
-import com.demoJob.demo.dto.request.Admin.Job.JobRequest;
-import com.demoJob.demo.dto.response.Admin.Job.CompanyJobResponse;
-import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
-import com.demoJob.demo.dto.response.Admin.SkillResponse;
+import com.demoJob.demo.dto.request.Job.JobRequest;
+import com.demoJob.demo.dto.response.Job.JobResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
-import com.demoJob.demo.entity.Company;
-import com.demoJob.demo.entity.Job;
-import com.demoJob.demo.entity.Skill;
+import com.demoJob.demo.entity.*;
+import com.demoJob.demo.exception.InvalidDataException;
+import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.repository.CompanyRepository;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SkillRepository;
+import com.demoJob.demo.repository.UserCompanyRepository;
+import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
 import com.demoJob.demo.util.UserUtil;
 import com.demoJob.demo.util.enums.CompanyStatus;
@@ -34,11 +34,12 @@ public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final SkillRepository skillRepository;
     private final CompanyRepository companyRepository;
+    private final UserCompanyRepository userCompanyRepository;
+    private final UserUtil userUtil;
 
     /**
      * Admin và người tạo Job có thể tạo Job
      * Admin tạo job => ACTIVE luôn
-     * User tạo Job => sendmail => Admin check => ACTIVE || REJECT
      *
      * @param request thông tin Job cần tạo
      */
@@ -209,40 +210,60 @@ public class JobServiceImpl implements JobService {
 
     //================//==================//
 
-    private JobResponse convertToJob(Job job) {
-        return JobResponse.builder()
-                .id(job.getId())
-                .name(job.getName())
-                .location(job.getLocation())
-                .salary(job.getSalary())
-                .quantity(job.getQuantity())
-                .level(job.getLevel())
-                .description(job.getDescription())
-                .startDate(job.getStartDate())
-                .endDate(job.getEndDate())
-                .status(job.getStatus())
-                .company(CompanyJobResponse.builder()
-                        .id(job.getCompany().getId())
-                        .name(job.getCompany().getName())
-                        .build())
-                .skills(job.getSkills().stream()
-                        .map(skill -> SkillResponse.builder()
-                                .id(skill.getId())
-                                .name(skill.getName())
-                                .description(skill.getDescription())
-                                .build())
-                        .collect(Collectors.toSet()))
-                .build();
-    }
+    private List<Skill> getAllSkillById(List<Long> skillIds) {
+        if (skillIds == null || skillIds.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-    private List<Skill> fetchSkillsByIds(List<Long> skillIds) {
-        if (skillIds == null || skillIds.isEmpty()) return List.of();
+        List<Long> uniqueSkillIds = skillIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
 
-        List<Skill> skills = skillRepository.findAllById(skillIds);
-        if (skills.size() != skillIds.size()) {
-            throw new RuntimeException("Some skill don`t exists");
+        if (uniqueSkillIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Skill> skills = skillRepository.findAllById(uniqueSkillIds);
+
+        if (skills.size() != uniqueSkillIds.size()) {
+            List<Long> foundSkillIds = skills.stream()
+                    .map(Skill::getId)
+                    .toList();
+            List<Long> missingSkillIds = uniqueSkillIds.stream()
+                    .filter(id -> !foundSkillIds.contains(id))
+                    .toList();
+
+            throw new InvalidDataException("Skills not found: " + missingSkillIds);
         }
 
         return skills;
+    }
+
+    private void checkPermissionCreateJob(User user, Company company, boolean isAdmin) {
+        if (isAdmin) {
+            log.debug("Admin user {} creating job for company {}", user.getEmail(), company.getName());
+            return;
+        }
+
+        UserCompany userCompany = userCompanyRepository
+                .findByCompanyIdAndIsOwnerTrueAndStatus(company.getId(), UserCompanyStatus.ACTIVE)
+                .orElseThrow(() -> new InvalidDataException("Company does not have an active owner"));
+
+        if (!userCompany.getUser().getId().equals(user.getId())) {
+            throw new InvalidDataException("Bạn không có quyền tạo Job cho công ty này. Chỉ owner của công ty mới có thể tạo Job");
+        }
+
+        log.debug("User {} verified as owner of company {}", user.getEmail(), company.getName());
+    }
+
+    private Company getCompanyAndCheckActive(JobRequest request) {
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new NotFoundException("Company not found"));
+
+        if (company.getStatus() != CompanyStatus.ACTIVE) {
+            throw new InvalidDataException("Không thể tạo Job khi Company chưa được ACTIVE. Vui lòng đợi Admin duyệt Company");
+        }
+        return company;
     }
 }

@@ -1,13 +1,17 @@
 package com.demoJob.demo.service;
 
-import com.demoJob.demo.dto.request.Admin.Job.JobRequest;
-import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
+import com.demoJob.demo.dto.request.Job.JobRequest;
+import com.demoJob.demo.dto.response.Job.JobResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.util.enums.JobStatus;
 import java.util.List;
 
 public interface JobService {
 
+    /**
+     * Admin và người tạo Job có thể tạo Job
+     * Admin tạo job => ACTIVE luôn
+     */
     JobResponse createJob(JobRequest request);
 
     JobResponse updateJob(long jobId, JobRequest request);
