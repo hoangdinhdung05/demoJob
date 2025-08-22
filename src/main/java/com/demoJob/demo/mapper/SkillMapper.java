@@ -12,5 +12,4 @@ public class SkillMapper {
                 .description(skill.getDescription())
                 .build();
     }
-
 }

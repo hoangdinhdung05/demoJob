@@ -35,18 +35,15 @@ public class JobController {
                         "API create job successfully", jobService.createJob(request)));
     }
 
-    @GetMapping("/admin/{jobId}")
-    public ResponseData<?> adminGetJobById(@PathVariable @Min(1) Long jobId) {
-        log.info("API admin get job by ID: {}", jobId);
-
-        try {
-            JobResponse job = jobService.getById(jobId);
-            return new ResponseData<>(HttpStatus.OK.value(), "Get job by ID successfully", job);
-        } catch (Exception e) {
-            log.error("Get job by ID failed: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Get job by ID failed");
-        }
-    }
+    /**
+     * Get info job by jobId
+     */
+    @GetMapping("/{jobId}")
+    public ResponseEntity<?> getJobById(@PathVariable Long jobId) {
+        log.info("API get job by ID: {}", jobId);
+        return ResponseEntity.ok(
+                new ResponseData<>(HttpStatus.OK.value(),
+                        "API get info job by id successfully", jobService.getJobById(jobId)));    }
 
     @PatchMapping("/admin/{jobId}")
     public ResponseData<?> adminUpdateJob(@PathVariable @Min(1) Long jobId, @RequestBody @Valid JobRequest request) {
@@ -88,16 +85,15 @@ public class JobController {
         }
     }
 
-    @GetMapping("/admin/getAll")
-    public ResponseData<?> adminGetAllJobs(@RequestParam int page, @RequestParam int size) {
-        log.info("API admin get all jobs with pagination");
-
-        try {
-            PageResponse<?> response = jobService.getAllPage(page, size);
-            return new ResponseData<>(HttpStatus.OK.value(), "Get jobs successfully", response);
-        } catch (Exception e) {
-            log.error("Get all jobs failed: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Get all jobs failed");
-        }
+    /**
+     * Get list info Job
+     */
+    @GetMapping
+    public ResponseEntity<?> getListJob(@RequestParam(defaultValue = "0") int page,
+                                           @RequestParam(defaultValue = "10") int size) {
+        log.info("API get list job");
+        return ResponseEntity.ok(
+                new ResponseData<>(HttpStatus.OK.value(),
+                        "API get list job successfully", jobService.getAllPage(page, size)));
     }
 }
