@@ -135,7 +135,7 @@ public class JobServiceImpl implements JobService {
      */
     @Override
     public JobResponse getJobById(Long id) {
-        Job job = checkAvtiveJob(id);
+        Job job = getJobByPermission(id);
         log.info("Get info job successfully with jobId={}", id);
         return toResponse(job);
     }
@@ -260,7 +260,7 @@ public class JobServiceImpl implements JobService {
                 .orElseThrow(() -> new NotFoundException("Job not found with id: " + jobId));
     }
 
-    private Job checkAvtiveJob(Long jobId) {
+    private Job getJobByPermission(Long jobId) {
         Job job = getJobByIdOrThrow(jobId);
 
         if (job.getStatus() == JobStatus.ACTIVE) return job;
