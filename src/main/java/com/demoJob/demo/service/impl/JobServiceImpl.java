@@ -8,9 +8,13 @@ import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Skill;
+import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.NotFoundException;
+import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.CompanyRepository;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SkillRepository;
+import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
 import com.demoJob.demo.util.enums.JobStatus;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
+import static com.demoJob.demo.mapper.JobMapper.toResponse;
 
 @Service
 @Slf4j
@@ -123,14 +128,16 @@ public class JobServiceImpl implements JobService {
         return convertToJob(job);
     }
 
+    /**
+     * Dùng chung logic cho cả User, Admin và người có Owner trong CTY
+     * Nhưng User chỉ xem được những Job đã ACTIVE
+     * Còn Admin và Owner(người tạo Job thì xem job)
+     */
     @Override
-    public JobResponse getById(Long id) {
-
-        log.info("Fetching job by ID: {}", id);
-
-        Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-        return convertToJob(job);
+    public JobResponse getJobById(Long id) {
+        Job job = getJobByPermission(id);
+        log.info("Get info job successfully with jobId={}", id);
+        return toResponse(job);
     }
 
     @Override
@@ -185,14 +192,20 @@ public class JobServiceImpl implements JobService {
     @Override
     public PageResponse<?> getAllPage(int page, int size) {
 
-        Page<Job> jobPage = jobRepository.findAll(PageRequest.of(page, size));
+        Page<Job> jobPage;
+
+        if (checkRole()) {
+            jobPage = jobRepository.findAll(PageRequest.of(page, size));
+        } else {
+            jobPage = jobRepository.findByStatus(JobStatus.ACTIVE, PageRequest.of(page, size));
+        }
 
         List<JobResponse> list = jobPage.stream()
-                .map(this::convertToJob)
+                .map(JobMapper::toResponse)
                 .toList();
 
         return PageResponse.<JobResponse>builder()
-                .page(jobPage.getNumber() + 1)
+                .page(jobPage.getNumber())
                 .size(jobPage.getSize())
                 .total(jobPage.getTotalElements())
                 .items(list)
@@ -236,5 +249,25 @@ public class JobServiceImpl implements JobService {
         }
 
         return skills;
+    }
+
+    private boolean checkRole() {
+        return SecurityUtils.hasRole("ADMIN") || SecurityUtils.hasRole("MANAGER");
+    }
+
+    private Job getJobByIdOrThrow(Long jobId) {
+        return jobRepository.findById(jobId)
+                .orElseThrow(() -> new NotFoundException("Job not found with id: " + jobId));
+    }
+
+    private Job getJobByPermission(Long jobId) {
+        Job job = getJobByIdOrThrow(jobId);
+
+        if (job.getStatus() == JobStatus.ACTIVE) return job;
+        if ((checkRole())) return job;
+        User user = SecurityUtils.getCurrentUserDetails().getUser();
+        if (user.getUsername().equals(job.getCreatedBy())) return job;
+
+        throw new NotFoundException("Job not found");
     }
 }
