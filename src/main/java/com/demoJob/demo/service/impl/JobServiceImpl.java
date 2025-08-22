@@ -9,6 +9,7 @@ import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Skill;
 import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.CompanyRepository;
@@ -16,6 +17,8 @@ import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SkillRepository;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
+import com.demoJob.demo.util.UserCompanyUtil;
+import com.demoJob.demo.util.UserUtil;
 import com.demoJob.demo.util.enums.JobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +37,8 @@ public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final SkillRepository skillRepository;
     private final CompanyRepository companyRepository;
+    private final UserCompanyUtil userCompanyUtil;
+    private final UserUtil userUtil;
 
     @Override
     public JobResponse createJob(JobRequest request) {
@@ -103,14 +108,18 @@ public class JobServiceImpl implements JobService {
     @Override
     public void deleteJob(long jobId) {
 
-        log.warn("Deleting job ID: {}", jobId);
+        Job job = getJobByIdOrThrow(jobId);
+        Company company = job.getCompany();
+        User currentUser = userUtil.getCurrentUser();
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+        if (!SecurityUtils.hasRole("ADMIN") && !SecurityUtils.hasRole("MANAGER") && !userCompanyUtil.isOwner(currentUser, company)) {
+            throw new InvalidDataException("Bạn không đủ quyền hạn xóa jobId: " + jobId);
+        }
 
-        job.setStatus(JobStatus.INACTIVE);
-
+        job.setStatus(JobStatus.DELETE);
         jobRepository.save(job);
+
+        log.info("Delete job with jobId={} successfully", jobId);
     }
 
     @Override
