@@ -1,8 +1,8 @@
 package com.demoJob.demo.controller;
 
-import com.demoJob.demo.dto.request.Admin.Job.JobRequest;
+import com.demoJob.demo.dto.request.Job.JobRequest;
+import com.demoJob.demo.dto.request.Job.JobStatusRequest;
 import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
-import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.service.JobService;
@@ -46,17 +46,14 @@ public class JobController {
                 new ResponseData<>(HttpStatus.OK.value(),
                         "API get info job by id successfully", jobService.getJobById(jobId)));    }
 
-    @PatchMapping("/admin/{jobId}")
-    public ResponseData<?> adminUpdateJob(@PathVariable @Min(1) Long jobId, @RequestBody @Valid JobRequest request) {
-        log.info("API admin update job ID: {}", jobId);
-
-        try {
-            JobResponse response = jobService.updateJob(jobId, request);
-            return new ResponseData<>(HttpStatus.OK.value(), "Job updated successfully", response);
-        } catch (Exception e) {
-            log.error("Update job failed: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Update job failed");
-        }
+    /**
+     * Admin và Owner dùng để update info của job
+     */
+    @PatchMapping("/{jobId}")
+    public ResponseEntity<?> updateJob(@PathVariable Long jobId, @RequestBody @Valid JobRequest request) {
+        log.info("API update job ID: {}", jobId);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "API update job successfully", jobService.updateJob(jobId, request)));
     }
 
     @DeleteMapping("/admin/{jobId}")
@@ -72,18 +69,17 @@ public class JobController {
         }
     }
 
-    @PatchMapping("/admin/change-status/{jobId}")
-    public ResponseData<?> adminChangeJobStatus(@PathVariable @Min(1) Long jobId,
-                                                @RequestParam JobStatus status) {
-        log.info("API admin change status of job ID: {} to {}", jobId, status);
-
-        try {
-            JobResponse job = jobService.changJobStatus(jobId, status);
-            return new ResponseData<>(HttpStatus.OK.value(), "Job status updated successfully", job);
-        } catch (Exception e) {
-            log.error("Change job status failed: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Change job status failed");
-        }
+    /**
+     * Admin và Owner dùng để update status của job
+     */
+    @PatchMapping("/{jobId}/status")
+    public ResponseEntity<?> adminChangeJobStatus(@PathVariable Long jobId,
+                                                @RequestBody JobStatusRequest status) {
+        log.info("API change status of job ID: {} to {}", jobId, status);
+        jobService.updateJobStatus(jobId, status);
+        return ResponseEntity.ok(
+                new ResponseData<>(HttpStatus.OK.value(),
+                        "Company status updated successfully"));
     }
 
     /**

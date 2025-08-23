@@ -1,20 +1,26 @@
 package com.demoJob.demo.service;
 
-import com.demoJob.demo.dto.request.Admin.Job.JobRequest;
+import com.demoJob.demo.dto.request.Job.JobRequest;
+import com.demoJob.demo.dto.request.Job.JobStatusRequest;
 import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
-import com.demoJob.demo.util.enums.JobStatus;
 import java.util.List;
 
 public interface JobService {
 
     JobResponse createJob(JobRequest request);
 
-    JobResponse updateJob(long jobId, JobRequest request);
+    /**
+     * Admin và owner update info cho Job
+     */
+    JobResponse updateJob(Long jobId, JobRequest request);
 
     void deleteJob(long jobId);
 
-    JobResponse changJobStatus(long jobId, JobStatus jobStatus);
+    /**
+     * Thay đổi trạng thái của job (Admin và owner)
+     */
+    void updateJobStatus(long jobId, JobStatusRequest jobStatus);
 
     /**
      * Dùng chung logic cho cả User, Admin và người có Owner trong CTY

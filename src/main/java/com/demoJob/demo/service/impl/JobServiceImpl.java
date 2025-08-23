@@ -1,6 +1,7 @@
 package com.demoJob.demo.service.impl;
 
-import com.demoJob.demo.dto.request.Admin.Job.JobRequest;
+import com.demoJob.demo.dto.request.Job.JobRequest;
+import com.demoJob.demo.dto.request.Job.JobStatusRequest;
 import com.demoJob.demo.dto.response.Admin.Job.CompanyJobResponse;
 import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
 import com.demoJob.demo.dto.response.Admin.SkillResponse;
@@ -9,6 +10,7 @@ import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Skill;
 import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.CompanyRepository;
@@ -16,6 +18,8 @@ import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SkillRepository;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
+import com.demoJob.demo.util.UserCompanyUtil;
+import com.demoJob.demo.util.UserUtil;
 import com.demoJob.demo.util.enums.JobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +38,8 @@ public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final SkillRepository skillRepository;
     private final CompanyRepository companyRepository;
+    private final UserUtil userUtil;
+    private final UserCompanyUtil userCompanyUtil;
 
     @Override
     public JobResponse createJob(JobRequest request) {
@@ -68,36 +74,27 @@ public class JobServiceImpl implements JobService {
 
     }
 
+    /**
+     * Admin và owner update info cho Job
+     */
     @Override
-    public JobResponse updateJob(long jobId, JobRequest request) {
+    public JobResponse updateJob(Long jobId, JobRequest request) {
+        Job job = getJobByIdOrThrow(jobId);
+        Company company = job.getCompany();
+        User currentUser = userUtil.getCurrentUser();
 
-        log.info("Updating job: {}", request.getName());
+        if (!SecurityUtils.hasRole("ADMIN")
+                && !SecurityUtils.hasRole("MANAGER")
+                && !userCompanyUtil.isOwner(currentUser, company)) {
+            throw new InvalidDataException("Bạn không đủ quyền hạn cập nhật jobId: " + jobId);
+        }
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+        updateRequestJob(request, job);
+        Job jobUpdated = jobRepository.save(job);
 
-        Company company = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+        log.info("Update job info successfully with jobId={}", jobId);
 
-        List<Skill> skills = fetchSkillsByIds(request.getSkillIds());
-
-        job.setName(request.getName());
-        job.setLocation(request.getLocation());
-        job.setSalary(request.getSalary());
-        job.setQuantity(request.getQuantity());
-        job.setLevel(request.getLevel());
-        job.setDescription(request.getDescription());
-        job.setStartDate(request.getStartDate());
-        job.setEndDate(request.getEndDate());
-        job.setStatus(request.getStatus());
-        job.setCompany(company);
-        job.setSkills(skills);
-
-        Job jobUpdate = jobRepository.save(job);
-
-        log.info("Update a job successfully with job id={}", jobId);
-
-        return convertToJob(jobUpdate);
+        return toResponse(jobUpdated);
     }
 
     @Override
@@ -113,19 +110,26 @@ public class JobServiceImpl implements JobService {
         jobRepository.save(job);
     }
 
+    /**
+     * Thay đổi trạng thái của job (Admin và owner)
+     */
     @Override
-    public JobResponse changJobStatus(long jobId, JobStatus jobStatus) {
+    public void updateJobStatus(long jobId, JobStatusRequest jobStatus) {
 
-        log.warn("Change job status with job ID: {}", jobId);
+        Job job = getJobByIdOrThrow(jobId);
+        Company company = job.getCompany();
+        User currentUser = userUtil.getCurrentUser();
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+        if (!SecurityUtils.hasRole("ADMIN")
+                && !SecurityUtils.hasRole("MANAGER")
+                && !userCompanyUtil.isOwner(currentUser, company)) {
+            throw new InvalidDataException("Bạn không đủ quyền hạn xóa jobId: " + job);
+        }
 
-        job.setStatus(jobStatus);
+        job.setStatus(jobStatus.getStatus());
+        jobRepository.save(job);
 
-        job = jobRepository.save(job);
-
-        return convertToJob(job);
+        log.info("Update status successfully with jobId={}", jobId);
     }
 
     /**
@@ -269,5 +273,18 @@ public class JobServiceImpl implements JobService {
         if (user.getUsername().equals(job.getCreatedBy())) return job;
 
         throw new NotFoundException("Job not found");
+    }
+
+    private void updateRequestJob(JobRequest request, Job job) {
+        List<Skill> skills = fetchSkillsByIds(request.getSkillIds());
+        job.setName(request.getName());
+        job.setLocation(request.getLocation());
+        job.setSalary(request.getSalary());
+        job.setQuantity(request.getQuantity());
+        job.setLevel(request.getLevel());
+        job.setDescription(request.getDescription());
+        job.setStartDate(request.getStartDate());
+        job.setEndDate(request.getEndDate());
+        job.setSkills(skills);
     }
 }
