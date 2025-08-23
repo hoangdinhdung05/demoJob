@@ -23,11 +23,20 @@ public interface JobService {
      */
     JobResponse getJobById(Long id);
 
-    List<JobResponse> getByCompanyId(Long companyId);
+    /**
+     * Tìm job thông qua Company
+     */
+    List<JobResponse> getJobByCompanyId(Long companyId);
 
-    List<JobResponse> getBySkillId(Long skillId);
+    /**
+     * User tìm job thông qua Skill
+     */
+    List<JobResponse> getJobBySkillName(String skillName);
 
-    List<JobResponse> searchByName(String keyword);
+    /**
+     * Tìm job theo keyword
+     */
+    List<JobResponse> searchJobByName(String keyword);
 
     List<JobResponse> getAlls();
 

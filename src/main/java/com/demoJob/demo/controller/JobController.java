@@ -2,7 +2,6 @@ package com.demoJob.demo.controller;
 
 import com.demoJob.demo.dto.request.Admin.Job.JobRequest;
 import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
-import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.service.JobService;
@@ -97,4 +96,29 @@ public class JobController {
                 new ResponseData<>(HttpStatus.OK.value(),
                         "API get list job successfully", jobService.getAllPage(page, size)));
     }
+
+    /**
+     * User tìm job theo companyId
+     */
+    @GetMapping("/company/{companyId}")
+    public ResponseEntity<?> getJobsByCompany(@PathVariable Long companyId) {
+        log.info("API get jobs by company ID: {}", companyId);
+        return ResponseEntity.ok(
+                new ResponseData<>(HttpStatus.OK.value(),
+                        "API get jobs by company successfully",
+                        jobService.getJobByCompanyId(companyId)));
+    }
+
+    /**
+     * User tìm job theo skillName
+     */
+    @GetMapping("/skill")
+    public ResponseEntity<?> getJobsBySkill(@RequestParam String skill) {
+        log.info("API get jobs by skill: {}", skill);
+        return ResponseEntity.ok(
+                new ResponseData<>(HttpStatus.OK.value(),
+                        "API get jobs by skill successfully",
+                        jobService.getJobBySkillName(skill)));
+    }
+
 }

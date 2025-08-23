@@ -23,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import static com.demoJob.demo.mapper.JobMapper.toResponse;
 
@@ -140,41 +141,52 @@ public class JobServiceImpl implements JobService {
         return toResponse(job);
     }
 
+    /**
+     * Tìm job thông qua Company
+     */
     @Override
-    public List<JobResponse> getByCompanyId(Long companyId) {
+    public List<JobResponse> getJobByCompanyId(Long companyId) {
 
         log.info("Getting jobs for company ID: {}", companyId);
 
-        List<Job> jobs = jobRepository.findAll()
+        return jobRepository.findAll()
                 .stream()
                 .filter(job -> job.getCompany().getId().equals(companyId))
+                .map(this::getJob)
+                .filter(Objects::nonNull)
+                .map(JobMapper::toResponse)
                 .toList();
-
-        return jobs.stream().map(this::convertToJob).toList();
     }
 
+    /**
+     * User tìm job thông qua Skill
+     */
     @Override
-    public List<JobResponse> getBySkillId(Long skillId) {
+    public List<JobResponse> getJobBySkillName(String skillName) {
+        log.info("Getting jobs for skill name: {}", skillName);
 
-        log.info("Getting jobs for skill ID: {}", skillId);
-
-        List<Job> jobs = jobRepository.findAll()
+        return jobRepository.findBySkillName(skillName)
                 .stream()
-                .filter(job -> job.getSkills().stream().anyMatch(skill -> skill.getId().equals(skillId)))
+                .map(this::getJob)
+                .filter(Objects::nonNull)
+                .map(JobMapper::toResponse)
                 .toList();
-
-        return jobs.stream().map(this::convertToJob).toList();
     }
 
+    /**
+     * Tìm job theo keyword
+     */
     @Override
-    public List<JobResponse> searchByName(String keyword) {
+    public List<JobResponse> searchJobByName(String keyword) {
 
         log.info("Searching jobs by name containing: {}", keyword);
 
         return jobRepository.findAll()
                 .stream()
                 .filter(job -> job.getName().toLowerCase().contains(keyword.toLowerCase()))
-                .map(this::convertToJob)
+                .map(this::getJob)
+                .filter(Objects::nonNull)
+                .map(JobMapper::toResponse)
                 .toList();
     }
 
@@ -269,5 +281,13 @@ public class JobServiceImpl implements JobService {
         if (user.getUsername().equals(job.getCreatedBy())) return job;
 
         throw new NotFoundException("Job not found");
+    }
+
+    private Job getJob(Job job) {
+        try {
+            return getJobByPermission(job.getId());
+        } catch (NotFoundException e) {
+            return null;
+        }
     }
 }
