@@ -5,10 +5,13 @@ import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
 import com.demoJob.demo.dto.response.Admin.SkillResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.SaveJob;
+import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.DuplicateResourceException;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SaveJobRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.SaveJobService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,19 +27,27 @@ public class SaveJobServiceImpl implements SaveJobService {
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
 
+    /**
+     * User lưu lại các Job mà mình quan tâm hoặc yêu thích
+     */
     @Override
     public void saveJob(Long userId, Long jobId) {
-        if (saveJobRepository.existsByUserIdAndJobId(userId, jobId)) {
-            throw new RuntimeException("Job already saved");
+        //check exists
+        if (checkExistsJobInCategory(userId, jobId)) {
+            throw new DuplicateResourceException("Job already saved");
         }
 
+        //Valid user and job
+        var user = getUserOrThrow(userId);
+        var job = getJobOrThrow(jobId);
+
         SaveJob saveJob = SaveJob.builder()
-                .user(userRepository.findById(userId).orElseThrow())
-                .job(jobRepository.findById(jobId).orElseThrow())
+                .user(user)
+                .job(job)
                 .build();
 
         saveJobRepository.save(saveJob);
-        log.info("User {} saved job {}", userId, jobId);
+        log.info("User {} saved job {} successfully", userId, jobId);
     }
 
     @Override
@@ -83,5 +94,20 @@ public class SaveJobServiceImpl implements SaveJobService {
                                 .build())
                         .collect(Collectors.toSet()))
                 .build();
+    }
+
+    //========== PRIVATE METHOD ==========//
+    private boolean checkExistsJobInCategory(Long userId, Long jobId) {
+        return saveJobRepository.existsByUserIdAndJobId(userId, jobId);
+    }
+
+    private Job getJobOrThrow(Long jobId) {
+        return jobRepository.findById(jobId)
+                .orElseThrow(() -> new EntityNotFoundException("Job not found"));
+    }
+
+    private User getUserOrThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
     }
 }
