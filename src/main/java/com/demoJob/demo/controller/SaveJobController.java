@@ -12,7 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/me/save-job")
+@RequestMapping("/api/save-job")
 @RequiredArgsConstructor
 @Slf4j
 public class SaveJobController {
