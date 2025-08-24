@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,9 +35,7 @@ public class SaveJobServiceImpl implements SaveJobService {
     @Override
     public void saveJob(Long userId, Long jobId) {
         //check exists
-        if (checkExistsJobInCategory(userId, jobId)) {
-            throw new DuplicateResourceException("Job already saved");
-        }
+        if (validExistsJobAndActive(userId, jobId)) return;
 
         //Valid user and job
         var user = getUserOrThrow(userId);
@@ -112,4 +111,24 @@ public class SaveJobServiceImpl implements SaveJobService {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
     }
+
+    private boolean validExistsJobAndActive(Long userId, Long jobId) {
+        Optional<SaveJob> existsJob = saveJobRepository.findByUserIdAndJobId(userId, jobId);
+
+        if (existsJob.isPresent()) {
+            SaveJob saveJob = existsJob.get();
+            if (saveJob.getStatus() == SaveJobStatus.ACTIVE) {
+                throw new DuplicateResourceException("Job đã nằm trong danh sách");
+            }
+
+            if (saveJob.getStatus() == SaveJobStatus.DELETE) {
+                saveJob.setStatus(SaveJobStatus.ACTIVE);
+                saveJobRepository.save(saveJob);
+                log.info("User {} re-saved job {} successfully", userId, jobId);
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
