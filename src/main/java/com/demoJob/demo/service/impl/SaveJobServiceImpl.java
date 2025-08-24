@@ -3,15 +3,23 @@ package com.demoJob.demo.service.impl;
 import com.demoJob.demo.dto.response.Admin.Job.CompanyJobResponse;
 import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
 import com.demoJob.demo.dto.response.Admin.SkillResponse;
+import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.SaveJob;
+import com.demoJob.demo.entity.User;
+import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SaveJobRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.SaveJobService;
+import com.demoJob.demo.util.UserUtil;
+import com.demoJob.demo.util.enums.JobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,6 +31,7 @@ public class SaveJobServiceImpl implements SaveJobService {
     private final SaveJobRepository saveJobRepository;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
+    private final UserUtil userUtil;
 
     @Override
     public void saveJob(Long userId, Long jobId) {
@@ -46,11 +55,27 @@ public class SaveJobServiceImpl implements SaveJobService {
         log.info("User {} removed saved job {}", userId, jobId);
     }
 
+    /**
+     * Lấy ra list job mà User đã lưu
+     */
     @Override
-    public List<JobResponse> getSavedJobs(Long userId) {
-        return saveJobRepository.findAllByUserId(userId).stream()
-                .map(this::convertToJob)
+    public PageResponse<?> getAllSavedJobs(int page, int size) {
+
+        User user = userUtil.getCurrentUser();
+
+        Page<SaveJob> jobPage = saveJobRepository.findAllByUserId(PageRequest.of(page, size), user.getId());
+
+        List<JobResponse> responses = jobPage.getContent().stream()
+//                .filter(saveJob -> saveJob.getJob().getStatus() == JobStatus.ACTIVE)
+                .map(saveJob -> JobMapper.toResponse(saveJob.getJob()))
                 .collect(Collectors.toList());
+
+        return PageResponse.<JobResponse>builder()
+                .page(jobPage.getNumber())
+                .size(jobPage.getSize())
+                .total(jobPage.getTotalElements())
+                .items(responses)
+                .build();
     }
 
     @Override

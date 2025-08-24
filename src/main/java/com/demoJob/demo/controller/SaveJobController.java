@@ -7,11 +7,12 @@ import com.demoJob.demo.service.SaveJobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/users/save-job")
+@RequestMapping("/api/save-job")
 @RequiredArgsConstructor
 @Slf4j
 public class SaveJobController {
@@ -43,4 +44,17 @@ public class SaveJobController {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Bỏ lưu công việc thất bại");
         }
     }
+
+    /**
+     * Lấy ra list job mà User đã lưu
+     */
+    @GetMapping
+    public ResponseEntity<?> getAllSaveJobs(@RequestParam(defaultValue = "0") int page,
+                                            @RequestParam(defaultValue = "10") int size) {
+        log.info("API get list save job");
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "API get list save job successfully",
+                saveJobService.getAllSavedJobs(page, size)));
+    }
+
 }

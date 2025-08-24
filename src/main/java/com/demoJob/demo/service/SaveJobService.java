@@ -1,7 +1,6 @@
 package com.demoJob.demo.service;
 
-import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
-import java.util.List;
+import com.demoJob.demo.dto.response.system.PageResponse;
 
 public interface SaveJobService {
 
@@ -9,7 +8,10 @@ public interface SaveJobService {
 
     void deleteSaveJob(Long userId, Long jobId);
 
-    List<JobResponse> getSavedJobs(Long userId);
+    /**
+     * Lấy ra list job mà User đã lưu
+     */
+    PageResponse<?> getAllSavedJobs(int page, int size);
 
     boolean isJobSaved(Long userId, Long jobId);
 
