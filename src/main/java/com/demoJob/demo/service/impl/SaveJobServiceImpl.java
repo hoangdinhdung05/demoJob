@@ -11,6 +11,7 @@ import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SaveJobRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.SaveJobService;
+import com.demoJob.demo.util.enums.SaveJobStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class SaveJobServiceImpl implements SaveJobService {
         SaveJob saveJob = SaveJob.builder()
                 .user(user)
                 .job(job)
+                .status(SaveJobStatus.ACTIVE)
                 .build();
 
         saveJobRepository.save(saveJob);
