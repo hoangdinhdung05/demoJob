@@ -22,7 +22,9 @@ public interface SaveJobRepository extends JpaRepository<SaveJob, Long> {
             SELECT sj
             FROM SaveJob sj
             JOIN sj.job j
-            WHERE j.status = 'ACTIVE' AND sj.user.id = :userId
+            WHERE j.status = 'ACTIVE'
+            AND sj.user.id = :userId
+            AND sj.status = 'ACTIVE'
             """)
     Page<SaveJob> findAllByUserId(Pageable pageable, Long userId);
 
