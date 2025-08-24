@@ -1,5 +1,6 @@
 package com.demoJob.demo.entity;
 
+import com.demoJob.demo.util.enums.SaveJobStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,6 +12,9 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class SaveJob extends AbstractEntity<Long> {
+
+    @Enumerated(EnumType.STRING)
+    private SaveJobStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

@@ -5,10 +5,14 @@ import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
 import com.demoJob.demo.dto.response.Admin.SkillResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.SaveJob;
+import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SaveJobRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.SaveJobService;
+import com.demoJob.demo.util.UserUtil;
+import com.demoJob.demo.util.enums.SaveJobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,7 @@ public class SaveJobServiceImpl implements SaveJobService {
     private final SaveJobRepository saveJobRepository;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
+    private final UserUtil userUtil;
 
     @Override
     public void saveJob(Long userId, Long jobId) {
@@ -39,11 +44,17 @@ public class SaveJobServiceImpl implements SaveJobService {
         log.info("User {} saved job {}", userId, jobId);
     }
 
+    /**
+     * User xóa Job khỏi danh sách yêu thích
+     */
     @Override
-    public void deleteSaveJob(Long userId, Long jobId) {
-        saveJobRepository.findByUserIdAndJobId(userId, jobId)
-                .ifPresent(saveJobRepository::delete);
-        log.info("User {} removed saved job {}", userId, jobId);
+    public void deleteSaveJob(Long jobId) {
+        User user = userUtil.getCurrentUser();
+        //Không cần load entity
+        int update = saveJobRepository.softDeleteByUserIdAndJobId(user.getId(), jobId);
+        if (update == 0) throw new NotFoundException("Save job not found for user");
+
+        log.info("User={} removed saved job={}", user.getId(), jobId);
     }
 
     @Override

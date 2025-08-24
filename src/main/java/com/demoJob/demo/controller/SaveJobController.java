@@ -7,11 +7,12 @@ import com.demoJob.demo.service.SaveJobService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/users/save-job")
+@RequestMapping("/api/save-job")
 @RequiredArgsConstructor
 @Slf4j
 public class SaveJobController {
@@ -31,16 +32,14 @@ public class SaveJobController {
         }
     }
 
+    /**
+     * User xóa Job khỏi danh sách yêu thích
+     */
     @DeleteMapping("/{jobId}")
-    public ResponseData<?> deleteSaveJob(@PathVariable Long jobId,
-                                         @AuthenticationPrincipal CustomUserDetails user) {
-        log.info("User {} is deleting saved job {}", user.getId(), jobId);
-        try {
-            saveJobService.deleteSaveJob(user.getId(), jobId);
-            return new ResponseData<>(HttpStatus.OK.value(), "Đã bỏ lưu công việc", null);
-        } catch (Exception e) {
-            log.error("Lỗi khi bỏ lưu job: {}", e.getMessage());
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Bỏ lưu công việc thất bại");
-        }
+    public ResponseEntity<?> deleteSaveJob(@PathVariable Long jobId) {
+        log.info("API user delete save job {}", jobId);
+        saveJobService.deleteSaveJob(jobId);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(),
+                "API user delete save job successfully"));
     }
 }

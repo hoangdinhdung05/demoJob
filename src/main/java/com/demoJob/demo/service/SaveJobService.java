@@ -7,7 +7,10 @@ public interface SaveJobService {
 
     void saveJob(Long userId, Long jobId);
 
-    void deleteSaveJob(Long userId, Long jobId);
+    /**
+     * User xóa Job khỏi danh sách yêu thích
+     */
+    void deleteSaveJob(Long jobId);
 
     List<JobResponse> getSavedJobs(Long userId);
 
