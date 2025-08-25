@@ -1,4 +1,4 @@
-package com.demoJob.demo.dto.response.Admin.Job;
+package com.demoJob.demo.dto.response.Job;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

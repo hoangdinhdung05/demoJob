@@ -1,7 +1,7 @@
 package com.demoJob.demo.mapper;
 
 import com.demoJob.demo.dto.request.Company.CompanyUpdateRequest;
-import com.demoJob.demo.dto.response.Admin.Job.CompanyJobResponse;
+import com.demoJob.demo.dto.response.Job.CompanyJobResponse;
 import com.demoJob.demo.dto.response.Company.CompanyDetailResponse;
 import com.demoJob.demo.dto.response.Company.CompanyResponse;
 import com.demoJob.demo.entity.Company;

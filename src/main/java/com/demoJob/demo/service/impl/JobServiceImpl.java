@@ -1,10 +1,11 @@
 package com.demoJob.demo.service.impl;
 
-import com.demoJob.demo.dto.request.Admin.Job.JobRequest;
-import com.demoJob.demo.dto.response.Admin.Job.CompanyJobResponse;
-import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
-import com.demoJob.demo.dto.response.Admin.SkillResponse;
+import com.demoJob.demo.dto.request.Job.JobRequest;
+import com.demoJob.demo.dto.response.Job.JobResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
+import com.demoJob.demo.entity.*;
+import com.demoJob.demo.exception.InvalidDataException;
+import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Skill;
@@ -15,18 +16,24 @@ import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.CompanyRepository;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SkillRepository;
+import com.demoJob.demo.repository.UserCompanyRepository;
+import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
-import com.demoJob.demo.util.UserCompanyUtil;
 import com.demoJob.demo.util.UserUtil;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.enums.JobStatus;
+import com.demoJob.demo.util.enums.UserCompanyStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import static com.demoJob.demo.mapper.JobMapper.buildJob;
 import static com.demoJob.demo.mapper.JobMapper.toResponse;
 
 @Service
@@ -37,40 +44,40 @@ public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final SkillRepository skillRepository;
     private final CompanyRepository companyRepository;
-    private final UserCompanyUtil userCompanyUtil;
-    private final UserUtil userUtil;
 
+    /**
+     * Admin và người tạo Job có thể tạo Job
+     * Admin tạo job => ACTIVE luôn
+     *
+     * @param request thông tin Job cần tạo
+     */
     @Override
     public JobResponse createJob(JobRequest request) {
 
-        log.info("Create a job with name={}", request.getName());
+        // Get current user and get active company
+        User user = userUtil.getCurrentUser();
+        boolean isAdmin = SecurityUtils.hasRole("ADMIN");
+        Company company = getCompanyAndCheckActive(request);
 
-        //check cty
-        Company company = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+        // Validate permission
+        checkPermissionCreateJob(user, company, isAdmin);
 
-        List<Skill> skills = fetchSkillsByIds(request.getSkillIds());
+        // Get and validate skills
+        List<Skill> skillList = getAllSkillById(request.getSkillIds());
 
-        Job job = Job.builder()
-                .name(request.getName())
-                .location(request.getLocation())
-                .salary(request.getSalary())
-                .quantity(request.getQuantity())
-                .level(request.getLevel())
-                .description(request.getDescription())
-                .startDate(request.getStartDate())
-                .endDate(request.getEndDate())
-                .status(request.getStatus())
-                .company(company)
-                .skills(skills)
-                .build();
+        //save in DB
+        Job job = buildJob(request, company, skillList, isAdmin);
+        try {
+            job = jobRepository.save(job);
+        } catch (Exception e) {
+            log.error("Failed to save job: {}", e.getMessage());
+            throw new RuntimeException("Failed to create job", e);
+        }
 
-        job = jobRepository.save(job);
+        log.info("Job created successfully - jobId: {}, status: {}, created by: {}",
+                job.getId(), job.getStatus(), user.getEmail());
 
-        log.info("Create a job successfully with job id={}", job.getId());
-
-        return convertToJob(job);
-
+        return toResponse(job);
     }
 
     @Override
@@ -223,38 +230,31 @@ public class JobServiceImpl implements JobService {
 
     //================//==================//
 
-    private JobResponse convertToJob(Job job) {
-        return JobResponse.builder()
-                .id(job.getId())
-                .name(job.getName())
-                .location(job.getLocation())
-                .salary(job.getSalary())
-                .quantity(job.getQuantity())
-                .level(job.getLevel())
-                .description(job.getDescription())
-                .startDate(job.getStartDate())
-                .endDate(job.getEndDate())
-                .status(job.getStatus())
-                .company(CompanyJobResponse.builder()
-                        .id(job.getCompany().getId())
-                        .name(job.getCompany().getName())
-                        .build())
-                .skills(job.getSkills().stream()
-                        .map(skill -> SkillResponse.builder()
-                                .id(skill.getId())
-                                .name(skill.getName())
-                                .description(skill.getDescription())
-                                .build())
-                        .collect(Collectors.toSet()))
-                .build();
-    }
+    private List<Skill> getAllSkillById(List<Long> skillIds) {
+        if (skillIds == null || skillIds.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-    private List<Skill> fetchSkillsByIds(List<Long> skillIds) {
-        if (skillIds == null || skillIds.isEmpty()) return List.of();
+        List<Long> uniqueSkillIds = skillIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
 
-        List<Skill> skills = skillRepository.findAllById(skillIds);
-        if (skills.size() != skillIds.size()) {
-            throw new RuntimeException("Some skill don`t exists");
+        if (uniqueSkillIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<Skill> skills = skillRepository.findAllById(uniqueSkillIds);
+
+        if (skills.size() != uniqueSkillIds.size()) {
+            List<Long> foundSkillIds = skills.stream()
+                    .map(Skill::getId)
+                    .toList();
+            List<Long> missingSkillIds = uniqueSkillIds.stream()
+                    .filter(id -> !foundSkillIds.contains(id))
+                    .toList();
+
+            throw new InvalidDataException("Skills not found: " + missingSkillIds);
         }
 
         return skills;
@@ -278,5 +278,32 @@ public class JobServiceImpl implements JobService {
         if (user.getUsername().equals(job.getCreatedBy())) return job;
 
         throw new NotFoundException("Job not found");
+    }
+
+    private void checkPermissionCreateJob(User user, Company company, boolean isAdmin) {
+        if (isAdmin) {
+            log.debug("Admin user {} creating job for company {}", user.getEmail(), company.getName());
+            return;
+        }
+
+        UserCompany userCompany = userCompanyRepository
+                .findByCompanyIdAndIsOwnerTrueAndStatus(company.getId(), UserCompanyStatus.ACTIVE)
+                .orElseThrow(() -> new InvalidDataException("Company does not have an active owner"));
+
+        if (!userCompany.getUser().getId().equals(user.getId())) {
+            throw new InvalidDataException("Bạn không có quyền tạo Job cho công ty này. Chỉ owner của công ty mới có thể tạo Job");
+        }
+
+        log.debug("User {} verified as owner of company {}", user.getEmail(), company.getName());
+    }
+
+    private Company getCompanyAndCheckActive(JobRequest request) {
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new NotFoundException("Company not found"));
+
+        if (company.getStatus() != CompanyStatus.ACTIVE) {
+            throw new InvalidDataException("Không thể tạo Job khi Company chưa được ACTIVE. Vui lòng đợi Admin duyệt Company");
+        }
+        return company;
     }
 }
