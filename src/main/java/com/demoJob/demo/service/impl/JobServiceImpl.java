@@ -1,9 +1,8 @@
 package com.demoJob.demo.service.impl;
 
-import com.demoJob.demo.dto.request.Admin.Job.JobRequest;
-import com.demoJob.demo.dto.response.Admin.Job.CompanyJobResponse;
-import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
-import com.demoJob.demo.dto.response.Admin.SkillResponse;
+import com.demoJob.demo.dto.request.Job.JobRequest;
+import com.demoJob.demo.dto.request.Job.JobStatusRequest;
+import com.demoJob.demo.dto.response.Job.JobResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.*;
 import com.demoJob.demo.exception.InvalidDataException;
@@ -12,7 +11,6 @@ import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Skill;
 import com.demoJob.demo.entity.User;
-import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.CompanyRepository;
 import com.demoJob.demo.repository.JobRepository;
@@ -20,6 +18,9 @@ import com.demoJob.demo.repository.SkillRepository;
 import com.demoJob.demo.repository.UserCompanyRepository;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
+import com.demoJob.demo.util.UserCompanyUtil;
+import com.demoJob.demo.util.UserUtil;
+import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.enums.JobStatus;
 import com.demoJob.demo.util.enums.UserCompanyStatus;
 import lombok.RequiredArgsConstructor;
@@ -93,7 +94,7 @@ public class JobServiceImpl implements JobService {
 
         if (!SecurityUtils.hasRole("ADMIN")
                 && !SecurityUtils.hasRole("MANAGER")
-                && !userCompanyUtil.isOwner(currentUser, company)) {
+                && !userCompanyUtil.isOwnerOfCompany(currentUser, company)) {
             throw new InvalidDataException("Bạn không đủ quyền hạn cập nhật jobId: " + jobId);
         }
 
@@ -139,7 +140,7 @@ public class JobServiceImpl implements JobService {
 
         if (!SecurityUtils.hasRole("ADMIN")
                 && !SecurityUtils.hasRole("MANAGER")
-                && !userCompanyUtil.isOwner(currentUser, company)) {
+                && !userCompanyUtil.isOwnerOfCompany(currentUser, company)) {
             throw new InvalidDataException("Bạn không đủ quyền hạn xóa jobId: " + job);
         }
 
@@ -320,7 +321,7 @@ public class JobServiceImpl implements JobService {
     }
 
     private void updateRequestJob(JobRequest request, Job job) {
-        List<Skill> skills = fetchSkillsByIds(request.getSkillIds());
+        List<Skill> skills = getAllSkillById(request.getSkillIds());
         job.setName(request.getName());
         job.setLocation(request.getLocation());
         job.setSalary(request.getSalary());
