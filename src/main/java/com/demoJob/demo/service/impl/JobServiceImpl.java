@@ -20,6 +20,7 @@ import com.demoJob.demo.repository.UserCompanyRepository;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
+import com.demoJob.demo.util.UserCompanyUtil;
 import com.demoJob.demo.util.UserUtil;
 import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.enums.JobStatus;
@@ -44,6 +45,10 @@ public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final SkillRepository skillRepository;
     private final CompanyRepository companyRepository;
+    private final UserCompanyRepository userCompanyRepository;
+    private final UserUtil userUtil;
+    private final UserCompanyUtil userCompanyUtil;
+
 
     /**
      * Admin và người tạo Job có thể tạo Job
@@ -112,6 +117,9 @@ public class JobServiceImpl implements JobService {
         return convertToJob(jobUpdate);
     }
 
+    /**
+     * Admin hoặc Owner có thể xóa đi Job
+     */
     @Override
     public void deleteJob(long jobId) {
 
@@ -205,6 +213,9 @@ public class JobServiceImpl implements JobService {
                 .toList();
     }
 
+    /**
+     * Get list info Job
+     */
     @Override
     public PageResponse<?> getAllPage(int page, int size) {
 

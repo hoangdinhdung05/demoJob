@@ -57,6 +57,9 @@ public class JobController {
         }
     }
 
+    /**
+     * Admin hoặc Owner có thể xóa đi Job
+     */
     @DeleteMapping("/{jobId}")
     public ResponseEntity<?> deleteJob(@PathVariable Long jobId) {
         log.info("API delete job ID: {}", jobId);

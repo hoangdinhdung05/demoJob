@@ -16,6 +16,9 @@ public interface JobService {
 
     JobResponse updateJob(long jobId, JobRequest request);
 
+    /**
+     * Admin hoặc Owner có thể xóa đi Job
+     */
     void deleteJob(long jobId);
 
     JobResponse changJobStatus(long jobId, JobStatus jobStatus);
