@@ -10,14 +10,11 @@ import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Skill;
 import com.demoJob.demo.entity.User;
-import com.demoJob.demo.exception.InvalidDataException;
-import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.CompanyRepository;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SkillRepository;
 import com.demoJob.demo.repository.UserCompanyRepository;
-import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.JobService;
 import com.demoJob.demo.util.UserCompanyUtil;
@@ -127,7 +124,9 @@ public class JobServiceImpl implements JobService {
         Company company = job.getCompany();
         User currentUser = userUtil.getCurrentUser();
 
-        if (!SecurityUtils.hasRole("ADMIN") && !SecurityUtils.hasRole("MANAGER") && !userCompanyUtil.isOwner(currentUser, company)) {
+        if (!SecurityUtils.hasRole("ADMIN")
+                && !SecurityUtils.hasRole("MANAGER")
+                && !userCompanyUtil.isOwnerOfCompany(currentUser, company)) {
             throw new InvalidDataException("Bạn không đủ quyền hạn xóa jobId: " + jobId);
         }
 
@@ -220,9 +219,13 @@ public class JobServiceImpl implements JobService {
     public PageResponse<?> getAllPage(int page, int size) {
 
         Page<Job> jobPage;
+        User currentUser = userUtil.getCurrentUser();
 
         if (checkRole()) {
             jobPage = jobRepository.findAll(PageRequest.of(page, size));
+        } else if (userCompanyUtil.isOwner(currentUser)) {
+            Long companyId = userCompanyUtil.getOwnerCompanyId(currentUser);
+            jobPage = jobRepository.findByCompanyId(companyId, PageRequest.of(page, size));
         } else {
             jobPage = jobRepository.findByStatus(JobStatus.ACTIVE, PageRequest.of(page, size));
         }

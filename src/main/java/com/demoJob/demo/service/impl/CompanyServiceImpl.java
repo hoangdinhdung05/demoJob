@@ -90,7 +90,7 @@ public class CompanyServiceImpl implements CompanyService {
         boolean isAdmin = SecurityUtils.hasRole("ADMIN");
 
         // Check quyền
-        if (!isAdmin && !userCompanyUtil.isOwner(currentUser, company)) {
+        if (!isAdmin && !userCompanyUtil.isOwnerOfCompany(currentUser, company)) {
             throw new InvalidDataException("Bạn không có quyền update company");
         }
 
@@ -279,12 +279,15 @@ public class CompanyServiceImpl implements CompanyService {
     private Company checkActiveCompany(Long companyId) {
         Company company = getCompanyByIdOrThrow(companyId);
 
+        //User
         if (company.getStatus() == CompanyStatus.ACTIVE) return company;
+
+        //Admin and manager
         if (SecurityUtils.hasRole("ADMIN") || SecurityUtils.hasRole("MANAGER")) return company;
 
         //check pending => user create company vẫn xem được
         User user = SecurityUtils.getCurrentUserDetails().getUser();
-        if (userCompanyUtil.isOwner(user, company)) return company;
+        if (company.getStatus() == CompanyStatus.PENDING && userCompanyUtil.isOwnerOfCompany(user, company)) return company;
 
         throw new NotFoundException("Company not found with id: " + companyId);
     }
