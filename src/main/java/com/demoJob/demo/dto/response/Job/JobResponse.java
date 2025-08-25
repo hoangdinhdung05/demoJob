@@ -1,4 +1,4 @@
-package com.demoJob.demo.dto.response.Admin.Job;
+package com.demoJob.demo.dto.response.Job;
 
 import com.demoJob.demo.dto.response.Admin.SkillResponse;
 import com.demoJob.demo.util.enums.JobStatus;
@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.time.LocalDate;
 import java.util.Set;
 
