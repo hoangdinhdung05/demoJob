@@ -18,6 +18,7 @@ public class JobRequest {
     private double salary;
 
     @Min(value = 1, message = "Số lượng phải lớn hơn 0")
+    @Max(value = 50, message = "Số lượng không lớn hơn 50")
     private int quantity;
 
     private LevelEnum level;

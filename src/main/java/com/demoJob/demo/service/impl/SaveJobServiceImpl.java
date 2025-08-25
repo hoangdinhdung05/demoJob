@@ -1,7 +1,7 @@
 package com.demoJob.demo.service.impl;
 
-import com.demoJob.demo.dto.response.Admin.Job.CompanyJobResponse;
-import com.demoJob.demo.dto.response.Admin.Job.JobResponse;
+import com.demoJob.demo.dto.response.Job.CompanyJobResponse;
+import com.demoJob.demo.dto.response.Job.JobResponse;
 import com.demoJob.demo.dto.response.Admin.SkillResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.SaveJob;
