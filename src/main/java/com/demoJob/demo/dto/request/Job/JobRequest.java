@@ -1,6 +1,5 @@
 package com.demoJob.demo.dto.request.Job;
 
-import com.demoJob.demo.util.enums.JobStatus;
 import com.demoJob.demo.util.enums.LevelEnum;
 import lombok.Getter;
 import jakarta.validation.constraints.*;

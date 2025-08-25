@@ -1,6 +1,7 @@
 package com.demoJob.demo.service.impl;
 
 import com.demoJob.demo.dto.request.Job.JobRequest;
+import com.demoJob.demo.dto.request.Job.JobStatusRequest;
 import com.demoJob.demo.dto.response.Job.JobResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.*;
@@ -82,36 +83,27 @@ public class JobServiceImpl implements JobService {
         return toResponse(job);
     }
 
+    /**
+     * Admin và owner update info cho Job
+     */
     @Override
-    public JobResponse updateJob(long jobId, JobRequest request) {
+    public JobResponse updateJob(Long jobId, JobRequest request) {
+        Job job = getJobByIdOrThrow(jobId);
+        Company company = job.getCompany();
+        User currentUser = userUtil.getCurrentUser();
 
-        log.info("Updating job: {}", request.getName());
+        if (!SecurityUtils.hasRole("ADMIN")
+                && !SecurityUtils.hasRole("MANAGER")
+                && !userCompanyUtil.isOwnerOfCompany(currentUser, company)) {
+            throw new InvalidDataException("Bạn không đủ quyền hạn cập nhật jobId: " + jobId);
+        }
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+        updateRequestJob(request, job);
+        Job jobUpdated = jobRepository.save(job);
 
-        Company company = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+        log.info("Update job info successfully with jobId={}", jobId);
 
-        List<Skill> skills = fetchSkillsByIds(request.getSkillIds());
-
-        job.setName(request.getName());
-        job.setLocation(request.getLocation());
-        job.setSalary(request.getSalary());
-        job.setQuantity(request.getQuantity());
-        job.setLevel(request.getLevel());
-        job.setDescription(request.getDescription());
-        job.setStartDate(request.getStartDate());
-        job.setEndDate(request.getEndDate());
-        job.setStatus(request.getStatus());
-        job.setCompany(company);
-        job.setSkills(skills);
-
-        Job jobUpdate = jobRepository.save(job);
-
-        log.info("Update a job successfully with job id={}", jobId);
-
-        return convertToJob(jobUpdate);
+        return toResponse(jobUpdated);
     }
 
     /**
@@ -136,19 +128,26 @@ public class JobServiceImpl implements JobService {
         log.info("Delete job with jobId={} successfully", jobId);
     }
 
+    /**
+     * Thay đổi trạng thái của job (Admin và owner)
+     */
     @Override
-    public JobResponse changJobStatus(long jobId, JobStatus jobStatus) {
+    public void updateJobStatus(long jobId, JobStatusRequest jobStatus) {
 
-        log.warn("Change job status with job ID: {}", jobId);
+        Job job = getJobByIdOrThrow(jobId);
+        Company company = job.getCompany();
+        User currentUser = userUtil.getCurrentUser();
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+        if (!SecurityUtils.hasRole("ADMIN")
+                && !SecurityUtils.hasRole("MANAGER")
+                && !userCompanyUtil.isOwnerOfCompany(currentUser, company)) {
+            throw new InvalidDataException("Bạn không đủ quyền hạn xóa jobId: " + job);
+        }
 
-        job.setStatus(jobStatus);
+        job.setStatus(jobStatus.getStatus());
+        jobRepository.save(job);
 
-        job = jobRepository.save(job);
-
-        return convertToJob(job);
+        log.info("Update status successfully with jobId={}", jobId);
     }
 
     /**
@@ -319,5 +318,18 @@ public class JobServiceImpl implements JobService {
             throw new InvalidDataException("Không thể tạo Job khi Company chưa được ACTIVE. Vui lòng đợi Admin duyệt Company");
         }
         return company;
+    }
+
+    private void updateRequestJob(JobRequest request, Job job) {
+        List<Skill> skills = getAllSkillById(request.getSkillIds());
+        job.setName(request.getName());
+        job.setLocation(request.getLocation());
+        job.setSalary(request.getSalary());
+        job.setQuantity(request.getQuantity());
+        job.setLevel(request.getLevel());
+        job.setDescription(request.getDescription());
+        job.setStartDate(request.getStartDate());
+        job.setEndDate(request.getEndDate());
+        job.setSkills(skills);
     }
 }
