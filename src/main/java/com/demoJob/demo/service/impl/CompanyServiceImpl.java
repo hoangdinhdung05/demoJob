@@ -19,6 +19,7 @@ import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.CompanyService;
 import com.demoJob.demo.service.MailService;
+import com.demoJob.demo.util.UserCompanyUtil;
 import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.enums.UserCompanyStatus;
 import com.demoJob.demo.validator.CompanyValidator;
@@ -43,6 +44,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final UserCompanyRepository userCompanyRepository;
     private final MailService mailService;
     private final CompanyValidator companyValidator;
+    private final UserCompanyUtil userCompanyUtil;
 
     /**
      * HR(User) và Admin tạo ra company
@@ -88,7 +90,7 @@ public class CompanyServiceImpl implements CompanyService {
         boolean isAdmin = SecurityUtils.hasRole("ADMIN");
 
         // Check quyền
-        if (!isAdmin && !isOwner(currentUser, company)) {
+        if (!isAdmin && !userCompanyUtil.isOwnerOfCompany(currentUser, company)) {
             throw new InvalidDataException("Bạn không có quyền update company");
         }
 
@@ -190,7 +192,7 @@ public class CompanyServiceImpl implements CompanyService {
         company.setStatus(newStatus);
         companyRepository.save(company);
 
-        UserCompany owner = getOwnerCompany(companyId);
+        UserCompany owner = userCompanyUtil.getOwnerCompany(companyId);
 
         // Gửi mail theo trạng thái
         switch (newStatus) {
@@ -274,27 +276,18 @@ public class CompanyServiceImpl implements CompanyService {
         log.info("Create owner for user: {} and company: {}", user.getId(), company.getName());
     }
 
-    private UserCompany getOwnerCompany(Long companyId) {
-        return userCompanyRepository
-                .findByCompanyIdAndIsOwnerTrueAndStatus(companyId, UserCompanyStatus.ACTIVE)
-                .orElseThrow(() -> new InvalidDataException("Company owner not found"));
-    }
-
-    private boolean isOwner(User user, Company company) {
-        if (user == null || user.getId() == null) return false;
-        UserCompany ownerCompany = getOwnerCompany(company.getId());
-        return ownerCompany.getUser().getId().equals(user.getId());
-    }
-
     private Company checkActiveCompany(Long companyId) {
         Company company = getCompanyByIdOrThrow(companyId);
 
+        //User
         if (company.getStatus() == CompanyStatus.ACTIVE) return company;
+
+        //Admin and manager
         if (SecurityUtils.hasRole("ADMIN") || SecurityUtils.hasRole("MANAGER")) return company;
 
         //check pending => user create company vẫn xem được
         User user = SecurityUtils.getCurrentUserDetails().getUser();
-        if (isOwner(user, company)) return company;
+        if (company.getStatus() == CompanyStatus.PENDING && userCompanyUtil.isOwnerOfCompany(user, company)) return company;
 
         throw new NotFoundException("Company not found with id: " + companyId);
     }

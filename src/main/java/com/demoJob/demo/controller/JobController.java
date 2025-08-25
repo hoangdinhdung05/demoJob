@@ -57,17 +57,14 @@ public class JobController {
         }
     }
 
-    @DeleteMapping("/admin/{jobId}")
-    public ResponseData<?> adminDeleteJob(@PathVariable @Min(1) Long jobId) {
-        log.info("API admin delete job ID: {}", jobId);
-
-        try {
-            jobService.deleteJob(jobId);
-            return new ResponseData<>(HttpStatus.NO_CONTENT.value(), "Job deleted successfully");
-        } catch (Exception e) {
-            log.error("Delete job failed: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Delete job failed");
-        }
+    /**
+     * Admin hoặc Owner có thể xóa đi Job
+     */
+    @DeleteMapping("/{jobId}")
+    public ResponseEntity<?> deleteJob(@PathVariable Long jobId) {
+        log.info("API delete job ID: {}", jobId);
+        jobService.deleteJob(jobId);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(), "Api delete job successfully"));
     }
 
     @PatchMapping("/admin/change-status/{jobId}")
