@@ -1,9 +1,14 @@
 package com.demoJob.demo.service;
 
+import com.demoJob.demo.dto.response.Job.JobResponse;
+import java.util.List;
 import com.demoJob.demo.dto.response.system.PageResponse;
 
 public interface SaveJobService {
 
+    /**
+     * User lưu lại các Job mà mình quan tâm hoặc yêu thích
+     */
     void saveJob(Long userId, Long jobId);
 
     void deleteSaveJob(Long userId, Long jobId);

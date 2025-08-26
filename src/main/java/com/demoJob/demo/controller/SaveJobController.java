@@ -19,17 +19,16 @@ public class SaveJobController {
 
     private final SaveJobService saveJobService;
 
+    /**
+     * User lưu lại các Job mà mình quan tâm hoặc yêu thích
+     */
     @PostMapping("/{jobId}")
-    public ResponseData<?> saveJob(@PathVariable Long jobId,
-                                   @AuthenticationPrincipal CustomUserDetails user) {
-        log.info("User {} is saving job {}", user.getId(), jobId);
-        try {
-            saveJobService.saveJob(user.getId(), jobId);
-            return new ResponseData<>(HttpStatus.OK.value(), "Lưu công việc thành công", null);
-        } catch (Exception e) {
-            log.error("Lỗi khi lưu job: {}", e.getMessage());
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Lưu công việc thất bại");
-        }
+    public ResponseEntity<?> saveJob(@PathVariable Long jobId,
+                                     @AuthenticationPrincipal CustomUserDetails user) {
+        log.info("API user save job with userId={} and jobId={}", user.getId(), jobId);
+        saveJobService.saveJob(user.getId(), jobId);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ResponseData<>(HttpStatus.CREATED.value(), "Job saved successfully"));
     }
 
     @DeleteMapping("/{jobId}")
