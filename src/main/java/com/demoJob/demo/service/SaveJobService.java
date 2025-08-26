@@ -1,18 +1,14 @@
 package com.demoJob.demo.service;
 
 import com.demoJob.demo.dto.response.system.PageResponse;
+import com.demoJob.demo.util.enums.SaveJobStatus;
 
 public interface SaveJobService {
 
     /**
      * User lưu lại các Job mà mình quan tâm hoặc yêu thích
      */
-    void saveJob(Long userId, Long jobId);
-
-    /**
-     * User xóa Job khỏi danh sách yêu thích
-     */
-    void deleteSaveJob(Long jobId);
+    void saveJob(Long userId, Long jobId, SaveJobStatus status);
 
     /**
      * Lấy ra list job mà User đã lưu

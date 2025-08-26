@@ -1,9 +1,9 @@
 package com.demoJob.demo.controller;
 
 import com.demoJob.demo.dto.response.system.ResponseData;
-import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.security.CustomUserDetails;
 import com.demoJob.demo.service.SaveJobService;
+import com.demoJob.demo.util.enums.SaveJobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,22 +24,12 @@ public class SaveJobController {
      */
     @PostMapping("/{jobId}")
     public ResponseEntity<?> saveJob(@PathVariable Long jobId,
-                                     @AuthenticationPrincipal CustomUserDetails user) {
-        log.info("API user save job with userId={} and jobId={}", user.getId(), jobId);
-        saveJobService.saveJob(user.getId(), jobId);
+                                     @AuthenticationPrincipal CustomUserDetails user,
+                                     @RequestParam SaveJobStatus status) {
+        log.info("API user save job or update status with userId={} and jobId={}", user.getId(), jobId);
+        saveJobService.saveJob(user.getId(), jobId, status);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(new ResponseData<>(HttpStatus.CREATED.value(), "Job saved successfully"));
-    }
-
-    /**
-     * User xóa Job khỏi danh sách yêu thích
-     */
-    @DeleteMapping("/{jobId}")
-    public ResponseEntity<?> deleteSaveJob(@PathVariable Long jobId) {
-        log.info("API user delete save job {}", jobId);
-        saveJobService.deleteSaveJob(jobId);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(),
-                "API user delete save job successfully"));
+                .body(new ResponseData<>(HttpStatus.CREATED.value(), "Job saved or updated successfully"));
     }
 
     /**
