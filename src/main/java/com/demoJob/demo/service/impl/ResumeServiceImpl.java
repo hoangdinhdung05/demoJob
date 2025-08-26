@@ -48,7 +48,7 @@ public class ResumeServiceImpl implements ResumeService {
         Job job = jobRepository.findById(request.getJobId())
                 .orElseThrow(() -> new EntityNotFoundException("Job not found"));
 
-        validateRequestCreate(user, job);
+        validateUserCanApplyToJob(user, job);
 
         log.info("Create resume with userId={} and jobId={}", user.getId(), job.getId());
 
@@ -161,16 +161,16 @@ public class ResumeServiceImpl implements ResumeService {
                 .build();
     }
 
-    //========== PRIVATE MODTHOD ==========//
+    //========== PRIVATE METHOD ==========//
 
-    private void validateRequestCreate(User user, Job job) {
+    private void validateUserCanApplyToJob(User user, Job job) {
         if (resumeRepository.existsByUserIdAndJobId(user.getId(), job.getId())) {
             throw new DuplicateResourceException("You already applied for this job");
 
         }
 
         if (job.getStatus() != JobStatus.ACTIVE) {
-            throw new NotFoundException("Job not found");
+            throw new NotFoundException("Cannot apply to an inactive job");
         }
     }
 }
