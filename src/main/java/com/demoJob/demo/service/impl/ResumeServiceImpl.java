@@ -21,7 +21,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -98,24 +97,6 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     @Override
-    public List<ResumeResponse> getResumeByUserId(long userId) {
-        List<Resume> resumes = resumeRepository.findByUserId(userId);
-        return resumes.stream().map(this::toResponse).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ResumeResponse> getResumeByJobId(long jobId) {
-        List<Resume> resumes = resumeRepository.findByJobId(jobId);
-        return resumes.stream().map(this::toResponse).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ResumeResponse> getList() {
-        List<Resume> resumes = resumeRepository.findAll();
-        return resumes.stream().map(this::toResponse).collect(Collectors.toList());
-    }
-
-    @Override
     public PageResponse<?> getPageResume(int page, int size) {
         Page<Resume> resumePage = resumeRepository.findAll(PageRequest.of(page, size));
 
@@ -128,33 +109,6 @@ public class ResumeServiceImpl implements ResumeService {
                 .size(resumePage.getSize())
                 .total(resumePage.getTotalElements())
                 .items(list)
-                .build();
-    }
-
-    @Override
-    public boolean checkResumeExistsByUserAndJob(Resume resume) {
-        return resumeRepository.existsByUserIdAndJobId(resume.getUser().getId(), resume.getJob().getId());
-    }
-
-    private ResumeResponse toResponse(Resume resume) {
-        return ResumeResponse.builder()
-                .id(resume.getId())
-                .email(resume.getEmail())
-                .url(resume.getUrl())
-                .status(resume.getStatus())
-                .createdAt(resume.getCreatedAt())
-                .updatedAt(resume.getUpdatedAt())
-                .createdBy(resume.getCreatedBy())
-                .updatedBy(resume.getUpdatedBy())
-                .companyName(resume.getJob().getCompany().getName())
-                .user(ResumeResponse.UserResume.builder()
-                        .id(resume.getUser().getId())
-                        .name(resume.getUser().getFirstName() + " " + resume.getUser().getLastName())
-                        .build())
-                .job(ResumeResponse.JobResume.builder()
-                        .id(resume.getJob().getId())
-                        .name(resume.getJob().getName())
-                        .build())
                 .build();
     }
 }
