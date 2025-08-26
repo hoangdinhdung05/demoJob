@@ -162,55 +162,6 @@ public class JobServiceImpl implements JobService {
         return toResponse(job);
     }
 
-    @Override
-    public List<JobResponse> getByCompanyId(Long companyId) {
-
-        log.info("Getting jobs for company ID: {}", companyId);
-
-        List<Job> jobs = jobRepository.findAll()
-                .stream()
-                .filter(job -> job.getCompany().getId().equals(companyId))
-                .toList();
-
-        return jobs.stream().map(this::convertToJob).toList();
-    }
-
-    @Override
-    public List<JobResponse> getBySkillId(Long skillId) {
-
-        log.info("Getting jobs for skill ID: {}", skillId);
-
-        List<Job> jobs = jobRepository.findAll()
-                .stream()
-                .filter(job -> job.getSkills().stream().anyMatch(skill -> skill.getId().equals(skillId)))
-                .toList();
-
-        return jobs.stream().map(this::convertToJob).toList();
-    }
-
-    @Override
-    public List<JobResponse> searchByName(String keyword) {
-
-        log.info("Searching jobs by name containing: {}", keyword);
-
-        return jobRepository.findAll()
-                .stream()
-                .filter(job -> job.getName().toLowerCase().contains(keyword.toLowerCase()))
-                .map(this::convertToJob)
-                .toList();
-    }
-
-    @Override
-    public List<JobResponse> getAlls() {
-
-        log.info("Fetching all jobs");
-
-        return jobRepository.findAll()
-                .stream()
-                .map(this::convertToJob)
-                .toList();
-    }
-
     /**
      * Get list info Job
      */

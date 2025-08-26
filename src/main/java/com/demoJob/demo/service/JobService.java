@@ -4,7 +4,6 @@ import com.demoJob.demo.dto.request.Job.JobRequest;
 import com.demoJob.demo.dto.request.Job.JobStatusRequest;
 import com.demoJob.demo.dto.response.Job.JobResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
-import java.util.List;
 
 public interface JobService {
 
@@ -35,14 +34,6 @@ public interface JobService {
      * Còn Admin và Owner(người tạo Job thì xem job)
      */
     JobResponse getJobById(Long id);
-
-    List<JobResponse> getByCompanyId(Long companyId);
-
-    List<JobResponse> getBySkillId(Long skillId);
-
-    List<JobResponse> searchByName(String keyword);
-
-    List<JobResponse> getAlls();
 
     /**
      * Dùng chung logic cho cả User, Admin và người có Owner trong CTY
