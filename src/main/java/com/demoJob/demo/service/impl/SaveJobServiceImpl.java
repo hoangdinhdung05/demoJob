@@ -50,10 +50,19 @@ public class SaveJobServiceImpl implements SaveJobService {
         }
 
         List<SaveJob> jobs = saveJobRepository.findAllByUserId(userId);
+        SaveJob saveJob = findSaveJob(jobId, jobs);
 
         //check exists job và xem cần tích lại không
-        if (status == SaveJobStatus.ACTIVE && checkAndReactivateJob(jobs, userId, jobId)) return;
-        SaveJob saveJob = findSaveJob(jobId, jobs);
+        if (status == SaveJobStatus.ACTIVE && saveJob != null) {
+            if (saveJob.getStatus() == SaveJobStatus.ACTIVE) {
+                throw new DuplicateResourceException("Job đã nằm trong danh sách");
+            } else if (saveJob.getStatus() == SaveJobStatus.DELETE) {
+                saveJob.setStatus(SaveJobStatus.ACTIVE);
+                saveJobRepository.save(saveJob);
+                log.info("User {} re-saved job {} successfully", userId, jobId);
+                return;
+            }
+        }
 
         if (saveJob != null) {
             validSaveJobStatus(status, saveJob);
@@ -137,23 +146,6 @@ public class SaveJobServiceImpl implements SaveJobService {
     private User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
-    }
-
-    private boolean checkAndReactivateJob(List<SaveJob> jobs, Long userId, Long jobId) {
-        SaveJob saveJob = findSaveJob(jobId, jobs);
-
-        if (saveJob != null) {
-            if (saveJob.getStatus() == SaveJobStatus.ACTIVE) {
-                throw new  DuplicateResourceException("Job đã nằm trong danh sách");
-            } else if (saveJob.getStatus() == SaveJobStatus.DELETE) {
-                saveJob.setStatus(SaveJobStatus.ACTIVE);
-                saveJobRepository.save(saveJob);
-
-                log.info("User {} re-saved job {} successfully", userId, jobId);
-                return true;
-            }
-        }
-        return false;
     }
 
     private SaveJob findSaveJob(Long jobId, List<SaveJob> jobs) {
