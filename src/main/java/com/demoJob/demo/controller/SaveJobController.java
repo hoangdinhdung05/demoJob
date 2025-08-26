@@ -41,4 +41,17 @@ public class SaveJobController {
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(),
                 "API user delete save job successfully"));
     }
+
+    /**
+     * Lấy ra list job mà User đã lưu
+     */
+    @GetMapping
+    public ResponseEntity<?> getAllSaveJobs(@RequestParam(defaultValue = "0") int page,
+                                            @RequestParam(defaultValue = "10") int size) {
+        log.info("API get list save job");
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "API get list save job successfully",
+                saveJobService.getAllSavedJobs(page, size)));
+    }
+
 }
