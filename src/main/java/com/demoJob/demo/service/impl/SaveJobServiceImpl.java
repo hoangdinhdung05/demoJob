@@ -8,7 +8,7 @@ import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.SaveJob;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.DuplicateResourceException;
-import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SaveJobRepository;
@@ -23,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -49,6 +48,10 @@ public class SaveJobServiceImpl implements SaveJobService {
         //Valid user and job
         var user = getUserOrThrow(userId);
         var job = getJobOrThrow(jobId);
+
+        if (job.getStatus() != JobStatus.ACTIVE) {
+            throw new NotFoundException("Job not found");
+        }
 
         SaveJob saveJob = SaveJob.builder()
                 .user(user)
@@ -78,7 +81,6 @@ public class SaveJobServiceImpl implements SaveJobService {
         Page<SaveJob> jobPage = saveJobRepository.findAllByUserId(PageRequest.of(page, size), user.getId());
 
         List<JobResponse> responses = jobPage.getContent().stream()
-//                .filter(saveJob -> saveJob.getJob().getStatus() == JobStatus.ACTIVE)
                 .map(saveJob -> JobMapper.toResponse(saveJob.getJob()))
                 .collect(Collectors.toList());
 
@@ -123,10 +125,6 @@ public class SaveJobServiceImpl implements SaveJobService {
     }
 
     //========== PRIVATE METHOD ==========//
-    private boolean checkExistsJobInCategory(Long userId, Long jobId) {
-        return saveJobRepository.existsByUserIdAndJobId(userId, jobId);
-    }
-
     private Job getJobOrThrow(Long jobId) {
         return jobRepository.findById(jobId)
                 .orElseThrow(() -> new EntityNotFoundException("Job not found"));
@@ -155,5 +153,4 @@ public class SaveJobServiceImpl implements SaveJobService {
         }
         return false;
     }
-
 }
