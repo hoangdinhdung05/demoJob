@@ -8,6 +8,7 @@ import com.demoJob.demo.repository.UserCompanyRepository;
 import com.demoJob.demo.util.enums.UserCompanyStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -54,4 +55,13 @@ public class UserCompanyUtil {
                 .orElseThrow(() -> new InvalidDataException("Owner company not found for userId = " + user.getId()));
     }
 
+    /**
+     * Lấy danh sách công ty mà user tham gia (ACTIVE)
+     */
+    public List<UserCompany> getCompaniesOfUser(User user) {
+        if (user == null || user.getId() == null) {
+            return List.of();
+        }
+        return userCompanyRepository.findByUserAndStatus(user, UserCompanyStatus.ACTIVE);
+    }
 }
