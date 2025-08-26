@@ -23,11 +23,11 @@ public class SaveJobController {
      * User lưu lại các Job mà mình quan tâm hoặc yêu thích
      */
     @PostMapping("/{jobId}")
-    public ResponseEntity<?> saveJob(@PathVariable Long jobId,
-                                     @AuthenticationPrincipal CustomUserDetails user,
-                                     @RequestParam SaveJobStatus status) {
+    public ResponseEntity<?> saveOrUpdate(@PathVariable Long jobId,
+                                          @AuthenticationPrincipal CustomUserDetails user,
+                                          @RequestParam SaveJobStatus status) {
         log.info("API user save job or update status with userId={} and jobId={}", user.getId(), jobId);
-        saveJobService.saveJob(user.getId(), jobId, status);
+        saveJobService.saveJobOrUpdateStatus(user.getId(), jobId, status);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ResponseData<>(HttpStatus.CREATED.value(), "Job saved or updated successfully"));
     }

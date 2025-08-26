@@ -40,7 +40,7 @@ public class SaveJobServiceImpl implements SaveJobService {
      * User lưu lại các Job mà mình quan tâm hoặc yêu thích
      */
     @Override
-    public void saveJob(Long userId, Long jobId, SaveJobStatus status) {
+    public void saveJobOrUpdateStatus(Long userId, Long jobId, SaveJobStatus status) {
         //Valid user and job
         var user = getUserOrThrow(userId);
         var job = getJobOrThrow(jobId);

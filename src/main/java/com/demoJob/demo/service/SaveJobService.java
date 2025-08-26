@@ -8,7 +8,7 @@ public interface SaveJobService {
     /**
      * User lưu lại các Job mà mình quan tâm hoặc yêu thích
      */
-    void saveJob(Long userId, Long jobId, SaveJobStatus status);
+    void saveJobOrUpdateStatus(Long userId, Long jobId, SaveJobStatus status);
 
     /**
      * Lấy ra list job mà User đã lưu
