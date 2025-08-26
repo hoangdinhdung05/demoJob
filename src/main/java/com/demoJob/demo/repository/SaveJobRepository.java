@@ -30,9 +30,15 @@ public interface SaveJobRepository extends JpaRepository<SaveJob, Long> {
     int softDeleteByUserIdAndJobId(@Param("userId") Long userId,
                                    @Param("jobId") Long jobId);
 
-
+    /**
+     * Query danh sách job đã lưu theo UserId
+     * @param userId
+     * @return
+     */
     List<SaveJob> findAllByUserId(Long userId);
 
-    void deleteByUserIdAndJobId(Long userId, Long jobId);
-
+    /**
+     * Query job theo userId và jobId
+     */
+    Optional<SaveJob> findByUserIdAndJobId(Long userId, Long jobId);
 }

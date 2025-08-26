@@ -7,16 +7,15 @@ import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.SaveJob;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.DuplicateResourceException;
-import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SaveJobRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.SaveJobService;
+import com.demoJob.demo.util.enums.JobStatus;
 import com.demoJob.demo.util.enums.SaveJobStatus;
 import jakarta.persistence.EntityNotFoundException;
 import com.demoJob.demo.util.UserUtil;
-import com.demoJob.demo.util.enums.SaveJobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,6 +44,10 @@ public class SaveJobServiceImpl implements SaveJobService {
         //Valid user and job
         var user = getUserOrThrow(userId);
         var job = getJobOrThrow(jobId);
+
+        if (job.getStatus() != JobStatus.ACTIVE) {
+            throw new NotFoundException("Job not found");
+        }
 
         SaveJob saveJob = SaveJob.builder()
                 .user(user)
@@ -109,10 +112,6 @@ public class SaveJobServiceImpl implements SaveJobService {
     }
 
     //========== PRIVATE METHOD ==========//
-    private boolean checkExistsJobInCategory(Long userId, Long jobId) {
-        return saveJobRepository.existsByUserIdAndJobId(userId, jobId);
-    }
-
     private Job getJobOrThrow(Long jobId) {
         return jobRepository.findById(jobId)
                 .orElseThrow(() -> new EntityNotFoundException("Job not found"));
