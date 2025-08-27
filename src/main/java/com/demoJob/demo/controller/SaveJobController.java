@@ -43,4 +43,17 @@ public class SaveJobController {
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "Bỏ lưu công việc thất bại");
         }
     }
+
+    /**
+     * Lấy ra list job mà User đã lưu
+     */
+    @GetMapping
+    public ResponseEntity<?> getAllSaveJobs(@RequestParam(defaultValue = "0") int page,
+                                            @RequestParam(defaultValue = "10") int size) {
+        log.info("API get list save job");
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "API get list save job successfully",
+                saveJobService.getAllSavedJobs(page, size)));
+    }
+
 }

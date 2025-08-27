@@ -118,24 +118,6 @@ public class ResumeServiceImpl implements ResumeService {
         return toResponse(resume);
     }
 
-    @Override
-    public List<ResumeResponse> getResumeByUserId(long userId) {
-        List<Resume> resumes = resumeRepository.findByUserId(userId);
-        return resumes.stream().map(this::toResponse).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ResumeResponse> getResumeByJobId(long jobId) {
-        List<Resume> resumes = resumeRepository.findByJobId(jobId);
-        return resumes.stream().map(this::toResponse).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ResumeResponse> getList() {
-        List<Resume> resumes = resumeRepository.findAll();
-        return resumes.stream().map(this::toResponse).collect(Collectors.toList());
-    }
-
     /**
      * Lấy toàn bộ resume có phân trang
      */
@@ -175,11 +157,6 @@ public class ResumeServiceImpl implements ResumeService {
                 .total(resumePage.getTotalElements())
                 .items(list)
                 .build();
-    }
-
-    @Override
-    public boolean checkResumeExistsByUserAndJob(Resume resume) {
-        return resumeRepository.existsByUserIdAndJobId(resume.getUser().getId(), resume.getJob().getId());
     }
 
     //========== PRIVATE METHOD =========//

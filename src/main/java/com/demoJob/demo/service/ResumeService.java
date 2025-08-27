@@ -34,4 +34,5 @@ public interface ResumeService {
 
     boolean checkResumeExistsByUserAndJob(Resume resume);
 
+    PageResponse<?> getPageResume(int page, int size);
 }

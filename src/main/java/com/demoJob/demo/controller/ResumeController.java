@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/resumes")
@@ -119,5 +118,15 @@ public class ResumeController {
         log.info("API get paged resumes, page={}, size={}", page, size);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
                 "API get paged resume successfully", resumeService.getAllResumes(page, size)));
+    @GetMapping("/admin/page")
+    public ResponseData<?> adminGetPageResumes(@RequestParam int page, @RequestParam int size) {
+        log.info("API admin get paged resumes, page={}, size={}", page, size);
+        try {
+            PageResponse<?> response = resumeService.getPageResume(page, size);
+            return new ResponseData<>(HttpStatus.OK.value(), "API admin get paged resumes successfully", response);
+        } catch (Exception e) {
+            log.error("API admin get paged resumes error: {}", e.getMessage(), e);
+            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin get paged resumes fail");
+        }
     }
 }
