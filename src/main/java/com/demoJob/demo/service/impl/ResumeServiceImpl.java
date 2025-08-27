@@ -26,7 +26,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -108,24 +107,6 @@ public class ResumeServiceImpl implements ResumeService {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new EntityNotFoundException("Resume not found"));
         return toResponse(resume);
-    }
-
-    @Override
-    public List<ResumeResponse> getResumeByUserId(long userId) {
-        List<Resume> resumes = resumeRepository.findByUserId(userId);
-        return resumes.stream().map(this::toResponse).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ResumeResponse> getResumeByJobId(long jobId) {
-        List<Resume> resumes = resumeRepository.findByJobId(jobId);
-        return resumes.stream().map(this::toResponse).collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ResumeResponse> getList() {
-        List<Resume> resumes = resumeRepository.findAll();
-        return resumes.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
     @Override
