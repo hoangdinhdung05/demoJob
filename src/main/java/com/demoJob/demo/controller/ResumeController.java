@@ -22,6 +22,9 @@ public class ResumeController {
 
     private final ResumeService resumeService;
 
+    /**
+     * User apply vào job mình yêu cầu
+     */
     @PostMapping
     public ResponseEntity<?> createResume(@RequestBody @Valid ResumeRequest request) {
         log.info("API create resume");
