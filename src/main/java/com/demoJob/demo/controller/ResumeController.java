@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -48,16 +49,14 @@ public class ResumeController {
         }
     }
 
-    @DeleteMapping("/admin/{resumeId}")
-    public ResponseData<?> adminDeleteResume(@PathVariable @Min(1) Long resumeId) {
-        log.info("API admin delete resume, id={}", resumeId);
-        try {
-            resumeService.deleteResume(resumeId);
-            return new ResponseData<>(HttpStatus.NO_CONTENT.value(), "API admin delete resume successfully");
-        } catch (Exception e) {
-            log.error("API admin delete resume error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin delete resume fail");
-        }
+    /**
+     * HR hoặc Admin xóa đi Resume của User
+     */
+    @DeleteMapping("/{resumeId}")
+    public ResponseEntity<?> delete(@PathVariable Long resumeId) {
+        log.info("API delete resume, id={}", resumeId);
+        resumeService.deleteResume(resumeId);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(), "Api delete resume successfully"));
     }
 
     @GetMapping("/admin/{resumeId}")

@@ -8,10 +8,15 @@ import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Resume;
 import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.InvalidDataException;
+import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.ResumeRepository;
 import com.demoJob.demo.repository.UserRepository;
+import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.ResumeService;
+import com.demoJob.demo.util.UserCompanyUtil;
+import com.demoJob.demo.util.UserUtil;
 import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +36,8 @@ public class ResumeServiceImpl implements ResumeService {
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
+    private final UserUtil userUtil;
+    private final UserCompanyUtil userCompanyUtil;
 
     @Override
     public ResumeCreateResponse createResume(ResumeRequest request) {
@@ -81,13 +88,19 @@ public class ResumeServiceImpl implements ResumeService {
                 .build();
     }
 
+    /**
+     * HR hoặc Admin xóa đi Resume của User
+     */
     @Override
     public void deleteResume(long resumeId) {
         log.info("Deleting resume with id={}", resumeId);
-        if (!resumeRepository.existsById(resumeId)) {
-            throw new EntityNotFoundException("Resume not found");
-        }
-        resumeRepository.deleteById(resumeId);
+        Resume resume = getResumeOrThrow(resumeId);
+
+        checkPermission(resume.getJob());
+
+        resume.setStatus(ResumeStatus.DELETED);
+        resumeRepository.save(resume);
+        log.info("Delete resume successfully");
     }
 
     @Override
@@ -136,6 +149,7 @@ public class ResumeServiceImpl implements ResumeService {
         return resumeRepository.existsByUserIdAndJobId(resume.getUser().getId(), resume.getJob().getId());
     }
 
+    //========== PRIVATE METHOD ==========//
     private ResumeResponse toResponse(Resume resume) {
         return ResumeResponse.builder()
                 .id(resume.getId())
@@ -156,5 +170,20 @@ public class ResumeServiceImpl implements ResumeService {
                         .name(resume.getJob().getName())
                         .build())
                 .build();
+    }
+
+    private Resume getResumeOrThrow(long resumeId) {
+        return resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new NotFoundException("Resume not found"));
+    }
+
+    private void checkPermission(Job job) {
+        User currentUser = userUtil.getCurrentUser();
+        boolean isAdmin = SecurityUtils.hasRole("ADMIN");
+
+        if (isAdmin) return;
+        if (!userCompanyUtil.isOwnerOfCompany(currentUser, job.getCompany())) {
+            throw new InvalidDataException("Bạn không có quyền thực hiện thao tác này");
+        }
     }
 }

@@ -14,6 +14,9 @@ public interface ResumeService {
 
     ResumeUpdateResponse updateResume(ResumeRequest request);
 
+    /**
+     * HR hoặc Admin xóa đi Resume của User
+     */
     void deleteResume(long resumeId);
 
     ResumeResponse getResumeById(long resumeId);
