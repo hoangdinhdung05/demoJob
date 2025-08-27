@@ -18,14 +18,5 @@ public interface ResumeService {
 
     ResumeResponse getResumeById(long resumeId);
 
-    List<ResumeResponse> getResumeByUserId(long userId);
-
-    List<ResumeResponse> getResumeByJobId(long jobId);
-
-    List<ResumeResponse> getList();
-
     PageResponse<?> getPageResume(int page, int size);
-
-    boolean checkResumeExistsByUserAndJob(Resume resume);
-
 }

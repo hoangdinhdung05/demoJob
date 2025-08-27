@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/resumes")
@@ -69,42 +68,6 @@ public class ResumeController {
         } catch (Exception e) {
             log.error("API admin get resume by id error: {}", e.getMessage(), e);
             return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin get resume by id fail");
-        }
-    }
-
-    @GetMapping("/admin/user/{userId}")
-    public ResponseData<?> adminGetResumesByUserId(@PathVariable @Min(1) Long userId) {
-        log.info("API admin get resumes by userId={}", userId);
-        try {
-            List<ResumeResponse> response = resumeService.getResumeByUserId(userId);
-            return new ResponseData<>(HttpStatus.OK.value(), "API admin get resumes by user successfully", response);
-        } catch (Exception e) {
-            log.error("API admin get resumes by user error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin get resumes by user fail");
-        }
-    }
-
-    @GetMapping("/admin/job/{jobId}")
-    public ResponseData<?> adminGetResumesByJobId(@PathVariable @Min(1) Long jobId) {
-        log.info("API admin get resumes by jobId={}", jobId);
-        try {
-            List<ResumeResponse> response = resumeService.getResumeByJobId(jobId);
-            return new ResponseData<>(HttpStatus.OK.value(), "API admin get resumes by job successfully", response);
-        } catch (Exception e) {
-            log.error("API admin get resumes by job error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin get resumes by job fail");
-        }
-    }
-
-    @GetMapping("/admin/getAll")
-    public ResponseData<?> adminGetAllResumes() {
-        log.info("API admin get all resumes");
-        try {
-            List<ResumeResponse> response = resumeService.getList();
-            return new ResponseData<>(HttpStatus.OK.value(), "API admin get all resumes successfully", response);
-        } catch (Exception e) {
-            log.error("API admin get all resumes error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin get all resumes fail");
         }
     }
 
