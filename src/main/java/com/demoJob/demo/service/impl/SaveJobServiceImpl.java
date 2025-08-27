@@ -3,18 +3,25 @@ package com.demoJob.demo.service.impl;
 import com.demoJob.demo.dto.response.Job.CompanyJobResponse;
 import com.demoJob.demo.dto.response.Job.JobResponse;
 import com.demoJob.demo.dto.response.Admin.SkillResponse;
+import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.SaveJob;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.DuplicateResourceException;
+import com.demoJob.demo.exception.NotFoundException;
+import com.demoJob.demo.mapper.JobMapper;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SaveJobRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.SaveJobService;
 import com.demoJob.demo.util.enums.SaveJobStatus;
 import jakarta.persistence.EntityNotFoundException;
+import com.demoJob.demo.util.UserUtil;
+import com.demoJob.demo.util.enums.JobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +35,7 @@ public class SaveJobServiceImpl implements SaveJobService {
     private final SaveJobRepository saveJobRepository;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
+    private final UserUtil userUtil;
 
     /**
      * User lưu lại các Job mà mình quan tâm hoặc yêu thích
@@ -40,6 +48,10 @@ public class SaveJobServiceImpl implements SaveJobService {
         //Valid user and job
         var user = getUserOrThrow(userId);
         var job = getJobOrThrow(jobId);
+
+        if (job.getStatus() != JobStatus.ACTIVE) {
+            throw new NotFoundException("Job not found");
+        }
 
         SaveJob saveJob = SaveJob.builder()
                 .user(user)
@@ -58,11 +70,26 @@ public class SaveJobServiceImpl implements SaveJobService {
         log.info("User {} removed saved job {}", userId, jobId);
     }
 
+    /**
+     * Lấy ra list job mà User đã lưu
+     */
     @Override
-    public List<JobResponse> getSavedJobs(Long userId) {
-        return saveJobRepository.findAllByUserId(userId).stream()
-                .map(this::convertToJob)
+    public PageResponse<?> getAllSavedJobs(int page, int size) {
+
+        User user = userUtil.getCurrentUser();
+
+        Page<SaveJob> jobPage = saveJobRepository.findAllByUserId(PageRequest.of(page, size), user.getId());
+
+        List<JobResponse> responses = jobPage.getContent().stream()
+                .map(saveJob -> JobMapper.toResponse(saveJob.getJob()))
                 .collect(Collectors.toList());
+
+        return PageResponse.<JobResponse>builder()
+                .page(jobPage.getNumber())
+                .size(jobPage.getSize())
+                .total(jobPage.getTotalElements())
+                .items(responses)
+                .build();
     }
 
     @Override
@@ -98,10 +125,6 @@ public class SaveJobServiceImpl implements SaveJobService {
     }
 
     //========== PRIVATE METHOD ==========//
-    private boolean checkExistsJobInCategory(Long userId, Long jobId) {
-        return saveJobRepository.existsByUserIdAndJobId(userId, jobId);
-    }
-
     private Job getJobOrThrow(Long jobId) {
         return jobRepository.findById(jobId)
                 .orElseThrow(() -> new EntityNotFoundException("Job not found"));
@@ -130,5 +153,4 @@ public class SaveJobServiceImpl implements SaveJobService {
         }
         return false;
     }
-
 }
