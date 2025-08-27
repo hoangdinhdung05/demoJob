@@ -3,11 +3,11 @@ package com.demoJob.demo.controller;
 import com.demoJob.demo.dto.request.Admin.Resume.ResumeRequest;
 import com.demoJob.demo.dto.response.Admin.Resume.ResumeCreateResponse;
 import com.demoJob.demo.dto.response.Admin.Resume.ResumeResponse;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
-import com.demoJob.demo.service.ResumeService;
+import com.demoJob.demo.service.ResumeService.ResumeService;
+import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -36,26 +36,14 @@ public class ResumeController {
         }
     }
 
-    @PutMapping("/admin/update")
-    public ResponseData<?> adminUpdateResume(@RequestBody @Valid ResumeRequest request) {
-        log.info("API admin update resume");
-        try {
-            ResumeUpdateResponse response = resumeService.updateResume(request);
-            return new ResponseData<>(HttpStatus.OK.value(), "API admin update resume successfully", response);
-        } catch (Exception e) {
-            log.error("API admin update resume error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin update resume fail");
-        }
-    }
-
     /**
-     * HR hoặc Admin xóa đi Resume của User
+     * HR hoặc Admin change status Resume của User
      */
-    @DeleteMapping("/{resumeId}")
-    public ResponseEntity<?> delete(@PathVariable Long resumeId) {
-        log.info("API delete resume, id={}", resumeId);
-        resumeService.deleteResume(resumeId);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(), "Api delete resume successfully"));
+    @PatchMapping("/{resumeId}")
+    public ResponseEntity<?> changeStatus(@PathVariable Long resumeId, @RequestParam ResumeStatus status) {
+        log.info("API change status resume, id={}", resumeId);
+        resumeService.changeStatus(resumeId, status);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(), "Api change status resume successfully"));
     }
 
     @GetMapping("/admin/{resumeId}")
