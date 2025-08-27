@@ -10,10 +10,11 @@ import java.util.Optional;
 
 @Repository
 public interface ResumeRepository extends JpaRepository<Resume, Long> {
+
+    /**
+     * Tìm resume theo userId và jobId
+     */
     Optional<Resume> findByUserIdAndJobId(Long userId, Long jobId);
-    List<Resume> findByUserId(Long userId);
-    List<Resume> findByJobId(Long jobId);
-    boolean existsByUserIdAndJobId(Long userId, Long jobId);
 
     /**
      * QUery lấy ra resume theo created_by

@@ -2,7 +2,6 @@ package com.demoJob.demo.controller;
 
 import com.demoJob.demo.dto.request.Admin.Resume.ResumeRequest;
 import com.demoJob.demo.dto.response.Admin.Resume.ResumeCreateResponse;
-import com.demoJob.demo.dto.response.Resume.ResumeResponse;
 import com.demoJob.demo.dto.response.Admin.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
@@ -71,42 +70,6 @@ public class ResumeController {
                 "API get resume successfully", resumeService.getResumeById(resumeId)));
     }
 
-    @GetMapping("/admin/user/{userId}")
-    public ResponseData<?> adminGetResumesByUserId(@PathVariable @Min(1) Long userId) {
-        log.info("API admin get resumes by userId={}", userId);
-        try {
-            List<ResumeResponse> response = resumeService.getResumeByUserId(userId);
-            return new ResponseData<>(HttpStatus.OK.value(), "API admin get resumes by user successfully", response);
-        } catch (Exception e) {
-            log.error("API admin get resumes by user error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin get resumes by user fail");
-        }
-    }
-
-    @GetMapping("/admin/job/{jobId}")
-    public ResponseData<?> adminGetResumesByJobId(@PathVariable @Min(1) Long jobId) {
-        log.info("API admin get resumes by jobId={}", jobId);
-        try {
-            List<ResumeResponse> response = resumeService.getResumeByJobId(jobId);
-            return new ResponseData<>(HttpStatus.OK.value(), "API admin get resumes by job successfully", response);
-        } catch (Exception e) {
-            log.error("API admin get resumes by job error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin get resumes by job fail");
-        }
-    }
-
-    @GetMapping("/admin/getAll")
-    public ResponseData<?> adminGetAllResumes() {
-        log.info("API admin get all resumes");
-        try {
-            List<ResumeResponse> response = resumeService.getList();
-            return new ResponseData<>(HttpStatus.OK.value(), "API admin get all resumes successfully", response);
-        } catch (Exception e) {
-            log.error("API admin get all resumes error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin get all resumes fail");
-        }
-    }
-
     /**
      * - Admin: tất cả resumes
      * - Owner: resumes nộp vào company mình sở hữu
@@ -118,15 +81,5 @@ public class ResumeController {
         log.info("API get paged resumes, page={}, size={}", page, size);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
                 "API get paged resume successfully", resumeService.getAllResumes(page, size)));
-    @GetMapping("/admin/page")
-    public ResponseData<?> adminGetPageResumes(@RequestParam int page, @RequestParam int size) {
-        log.info("API admin get paged resumes, page={}, size={}", page, size);
-        try {
-            PageResponse<?> response = resumeService.getPageResume(page, size);
-            return new ResponseData<>(HttpStatus.OK.value(), "API admin get paged resumes successfully", response);
-        } catch (Exception e) {
-            log.error("API admin get paged resumes error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin get paged resumes fail");
-        }
     }
 }
