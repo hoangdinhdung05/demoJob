@@ -1,17 +1,26 @@
 package com.demoJob.demo.service.impl;
 
+import com.demoJob.demo.dto.request.Resume.ResumeRequest;
 import com.demoJob.demo.dto.request.Admin.Resume.ResumeRequest;
 import com.demoJob.demo.dto.response.Admin.Resume.ResumeCreateResponse;
 import com.demoJob.demo.dto.response.Resume.ResumeResponse;
 import com.demoJob.demo.dto.response.Admin.Resume.ResumeUpdateResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeCreateResponse;
+import com.demoJob.demo.dto.response.Admin.Resume.ResumeResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Resume;
 import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.DuplicateResourceException;
+import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.mapper.ResumeMapper;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.ResumeRepository;
+import com.demoJob.demo.service.ResumeService.ResumeMailService;
+import com.demoJob.demo.service.ResumeService.ResumeService;
+import com.demoJob.demo.util.UserUtil;
+import com.demoJob.demo.util.enums.JobStatus;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.service.ResumeService;
@@ -28,6 +37,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import static com.demoJob.demo.mapper.ResumeMapper.toResponse;
+import static com.demoJob.demo.mapper.ResumeMapper.toCreateResponse;
+import static com.demoJob.demo.mapper.ResumeMapper.toEntity;
 
 @Service
 @RequiredArgsConstructor
@@ -35,37 +46,35 @@ import static com.demoJob.demo.mapper.ResumeMapper.toResponse;
 public class ResumeServiceImpl implements ResumeService {
 
     private final ResumeRepository resumeRepository;
-    private final UserRepository userRepository;
     private final JobRepository jobRepository;
+    private final UserUtil userUtil;
+    private final ResumeMailService resumeMailService;
     private final UserUtil userUtil;
     private final UserCompanyUtil userCompanyUtil;
 
+    /**
+     * User apply vào job mình yêu cầu
+     */
     @Override
     public ResumeCreateResponse createResume(ResumeRequest request) {
-        log.info("Creating resume for userId={} and jobId={}", request.getUserId(), request.getJobId());
-
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        User user = userUtil.getCurrentUser();
 
         Job job = jobRepository.findById(request.getJobId())
                 .orElseThrow(() -> new EntityNotFoundException("Job not found"));
 
-        Resume resume = Resume.builder()
-                .email(request.getEmail())
-                .url(request.getUrl())
-                .user(user)
-                .job(job)
-                .status(ResumeStatus.PENDING)
-                .build();
+        validateUserCanApplyToJob(user, job);
 
-        Resume saved = resumeRepository.save(resume);
+        log.info("Create resume with userId={} and jobId={}", user.getId(), job.getId());
 
-        return ResumeCreateResponse.builder()
-                .id(saved.getId())
-                .email(user.getEmail())
-                .createdAt(saved.getCreatedAt())
-                .createdBy(saved.getCreatedBy())
-                .build();
+        Resume resume = toEntity(request, user, job);
+        resumeRepository.save(resume);
+
+        log.info("Create resume with userId={} and jobId={} successfully", user.getId(), job.getId());
+
+        //SendMail to HR
+        resumeMailService.sendmailToHrOrOwner(job, user, resume);
+
+        return toCreateResponse(resume);
     }
 
     @Override
@@ -156,6 +165,17 @@ public class ResumeServiceImpl implements ResumeService {
                 .total(resumePage.getTotalElements())
                 .items(list)
                 .build();
+    }
+    //========== PRIVATE METHOD ==========//
+    private void validateUserCanApplyToJob(User user, Job job) {
+        if (resumeRepository.existsByUserIdAndJobId(user.getId(), job.getId())) {
+            throw new DuplicateResourceException("You already applied for this job");
+
+        }
+
+        if (job.getStatus() != JobStatus.ACTIVE) {
+            throw new NotFoundException("Cannot apply to an inactive job");
+        }
     }
 
     //========== PRIVATE METHOD =========//
