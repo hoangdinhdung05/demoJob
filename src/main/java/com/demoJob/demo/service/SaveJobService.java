@@ -14,7 +14,4 @@ public interface SaveJobService {
      * Lấy ra list job mà User đã lưu
      */
     PageResponse<?> getAllSavedJobs(int page, int size);
-
-    boolean isJobSaved(Long userId, Long jobId);
-
 }
