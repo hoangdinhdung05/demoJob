@@ -2,14 +2,13 @@ package com.demoJob.demo.service.impl;
 
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
 import com.demoJob.demo.dto.request.LoginRequest;
-import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
-import com.demoJob.demo.entity.RefreshToken;
+import com.demoJob.demo.entity.Token;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.*;
 import com.demoJob.demo.repository.UserRepository;
@@ -17,8 +16,8 @@ import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
 import com.demoJob.demo.service.UserService.UserClientService;
 import com.demoJob.demo.util.enums.OtpType;
-import com.demoJob.demo.util.enums.TokenBlacklistReason;
 import com.demoJob.demo.util.enums.UserStatus;
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +28,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Objects;
 import static com.demoJob.demo.mapper.AuthMapper.toResponse;
 
@@ -40,7 +37,7 @@ import static com.demoJob.demo.mapper.AuthMapper.toResponse;
 public class AuthServiceImpl implements AuthService {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final RefreshTokenService refreshTokenService;
+    private final TokenService tokenService;
     private final BlacklistService blacklistService;
     private final AuthenticationManager authenticationManager;
     private final UserClientService userService;
@@ -88,30 +85,29 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * Làm mới access token bằng refresh token
-     * @param refreshTokenRequest đối tượng chứa refresh token
+     * @param request refresh token
      * @return TokenRefreshResponse chứa access token và refresh token mới
      */
     @Override
-    public TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
-        String reqToken = refreshTokenRequest.getRefreshToken();
-
-        RefreshToken refreshToken = refreshTokenService.findByToken(reqToken)
-                .orElseThrow(() -> new TokenBlacklistedException("Invalid refresh token"));
-
-        if (!refreshTokenService.isValid(refreshToken)) {
-            throw new RuntimeException("Refresh token expired or revoked");
+    public TokenRefreshResponse refreshToken(HttpServletRequest request) {
+        final String refreshToken = extractToken(request);
+        if (StringUtils.isBlank(refreshToken)) {
+            throw new InvalidDataException("Token must be not blank");
         }
 
-        if (blacklistService.isBlacklisted(reqToken)) {
+        final String username = jwtTokenProvider.getUsernameFromRefreshToken(refreshToken);
+        var user = getUserByUsername(username);
+
+        if (blacklistService.isBlacklisted(refreshToken)) {
             throw new TokenBlacklistedException("Refresh token is blacklisted");
         }
 
-        User user = refreshToken.getUser();
         String accessToken = jwtTokenProvider.generateAccessToken(user);
+        buildToken(username, accessToken, refreshToken);
 
         return TokenRefreshResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(reqToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 
@@ -125,14 +121,8 @@ public class AuthServiceImpl implements AuthService {
     public String logout(HttpServletRequest request) {
         String accessToken = extractToken(request);
         String username = jwtTokenProvider.getUsernameFromAccessToken(accessToken);
-        if (username == null) throw new TokenBlacklistedException("Invalid access token");
 
-        User user = getUserByUsername(username);
-        refreshTokenService.revokeTokenByUser(user);
-
-        Instant expiry = jwtTokenProvider.getAccessTokenExpiry(accessToken)
-                .atZone(ZoneId.systemDefault()).toInstant();
-        blacklistService.blacklistToken(accessToken, expiry, TokenBlacklistReason.LOGOUT);
+        tokenService.delete(username);
 
         return "Logout successful";
     }
@@ -228,7 +218,7 @@ public class AuthServiceImpl implements AuthService {
     private AuthResponse generateAuthResponse(User user) {
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
-        refreshTokenService.createRefreshToken(user, refreshToken, jwtTokenProvider.getRefreshTokenExpiryDate());
+        buildToken(user.getUsername(), accessToken, refreshToken);
         return toResponse(accessToken, refreshToken);
     }
 
@@ -272,5 +262,16 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidTokenException("Token not provided");
         }
         return header.substring(7);
+    }
+
+    /**
+     * Lưu thông tin token xuống db
+     */
+    private void buildToken(String username, String accessToken, String refreshToken) {
+        tokenService.save(Token.builder()
+                .username(username)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build());
     }
 }

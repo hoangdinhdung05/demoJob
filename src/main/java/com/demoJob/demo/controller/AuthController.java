@@ -1,7 +1,6 @@
 package com.demoJob.demo.controller;
 
 import com.demoJob.demo.dto.request.*;
-import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
 import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
@@ -55,9 +54,10 @@ public class AuthController {
      * @return ResponseEntity chứa mã trạng thái và thông báo xác minh thành công.
      */
     @PostMapping("/refresh-token")
-    public ResponseEntity<ResponseData<TokenRefreshResponse>> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
+    public ResponseEntity<ResponseData<TokenRefreshResponse>> refreshToken(HttpServletRequest request) {
         log.info("[TOKEN] Refreshing token");
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "Làm mới token thành công", authService.refreshToken(request)));
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
+                "Làm mới token thành công", authService.refreshToken(request)));
     }
 
     /**

@@ -2,7 +2,6 @@ package com.demoJob.demo.service;
 
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
 import com.demoJob.demo.dto.request.LoginRequest;
-import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
 import com.demoJob.demo.dto.request.RegisterRequest;
 import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
@@ -35,10 +34,10 @@ public interface AuthService {
 
     /**
      * Làm mới token truy cập bằng refresh token
-     * @param refreshTokenRequest chứa thông tin refresh token
+     * @param request chứa refreshToken
      * @return TokenRefreshResponse chứa access token mới
      */
-    TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest);
+    TokenRefreshResponse refreshToken(HttpServletRequest request);
 
     /**
      * Đăng xuất người dùng
