@@ -1,8 +1,6 @@
 package com.demoJob.demo.service.impl;
 
-import com.demoJob.demo.dto.response.Job.CompanyJobResponse;
 import com.demoJob.demo.dto.response.Job.JobResponse;
-import com.demoJob.demo.dto.response.Admin.SkillResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.SaveJob;
@@ -90,40 +88,6 @@ public class SaveJobServiceImpl implements SaveJobService {
                 .size(jobPage.getSize())
                 .total(jobPage.getTotalElements())
                 .items(responses)
-                .build();
-    }
-
-    @Override
-    public boolean isJobSaved(Long userId, Long jobId) {
-        return saveJobRepository.existsByUserIdAndJobId(userId, jobId);
-    }
-
-    //========== PRIVATE METHOD ==========//
-
-    private JobResponse convertToJob(SaveJob saveJob) {
-        Job job = saveJob.getJob();
-        return JobResponse.builder()
-                .id(job.getId())
-                .name(job.getName())
-                .location(job.getLocation())
-                .salary(job.getSalary())
-                .quantity(job.getQuantity())
-                .level(job.getLevel())
-                .description(job.getDescription())
-                .startDate(job.getStartDate())
-                .endDate(job.getEndDate())
-                .status(job.getStatus())
-                .company(CompanyJobResponse.builder()
-                        .id(job.getCompany().getId())
-                        .name(job.getCompany().getName())
-                        .build())
-                .skills(job.getSkills().stream()
-                        .map(skill -> SkillResponse.builder()
-                                .id(skill.getId())
-                                .name(skill.getName())
-                                .description(skill.getDescription())
-                                .build())
-                        .collect(Collectors.toSet()))
                 .build();
     }
 

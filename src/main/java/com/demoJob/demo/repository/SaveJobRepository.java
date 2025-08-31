@@ -12,11 +12,6 @@ import java.util.*;
 public interface SaveJobRepository extends JpaRepository<SaveJob, Long> {
 
     /**
-     * Check exists trước khi lưu Job tránh trùng
-     */
-    boolean existsByUserIdAndJobId(Long userId, Long jobId);
-
-    /**
      * Lấy ra list job mà User đã lưu (Đã active)
      */
     @Query("""
