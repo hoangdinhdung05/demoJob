@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import static com.demoJob.demo.mapper.ResumeMapper.*;
@@ -91,23 +92,60 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
 
+    /**
+     * Lấy thông tin resume theo idResume
+     */
     @Override
     public ResumeResponse getResumeById(long resumeId) {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new EntityNotFoundException("Resume not found"));
+
+        boolean isCreatorResume = checkCreatorResume(resume);
+
+        if (!isCreatorResume) {
+            checkPermission(resume.getJob());
+        }
+
+        log.info("Get resume by resumeId={} successfully", resumeId);
+
         return toResponse(resume);
     }
 
+    /**
+     * Lấy toàn bộ resume có phân trang
+     */
     @Override
-    public PageResponse<?> getPageResume(int page, int size) {
-        Page<Resume> resumePage = resumeRepository.findAll(PageRequest.of(page, size));
+    public PageResponse<?> getAllResumes(int page, int size) {
+
+        User currentUser = userUtil.getCurrentUser();
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Resume> resumePage;
+
+        if (SecurityUtils.hasRole("ADMIN")) {
+            resumePage = resumeRepository.findAll(pageable);
+        } else if (userCompanyUtil.isOwner(currentUser)) {
+            List<Long> companyIds = userCompanyUtil.getCompaniesOfUser(currentUser).stream()
+                    .map(c -> c.getCompany().getId())
+                    .toList();
+
+            if (companyIds.isEmpty()) {
+                resumePage = Page.empty(pageable);
+            } else {
+                resumePage = resumeRepository.findByJob_Company_IdIn(companyIds, pageable);
+            }
+        } else {
+            resumePage = resumeRepository.findByCreatedBy(currentUser.getUsername(), pageable);
+        }
 
         List<ResumeResponse> list = resumePage.stream()
                 .map(ResumeMapper::toResponse)
                 .toList();
 
+        log.info("Get all resumes successfully");
+
         return PageResponse.<ResumeResponse>builder()
-                .page(resumePage.getNumber() + 1)
+                .page(resumePage.getNumber())
                 .size(resumePage.getSize())
                 .total(resumePage.getTotalElements())
                 .items(list)
@@ -126,11 +164,6 @@ public class ResumeServiceImpl implements ResumeService {
         }
     }
 
-    private Resume getResumeOrThrow(long resumeId) {
-        return resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new NotFoundException("Resume not found"));
-    }
-
     private void checkPermission(Job job) {
         User currentUser = userUtil.getCurrentUser();
         boolean isAdmin = SecurityUtils.hasRole("ADMIN");
@@ -139,6 +172,16 @@ public class ResumeServiceImpl implements ResumeService {
         if (!userCompanyUtil.isOwnerOfCompany(currentUser, job.getCompany())) {
             throw new InvalidDataException("Bạn không có quyền thực hiện thao tác này");
         }
+    }
+
+    private boolean checkCreatorResume(Resume resume) {
+        User currentUser = userUtil.getCurrentUser();
+        return resume.getCreatedBy().equals(currentUser.getUsername());
+    }
+
+    private Resume getResumeOrThrow(long resumeId) {
+        return resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new NotFoundException("Resume not found"));
     }
 
     private void validateTransition(ResumeStatus current, ResumeStatus target) {

@@ -1,9 +1,12 @@
 package com.demoJob.demo.repository;
 
+import com.demoJob.demo.entity.User;
 import com.demoJob.demo.entity.UserCompany;
 import com.demoJob.demo.util.enums.UserCompanyStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -35,4 +38,8 @@ public interface UserCompanyRepository extends JpaRepository<UserCompany, Long> 
      */
     boolean existsByUserIdAndCompanyIdAndIsOwnerTrueAndStatus(Long userId, Long companyId, UserCompanyStatus status);
 
+    /**
+     * Tìm list UserCompany theo User và Status
+     */
+    List<UserCompany> findByUserAndStatus(User user, UserCompanyStatus status);
 }

@@ -18,7 +18,13 @@ public interface ResumeService {
      */
     void changeStatus(long resumeId, ResumeStatus status);
 
+    /**
+     * Lấy thông tin resume theo idResume
+     */
     ResumeResponse getResumeById(long resumeId);
 
-    PageResponse<?> getPageResume(int page, int size);
+    /**
+     * Lấy toàn bộ resume có phân trang
+     */
+    PageResponse<?> getAllResumes(int page, int size);
 }
