@@ -3,8 +3,6 @@ package com.demoJob.demo.service.impl;
 import com.demoJob.demo.dto.request.Resume.ResumeRequest;
 import com.demoJob.demo.dto.response.Resume.ResumeCreateResponse;
 import com.demoJob.demo.dto.response.Resume.ResumeResponse;
-import com.demoJob.demo.dto.response.Resume.ResumeResponse;
-import com.demoJob.demo.dto.response.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Resume;
@@ -22,8 +20,6 @@ import com.demoJob.demo.util.enums.JobStatus;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.util.UserCompanyUtil;
 import com.demoJob.demo.util.enums.ResumeStatus;
-import com.demoJob.demo.security.SecurityUtils;
-import com.demoJob.demo.util.UserCompanyUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +28,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
-import static com.demoJob.demo.mapper.ResumeMapper.*;
 import static com.demoJob.demo.mapper.ResumeMapper.*;
 
 @Service
