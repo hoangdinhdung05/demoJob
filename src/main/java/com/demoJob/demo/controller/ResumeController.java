@@ -1,11 +1,11 @@
 package com.demoJob.demo.controller;
 
-import com.demoJob.demo.dto.request.Admin.Resume.ResumeRequest;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeCreateResponse;
+import com.demoJob.demo.dto.request.Resume.ResumeRequest;
 import com.demoJob.demo.dto.response.Admin.Resume.ResumeResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
+import com.demoJob.demo.service.ResumeService.ResumeService;
 import com.demoJob.demo.service.ResumeService.ResumeService;
 import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.validation.Valid;
@@ -24,16 +24,15 @@ public class ResumeController {
 
     private final ResumeService resumeService;
 
-    @PostMapping("/admin/create")
-    public ResponseData<?> adminCreateResume(@RequestBody @Valid ResumeRequest request) {
-        log.info("API admin create resume");
-        try {
-            ResumeCreateResponse response = resumeService.createResume(request);
-            return new ResponseData<>(HttpStatus.CREATED.value(), "API admin create resume successfully", response);
-        } catch (Exception e) {
-            log.error("API admin create resume error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin create resume fail");
-        }
+    /**
+     * User apply vào job mình yêu cầu
+     */
+    @PostMapping
+    public ResponseEntity<?> createResume(@RequestBody @Valid ResumeRequest request) {
+        log.info("API create resume");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ResponseData<>(HttpStatus.CREATED.value(),
+                        "API create resume successfully", resumeService.createResume(request)));
     }
 
     /**
