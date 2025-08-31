@@ -1,4 +1,4 @@
-package com.demoJob.demo.dto.response.Admin.Resume;
+package com.demoJob.demo.dto.response.Resume;
 
 import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.persistence.EnumType;

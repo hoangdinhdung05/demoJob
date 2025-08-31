@@ -1,11 +1,10 @@
 package com.demoJob.demo.controller;
 
 import com.demoJob.demo.dto.request.Resume.ResumeRequest;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
-import com.demoJob.demo.service.ResumeService.ResumeService;
 import com.demoJob.demo.service.ResumeService.ResumeService;
 import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.validation.Valid;
@@ -42,7 +41,8 @@ public class ResumeController {
     public ResponseEntity<?> changeStatus(@PathVariable Long resumeId, @RequestParam ResumeStatus status) {
         log.info("API change status resume, id={}", resumeId);
         resumeService.changeStatus(resumeId, status);
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(), "Api change status resume successfully"));
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(),
+                "Api change status resume successfully"));
     }
 
     @GetMapping("/admin/{resumeId}")
