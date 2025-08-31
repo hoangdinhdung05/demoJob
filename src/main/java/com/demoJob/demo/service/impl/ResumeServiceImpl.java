@@ -3,6 +3,7 @@ package com.demoJob.demo.service.impl;
 import com.demoJob.demo.dto.request.Resume.ResumeRequest;
 import com.demoJob.demo.dto.response.Resume.ResumeCreateResponse;
 import com.demoJob.demo.dto.response.Resume.ResumeResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeResponse;
 import com.demoJob.demo.dto.response.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Job;
@@ -20,6 +21,9 @@ import com.demoJob.demo.util.UserUtil;
 import com.demoJob.demo.util.enums.JobStatus;
 import com.demoJob.demo.security.SecurityUtils;
 import com.demoJob.demo.util.UserCompanyUtil;
+import com.demoJob.demo.util.enums.ResumeStatus;
+import com.demoJob.demo.security.SecurityUtils;
+import com.demoJob.demo.util.UserCompanyUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,9 +31,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
 import java.util.List;
-
+import static com.demoJob.demo.mapper.ResumeMapper.*;
 import static com.demoJob.demo.mapper.ResumeMapper.*;
 
 @Service
@@ -68,35 +71,31 @@ public class ResumeServiceImpl implements ResumeService {
         return toCreateResponse(resume);
     }
 
+    /**
+     * HR hoặc Admin change status Resume của User
+     */
     @Override
-    public ResumeUpdateResponse updateResume(ResumeRequest request) {
-        log.info("Updating resume for userId={} and jobId={}", request.getUserId(), request.getJobId());
+    public void changeStatus(long resumeId, ResumeStatus status) {
+        log.info("Changing resume status with id={} to {}", resumeId, status);
+        Resume resume = getResumeOrThrow(resumeId);
 
-        Resume resume = resumeRepository.findByUserIdAndJobId(request.getUserId(), request.getJobId())
-                .orElseThrow(() -> new EntityNotFoundException("Resume not found"));
+        checkPermission(resume.getJob());
+        validateTransition(resume.getStatus(), status);
 
-        resume.setEmail(request.getEmail());
-        resume.setUrl(request.getUrl());
-        resume.setUpdatedAt(LocalDateTime.now());
-        resume.setUpdatedBy(resume.getUser().getUsername());
+        resume.setStatus(status);
+        resumeRepository.save(resume);
 
-        Resume updated = resumeRepository.save(resume);
-
-        return  ResumeUpdateResponse.builder()
-                .id(updated.getId())
-                .updatedAt(updated.getUpdatedAt())
-                .updatedBy(updated.getUpdatedBy())
-                .build();
-    }
-
-    @Override
-    public void deleteResume(long resumeId) {
-        log.info("Deleting resume with id={}", resumeId);
-        if (!resumeRepository.existsById(resumeId)) {
-            throw new EntityNotFoundException("Resume not found");
+        // send mail to User
+        switch (status) {
+            case APPROVED -> resumeMailService.sendMailResumeApproved(resume);
+            case REJECTED -> resumeMailService.sendMailResumeRejected(resume); // dùng overload
+            case DELETED -> log.info("Resume {} marked as DELETED, no mail sent", resumeId);
+            default -> log.info("No mail action for status {}", status);
         }
-        resumeRepository.deleteById(resumeId);
+
+        log.info("Changed resume status successfully: id={}, newStatus={}", resumeId, status);
     }
+
 
     /**
      * Lấy thông tin resume theo idResume
@@ -157,6 +156,7 @@ public class ResumeServiceImpl implements ResumeService {
                 .items(list)
                 .build();
     }
+
     //========== PRIVATE METHOD ==========//
     private void validateUserCanApplyToJob(User user, Job job) {
         if (resumeRepository.existsByUserIdAndJobId(user.getId(), job.getId())) {
@@ -182,5 +182,19 @@ public class ResumeServiceImpl implements ResumeService {
     private boolean checkCreatorResume(Resume resume) {
         User currentUser = userUtil.getCurrentUser();
         return resume.getCreatedBy().equals(currentUser.getUsername());
+    }
+
+    private Resume getResumeOrThrow(long resumeId) {
+        return resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new NotFoundException("Resume not found"));
+    }
+
+    private void validateTransition(ResumeStatus current, ResumeStatus target) {
+        if (current == ResumeStatus.DELETED) {
+            throw new InvalidDataException("Resume đã bị xoá, không thể thay đổi trạng thái");
+        }
+        if (current == ResumeStatus.APPROVED && target == ResumeStatus.REJECTED) {
+            throw new InvalidDataException("Resume đã duyệt không thể bị từ chối");
+        }
     }
 }

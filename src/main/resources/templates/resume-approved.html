@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Application Approved</title>
+</head>
+<body>
+<p>Hi <span th:text="${candidateName}">Candidate</span>,</p>
+
+<p>
+    Congratulations! Your application for the job
+    <strong th:text="${jobName}">Job</strong> at
+    <strong th:text="${companyName}">Company</strong> has been approved.
+</p>
+
+<p>Our HR team will contact you shortly for the next steps.</p>
+
+<br/>
+<p>Best regards,<br/>The HR Team</p>
+</body>
+</html>

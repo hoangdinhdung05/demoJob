@@ -2,8 +2,8 @@ package com.demoJob.demo.mapper;
 
 import com.demoJob.demo.dto.request.Resume.ResumeRequest;
 import com.demoJob.demo.dto.response.Resume.ResumeCreateResponse;
-import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.dto.response.Resume.ResumeResponse;
+import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Resume;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.util.enums.ResumeStatus;
@@ -50,5 +50,4 @@ public class ResumeMapper {
                         .build())
                 .build();
     }
-
 }
