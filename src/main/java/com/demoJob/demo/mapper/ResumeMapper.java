@@ -22,6 +22,13 @@ public class ResumeMapper {
 
     public static ResumeCreateResponse toCreateResponse(Resume resume) {
         return ResumeCreateResponse.builder()
+                .id(resume.getId())
+                .email(resume.getEmail())
+                .createdAt(resume.getCreatedAt())
+                .createdBy(resume.getCreatedBy())
+                .build();
+    }
+
     public static ResumeResponse toResponse(Resume resume) {
         return ResumeResponse.builder()
                 .id(resume.getId())

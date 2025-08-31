@@ -1,12 +1,9 @@
 package com.demoJob.demo.service.impl;
 
 import com.demoJob.demo.dto.request.Resume.ResumeRequest;
-import com.demoJob.demo.dto.request.Admin.Resume.ResumeRequest;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeCreateResponse;
-import com.demoJob.demo.dto.response.Resume.ResumeResponse;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.Resume.ResumeCreateResponse;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Resume;
@@ -21,12 +18,8 @@ import com.demoJob.demo.service.ResumeService.ResumeMailService;
 import com.demoJob.demo.service.ResumeService.ResumeService;
 import com.demoJob.demo.util.UserUtil;
 import com.demoJob.demo.util.enums.JobStatus;
-import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.SecurityUtils;
-import com.demoJob.demo.service.ResumeService;
 import com.demoJob.demo.util.UserCompanyUtil;
-import com.demoJob.demo.util.UserUtil;
-import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,9 +29,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
-import static com.demoJob.demo.mapper.ResumeMapper.toResponse;
-import static com.demoJob.demo.mapper.ResumeMapper.toCreateResponse;
-import static com.demoJob.demo.mapper.ResumeMapper.toEntity;
+
+import static com.demoJob.demo.mapper.ResumeMapper.*;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +41,6 @@ public class ResumeServiceImpl implements ResumeService {
     private final JobRepository jobRepository;
     private final UserUtil userUtil;
     private final ResumeMailService resumeMailService;
-    private final UserUtil userUtil;
     private final UserCompanyUtil userCompanyUtil;
 
     /**
@@ -178,7 +169,6 @@ public class ResumeServiceImpl implements ResumeService {
         }
     }
 
-    //========== PRIVATE METHOD =========//
     private void checkPermission(Job job) {
         User currentUser = userUtil.getCurrentUser();
         boolean isAdmin = SecurityUtils.hasRole("ADMIN");

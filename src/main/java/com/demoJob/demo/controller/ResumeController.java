@@ -1,11 +1,7 @@
 package com.demoJob.demo.controller;
 
 import com.demoJob.demo.dto.request.Resume.ResumeRequest;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeResponse;
-import com.demoJob.demo.dto.response.system.PageResponse;
-import com.demoJob.demo.dto.request.Admin.Resume.ResumeRequest;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeCreateResponse;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeUpdateResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.service.ResumeService.ResumeService;

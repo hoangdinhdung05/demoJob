@@ -1,12 +1,9 @@
 package com.demoJob.demo.service.ResumeService;
 
 import com.demoJob.demo.dto.request.Resume.ResumeRequest;
-import com.demoJob.demo.dto.request.Admin.Resume.ResumeRequest;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeCreateResponse;
-import com.demoJob.demo.dto.response.Resume.ResumeResponse;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.Resume.ResumeCreateResponse;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 
 public interface ResumeService {
