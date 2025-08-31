@@ -126,7 +126,6 @@ public class ResumeServiceImpl implements ResumeService {
         }
     }
 
-    //========== PRIVATE METHOD ==========//
     private Resume getResumeOrThrow(long resumeId) {
         return resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new NotFoundException("Resume not found"));
