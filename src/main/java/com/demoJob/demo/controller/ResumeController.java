@@ -1,11 +1,12 @@
 package com.demoJob.demo.controller;
 
 import com.demoJob.demo.dto.request.Resume.ResumeRequest;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.service.ResumeService.ResumeService;
+import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -33,28 +34,15 @@ public class ResumeController {
                         "API create resume successfully", resumeService.createResume(request)));
     }
 
-    @PutMapping("/admin/update")
-    public ResponseData<?> adminUpdateResume(@RequestBody @Valid ResumeRequest request) {
-        log.info("API admin update resume");
-        try {
-            ResumeUpdateResponse response = resumeService.updateResume(request);
-            return new ResponseData<>(HttpStatus.OK.value(), "API admin update resume successfully", response);
-        } catch (Exception e) {
-            log.error("API admin update resume error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin update resume fail");
-        }
-    }
-
-    @DeleteMapping("/admin/{resumeId}")
-    public ResponseData<?> adminDeleteResume(@PathVariable @Min(1) Long resumeId) {
-        log.info("API admin delete resume, id={}", resumeId);
-        try {
-            resumeService.deleteResume(resumeId);
-            return new ResponseData<>(HttpStatus.NO_CONTENT.value(), "API admin delete resume successfully");
-        } catch (Exception e) {
-            log.error("API admin delete resume error: {}", e.getMessage(), e);
-            return new ResponseError(HttpStatus.BAD_REQUEST.value(), "API admin delete resume fail");
-        }
+    /**
+     * HR hoặc Admin change status Resume của User
+     */
+    @PatchMapping("/{resumeId}")
+    public ResponseEntity<?> changeStatus(@PathVariable Long resumeId, @RequestParam ResumeStatus status) {
+        log.info("API change status resume, id={}", resumeId);
+        resumeService.changeStatus(resumeId, status);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.NO_CONTENT.value(),
+                "Api change status resume successfully"));
     }
 
     @GetMapping("/admin/{resumeId}")

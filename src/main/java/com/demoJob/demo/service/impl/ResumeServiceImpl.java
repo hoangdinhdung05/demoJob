@@ -1,31 +1,33 @@
 package com.demoJob.demo.service.impl;
 
 import com.demoJob.demo.dto.request.Resume.ResumeRequest;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeUpdateResponse;
 import com.demoJob.demo.dto.response.Resume.ResumeCreateResponse;
-import com.demoJob.demo.dto.response.Admin.Resume.ResumeResponse;
+import com.demoJob.demo.dto.response.Resume.ResumeResponse;
 import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.entity.Job;
 import com.demoJob.demo.entity.Resume;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.DuplicateResourceException;
 import com.demoJob.demo.exception.NotFoundException;
+import com.demoJob.demo.exception.InvalidDataException;
+import com.demoJob.demo.mapper.ResumeMapper;
 import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.ResumeRepository;
 import com.demoJob.demo.service.ResumeService.ResumeMailService;
 import com.demoJob.demo.service.ResumeService.ResumeService;
 import com.demoJob.demo.util.UserUtil;
 import com.demoJob.demo.util.enums.JobStatus;
+import com.demoJob.demo.security.SecurityUtils;
+import com.demoJob.demo.util.UserCompanyUtil;
+import com.demoJob.demo.util.enums.ResumeStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
 import java.util.List;
-import static com.demoJob.demo.mapper.ResumeMapper.toCreateResponse;
-import static com.demoJob.demo.mapper.ResumeMapper.toEntity;
+import static com.demoJob.demo.mapper.ResumeMapper.*;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +38,7 @@ public class ResumeServiceImpl implements ResumeService {
     private final JobRepository jobRepository;
     private final UserUtil userUtil;
     private final ResumeMailService resumeMailService;
+    private final UserCompanyUtil userCompanyUtil;
 
     /**
      * User apply vào job mình yêu cầu
@@ -62,35 +65,31 @@ public class ResumeServiceImpl implements ResumeService {
         return toCreateResponse(resume);
     }
 
+    /**
+     * HR hoặc Admin change status Resume của User
+     */
     @Override
-    public ResumeUpdateResponse updateResume(ResumeRequest request) {
-        log.info("Updating resume for userId={} and jobId={}", request.getUserId(), request.getJobId());
+    public void changeStatus(long resumeId, ResumeStatus status) {
+        log.info("Changing resume status with id={} to {}", resumeId, status);
+        Resume resume = getResumeOrThrow(resumeId);
 
-        Resume resume = resumeRepository.findByUserIdAndJobId(request.getUserId(), request.getJobId())
-                .orElseThrow(() -> new EntityNotFoundException("Resume not found"));
+        checkPermission(resume.getJob());
+        validateTransition(resume.getStatus(), status);
 
-        resume.setEmail(request.getEmail());
-        resume.setUrl(request.getUrl());
-        resume.setUpdatedAt(LocalDateTime.now());
-        resume.setUpdatedBy(resume.getUser().getUsername());
+        resume.setStatus(status);
+        resumeRepository.save(resume);
 
-        Resume updated = resumeRepository.save(resume);
-
-        return  ResumeUpdateResponse.builder()
-                .id(updated.getId())
-                .updatedAt(updated.getUpdatedAt())
-                .updatedBy(updated.getUpdatedBy())
-                .build();
-    }
-
-    @Override
-    public void deleteResume(long resumeId) {
-        log.info("Deleting resume with id={}", resumeId);
-        if (!resumeRepository.existsById(resumeId)) {
-            throw new EntityNotFoundException("Resume not found");
+        // send mail to User
+        switch (status) {
+            case APPROVED -> resumeMailService.sendMailResumeApproved(resume);
+            case REJECTED -> resumeMailService.sendMailResumeRejected(resume); // dùng overload
+            case DELETED -> log.info("Resume {} marked as DELETED, no mail sent", resumeId);
+            default -> log.info("No mail action for status {}", status);
         }
-        resumeRepository.deleteById(resumeId);
+
+        log.info("Changed resume status successfully: id={}, newStatus={}", resumeId, status);
     }
+
 
     @Override
     public ResumeResponse getResumeById(long resumeId) {
@@ -104,7 +103,7 @@ public class ResumeServiceImpl implements ResumeService {
         Page<Resume> resumePage = resumeRepository.findAll(PageRequest.of(page, size));
 
         List<ResumeResponse> list = resumePage.stream()
-                .map(this::toResponse)
+                .map(ResumeMapper::toResponse)
                 .toList();
 
         return PageResponse.<ResumeResponse>builder()
@@ -114,6 +113,7 @@ public class ResumeServiceImpl implements ResumeService {
                 .items(list)
                 .build();
     }
+
     //========== PRIVATE METHOD ==========//
     private void validateUserCanApplyToJob(User user, Job job) {
         if (resumeRepository.existsByUserIdAndJobId(user.getId(), job.getId())) {
@@ -123,6 +123,30 @@ public class ResumeServiceImpl implements ResumeService {
 
         if (job.getStatus() != JobStatus.ACTIVE) {
             throw new NotFoundException("Cannot apply to an inactive job");
+        }
+    }
+
+    private Resume getResumeOrThrow(long resumeId) {
+        return resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new NotFoundException("Resume not found"));
+    }
+
+    private void checkPermission(Job job) {
+        User currentUser = userUtil.getCurrentUser();
+        boolean isAdmin = SecurityUtils.hasRole("ADMIN");
+
+        if (isAdmin) return;
+        if (!userCompanyUtil.isOwnerOfCompany(currentUser, job.getCompany())) {
+            throw new InvalidDataException("Bạn không có quyền thực hiện thao tác này");
+        }
+    }
+
+    private void validateTransition(ResumeStatus current, ResumeStatus target) {
+        if (current == ResumeStatus.DELETED) {
+            throw new InvalidDataException("Resume đã bị xoá, không thể thay đổi trạng thái");
+        }
+        if (current == ResumeStatus.APPROVED && target == ResumeStatus.REJECTED) {
+            throw new InvalidDataException("Resume đã duyệt không thể bị từ chối");
         }
     }
 }
