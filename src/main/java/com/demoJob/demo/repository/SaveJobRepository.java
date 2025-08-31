@@ -16,8 +16,6 @@ public interface SaveJobRepository extends JpaRepository<SaveJob, Long> {
      */
     boolean existsByUserIdAndJobId(Long userId, Long jobId);
 
-    Optional<SaveJob> findByUserIdAndJobId(Long userId, Long jobId);
-
     /**
      * Lấy ra list job mà User đã lưu (Đã active)
      */
@@ -31,6 +29,8 @@ public interface SaveJobRepository extends JpaRepository<SaveJob, Long> {
             """)
     Page<SaveJob> findAllByUserId(Pageable pageable, Long userId);
 
-    void deleteByUserIdAndJobId(Long userId, Long jobId);
-
+    /**
+     * Query danh sách job đã lưu theo UserId
+     */
+    List<SaveJob> findAllByUserId(Long userId);
 }

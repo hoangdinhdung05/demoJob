@@ -14,17 +14,16 @@ import com.demoJob.demo.repository.JobRepository;
 import com.demoJob.demo.repository.SaveJobRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.SaveJobService;
+import com.demoJob.demo.util.enums.JobStatus;
 import com.demoJob.demo.util.enums.SaveJobStatus;
 import jakarta.persistence.EntityNotFoundException;
 import com.demoJob.demo.util.UserUtil;
-import com.demoJob.demo.util.enums.JobStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,33 +40,35 @@ public class SaveJobServiceImpl implements SaveJobService {
      * User lưu lại các Job mà mình quan tâm hoặc yêu thích
      */
     @Override
-    public void saveJob(Long userId, Long jobId) {
-        //check exists
-        if (validExistsJobAndActive(userId, jobId)) return;
-
+    public void saveJobOrUpdateStatus(Long userId, Long jobId, SaveJobStatus status) {
         //Valid user and job
         var user = getUserOrThrow(userId);
         var job = getJobOrThrow(jobId);
-
-        if (job.getStatus() != JobStatus.ACTIVE) {
+        
+        if (job.getStatus() != JobStatus.ACTIVE && status == SaveJobStatus.ACTIVE) {
             throw new NotFoundException("Job not found");
         }
 
-        SaveJob saveJob = SaveJob.builder()
-                .user(user)
-                .job(job)
-                .status(SaveJobStatus.ACTIVE)
-                .build();
+        //Get save job
+        SaveJob saveJob = getSaveJob(userId, jobId);
 
-        saveJobRepository.save(saveJob);
-        log.info("User {} saved job {} successfully", userId, jobId);
-    }
+        //check exists job và xem cần tích lại không
+        if (checkExistsAndReSave(userId, jobId, status, saveJob)) return;
 
-    @Override
-    public void deleteSaveJob(Long userId, Long jobId) {
-        saveJobRepository.findByUserIdAndJobId(userId, jobId)
-                .ifPresent(saveJobRepository::delete);
-        log.info("User {} removed saved job {}", userId, jobId);
+        if (saveJob != null) {
+            validSaveJobStatus(status, saveJob);
+            // Change status (ACTIVE hoặc DELETE)
+            changeStatusSaveJob(status, saveJob);
+            log.info("User {} updated job {} status to {}", userId, jobId, status);
+        } else {
+            if (status == SaveJobStatus.ACTIVE) {
+                // Tạo mới
+                createSaveJob(user, job);
+                log.info("User {} saved job {} successfully", userId, jobId);
+            } else {
+                throw new NotFoundException("Save job not found for user");
+            }
+        }
     }
 
     /**
@@ -96,6 +97,8 @@ public class SaveJobServiceImpl implements SaveJobService {
     public boolean isJobSaved(Long userId, Long jobId) {
         return saveJobRepository.existsByUserIdAndJobId(userId, jobId);
     }
+
+    //========== PRIVATE METHOD ==========//
 
     private JobResponse convertToJob(SaveJob saveJob) {
         Job job = saveJob.getJob();
@@ -135,19 +138,54 @@ public class SaveJobServiceImpl implements SaveJobService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
     }
 
-    private boolean validExistsJobAndActive(Long userId, Long jobId) {
-        Optional<SaveJob> existsJob = saveJobRepository.findByUserIdAndJobId(userId, jobId);
+    private SaveJob findSaveJob(Long jobId, List<SaveJob> jobs) {
+        return jobs.stream()
+                .filter(sj -> sj.getJob().getId().equals(jobId))
+                .findFirst()
+                .orElse(null);
+    }
 
-        if (existsJob.isPresent()) {
-            SaveJob saveJob = existsJob.get();
+    private SaveJob getSaveJob(Long userId, Long jobId) {
+        List<SaveJob> jobs = saveJobRepository.findAllByUserId(userId);
+        return findSaveJob(jobId, jobs);
+    }
+
+    private void createSaveJob(User user, Job job) {
+        SaveJob saveJob;
+        saveJob = SaveJob.builder()
+                .user(user)
+                .job(job)
+                .status(SaveJobStatus.ACTIVE)
+                .build();
+        saveJobRepository.save(saveJob);
+    }
+
+    private void validSaveJobStatus(SaveJobStatus status, SaveJob saveJob) {
+        if (saveJob.getStatus() == status) {
+            if (status == SaveJobStatus.ACTIVE) {
+                throw new DuplicateResourceException("Job đã nằm trong danh sách");
+            } else {
+                throw new NotFoundException("Job đã bị xóa trước đó");
+            }
+        }
+    }
+
+    private void changeStatusSaveJob(SaveJobStatus status, SaveJob saveJob) {
+        saveJob.setStatus(status);
+        saveJobRepository.save(saveJob);
+    }
+
+    private void reSavedJobInSaveJob(Long userId, Long jobId, SaveJob saveJob) {
+        changeStatusSaveJob(SaveJobStatus.ACTIVE, saveJob);
+        log.info("User {} re-saved job {} successfully", userId, jobId);
+    }
+
+    private boolean checkExistsAndReSave(Long userId, Long jobId, SaveJobStatus status, SaveJob saveJob) {
+        if (status == SaveJobStatus.ACTIVE && saveJob != null) {
             if (saveJob.getStatus() == SaveJobStatus.ACTIVE) {
                 throw new DuplicateResourceException("Job đã nằm trong danh sách");
-            }
-
-            if (saveJob.getStatus() == SaveJobStatus.DELETE) {
-                saveJob.setStatus(SaveJobStatus.ACTIVE);
-                saveJobRepository.save(saveJob);
-                log.info("User {} re-saved job {} successfully", userId, jobId);
+            } else if (saveJob.getStatus() == SaveJobStatus.DELETE) {
+                reSavedJobInSaveJob(userId, jobId, saveJob);
                 return true;
             }
         }
