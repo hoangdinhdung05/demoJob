@@ -44,31 +44,21 @@ public class SaveJobServiceImpl implements SaveJobService {
         //Valid user and job
         var user = getUserOrThrow(userId);
         var job = getJobOrThrow(jobId);
-
+        
         if (job.getStatus() != JobStatus.ACTIVE && status == SaveJobStatus.ACTIVE) {
             throw new NotFoundException("Job not found");
         }
 
-        List<SaveJob> jobs = saveJobRepository.findAllByUserId(userId);
-        SaveJob saveJob = findSaveJob(jobId, jobs);
+        //Get save job
+        SaveJob saveJob = getSaveJob(userId, jobId);
 
         //check exists job và xem cần tích lại không
-        if (status == SaveJobStatus.ACTIVE && saveJob != null) {
-            if (saveJob.getStatus() == SaveJobStatus.ACTIVE) {
-                throw new DuplicateResourceException("Job đã nằm trong danh sách");
-            } else if (saveJob.getStatus() == SaveJobStatus.DELETE) {
-                saveJob.setStatus(SaveJobStatus.ACTIVE);
-                saveJobRepository.save(saveJob);
-                log.info("User {} re-saved job {} successfully", userId, jobId);
-                return;
-            }
-        }
+        if (checkExistsAndReSave(userId, jobId, status, saveJob)) return;
 
         if (saveJob != null) {
             validSaveJobStatus(status, saveJob);
-            // Update status (ACTIVE hoặc DELETE)
-            saveJob.setStatus(status);
-            saveJobRepository.save(saveJob);
+            // Change status (ACTIVE hoặc DELETE)
+            changeStatusSaveJob(status, saveJob);
             log.info("User {} updated job {} status to {}", userId, jobId, status);
         } else {
             if (status == SaveJobStatus.ACTIVE) {
@@ -155,6 +145,11 @@ public class SaveJobServiceImpl implements SaveJobService {
                 .orElse(null);
     }
 
+    private SaveJob getSaveJob(Long userId, Long jobId) {
+        List<SaveJob> jobs = saveJobRepository.findAllByUserId(userId);
+        return findSaveJob(jobId, jobs);
+    }
+
     private void createSaveJob(User user, Job job) {
         SaveJob saveJob;
         saveJob = SaveJob.builder()
@@ -173,5 +168,27 @@ public class SaveJobServiceImpl implements SaveJobService {
                 throw new NotFoundException("Job đã bị xóa trước đó");
             }
         }
+    }
+
+    private void changeStatusSaveJob(SaveJobStatus status, SaveJob saveJob) {
+        saveJob.setStatus(status);
+        saveJobRepository.save(saveJob);
+    }
+
+    private void reSavedJobInSaveJob(Long userId, Long jobId, SaveJob saveJob) {
+        changeStatusSaveJob(SaveJobStatus.ACTIVE, saveJob);
+        log.info("User {} re-saved job {} successfully", userId, jobId);
+    }
+
+    private boolean checkExistsAndReSave(Long userId, Long jobId, SaveJobStatus status, SaveJob saveJob) {
+        if (status == SaveJobStatus.ACTIVE && saveJob != null) {
+            if (saveJob.getStatus() == SaveJobStatus.ACTIVE) {
+                throw new DuplicateResourceException("Job đã nằm trong danh sách");
+            } else if (saveJob.getStatus() == SaveJobStatus.DELETE) {
+                reSavedJobInSaveJob(userId, jobId, saveJob);
+                return true;
+            }
+        }
+        return false;
     }
 }
