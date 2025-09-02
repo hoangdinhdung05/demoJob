@@ -27,10 +27,10 @@ public interface AuthService {
 
     /**
      * Đặt lại mật khẩu cho người dùng
+     *
      * @param request chứa thông tin đặt lại mật khẩu (verifyKey, mật khẩu mới)
-     * @return thông báo thành công
      */
-    String resetPassword(ResetPasswordRequest request);
+    void resetPassword(ResetPasswordRequest request);
 
     /**
      * Làm mới token truy cập bằng refresh token
@@ -70,5 +70,5 @@ public interface AuthService {
      *
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
      */
-    String verifyResetPassword(VerifyOtpRequest request);
+    void verifyResetPassword(VerifyOtpRequest request);
 }

@@ -164,18 +164,18 @@ public class AuthServiceImpl implements AuthService {
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
      */
     @Override
-    public String verifyResetPassword(VerifyOtpRequest request) {
-        return otpService.verifyOtp(request);
+    public void verifyResetPassword(VerifyOtpRequest request) {
+        otpService.verifyOtp(request);
     }
 
     /**
      * Đặt lại mật khẩu cho người dùng
      * Xác minh verifyKey và cập nhật mật khẩu mới
+     *
      * @param request đối tượng chứa thông tin đặt lại mật khẩu
-     * @return Thông báo đặt lại mật khẩu thành công
      */
     @Override
-    public String resetPassword(ResetPasswordRequest request) {
+    public void resetPassword(ResetPasswordRequest request) {
 
         //Validate password reset request
         if (!Objects.equals(request.getConfirmPassword(), request.getNewPassword())) {
@@ -188,7 +188,6 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        return "Mật khẩu đã được đặt lại thành công.";
     }
 
 
