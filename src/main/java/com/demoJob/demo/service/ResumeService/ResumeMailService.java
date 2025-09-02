@@ -5,7 +5,8 @@ import com.demoJob.demo.entity.Resume;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.entity.UserCompany;
 import com.demoJob.demo.exception.InvalidDataException;
-import com.demoJob.demo.service.MailService;
+import com.demoJob.demo.service.EmailService;
+import com.demoJob.demo.util.EmailUtil;
 import com.demoJob.demo.util.UserCompanyUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +19,9 @@ import java.util.Map;
 @Slf4j
 public class ResumeMailService {
 
-    private final MailService mailService;
+    private final EmailService emailService;
     private final UserCompanyUtil userCompanyUtil;
+    private final EmailUtil emailUtil;
 
     public void sendmailToHrOrOwner(Job job, User user, Resume resume) {
         try {
@@ -28,23 +30,21 @@ public class ResumeMailService {
 
             String subject = "New Resume Submitted for Job: " + job.getName();
 
-            // Build model for template
-            Map<String, Object> model = new HashMap<>();
-            model.put("hrName", getDisplayName(hrOrOwner));
-            model.put("candidateName", getDisplayName(user));
-            model.put("jobName", job.getName());
-            model.put("candidateEmail", resume.getEmail());
-            model.put("resumeUrl", resume.getUrl());
-            model.put("fromEmail", user.getEmail());
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("hrName", emailUtil.getDisplayName(hrOrOwner));
+            variables.put("candidateName", emailUtil.getDisplayName(user));
+            variables.put("jobName", job.getName());
+            variables.put("candidateEmail", resume.getEmail());
+            variables.put("resumeUrl", resume.getUrl());
+            variables.put("fromEmail", user.getEmail());
 
-            mailService.sendMail(
-                    hrOrOwner.getEmail(),
+            emailService.sendTemplateEmailAsync(
+                    new String[]{hrOrOwner.getEmail()},
                     subject,
-                    "resume-notification", // template name
-                    model
-            );
-            log.info("Sent resume email to HR {} for job {}", hrOrOwner.getEmail(), job.getId());
+                    "resume-notification",
+                    variables);
 
+            log.info("Sent resume email to HR {} for job {}", hrOrOwner.getEmail(), job.getId());
         } catch (InvalidDataException e) {
             log.warn("Cannot send resume email, no HR found for company {}", job.getCompany().getId());
         } catch (Exception e) {
@@ -61,14 +61,14 @@ public class ResumeMailService {
             String subject = "Your application for " + job.getName() + " has been approved";
 
             Map<String, Object> model = new HashMap<>();
-            model.put("candidateName", getDisplayName(candidate));
+            model.put("candidateName", emailUtil.getDisplayName(candidate));
             model.put("jobName", job.getName());
             model.put("companyName", job.getCompany().getName());
 
-            mailService.sendMail(
+            emailService.sendTemplateEmailAsync(
                     candidate.getEmail(),
                     subject,
-                    "resume-approved", // template name
+                    "resume-approved",
                     model
             );
             log.info("Sent APPROVED mail to {} for job {}", candidate.getEmail(), job.getId());
@@ -91,15 +91,15 @@ public class ResumeMailService {
             String subject = "Your application for " + job.getName() + " has been rejected";
 
             Map<String, Object> model = new HashMap<>();
-            model.put("candidateName", getDisplayName(candidate));
+            model.put("candidateName", emailUtil.getDisplayName(candidate));
             model.put("jobName", job.getName());
             model.put("companyName", job.getCompany().getName());
             model.put("reason", reason != null ? reason : "No specific reason provided");
 
-            mailService.sendMail(
+            emailService.sendTemplateEmailAsync(
                     candidate.getEmail(),
                     subject,
-                    "resume-rejected", // template name
+                    "resume-rejected",
                     model
             );
             log.info("Sent REJECTED mail to {} for job {}", candidate.getEmail(), job.getId());
@@ -107,14 +107,5 @@ public class ResumeMailService {
         } catch (Exception e) {
             log.error("Error sending REJECTED mail for resume {}: {}", resume.getId(), e.getMessage(), e);
         }
-    }
-
-    public String getDisplayName(User user) {
-        if (user.getFirstName() != null || user.getLastName() != null) {
-            return (user.getFirstName() == null ? "" : user.getFirstName()) +
-                    " " +
-                    (user.getLastName() == null ? "" : user.getLastName());
-        }
-        return user.getUsername() != null ? user.getUsername() : user.getEmail();
     }
 }

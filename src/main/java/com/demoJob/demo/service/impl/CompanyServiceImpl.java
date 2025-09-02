@@ -17,8 +17,8 @@ import com.demoJob.demo.repository.CompanyRepository;
 import com.demoJob.demo.repository.UserCompanyRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.SecurityUtils;
-import com.demoJob.demo.service.CompanyService;
-import com.demoJob.demo.service.MailService;
+import com.demoJob.demo.service.CompanyService.CompanyMailService;
+import com.demoJob.demo.service.CompanyService.CompanyService;
 import com.demoJob.demo.util.UserCompanyUtil;
 import com.demoJob.demo.util.enums.CompanyStatus;
 import com.demoJob.demo.util.enums.UserCompanyStatus;
@@ -42,9 +42,9 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyProfileRepository companyProfileRepository;
     private final UserRepository userRepository;
     private final UserCompanyRepository userCompanyRepository;
-    private final MailService mailService;
     private final CompanyValidator companyValidator;
     private final UserCompanyUtil userCompanyUtil;
+    private final CompanyMailService companyMailService;
 
     /**
      * HR(User) và Admin tạo ra company
@@ -68,7 +68,7 @@ public class CompanyServiceImpl implements CompanyService {
 
         //check role and sendmail
         if (!isAdmin) {
-            mailService.sendCompanyRegistrationNotification(company, getCurrentUser());
+            companyMailService.sendCompanyRegistrationNotification(company, getCurrentUser());
         }
 
         log.info("Company created by {} with id={} status={}",
@@ -196,9 +196,9 @@ public class CompanyServiceImpl implements CompanyService {
 
         // Gửi mail theo trạng thái
         switch (newStatus) {
-            case ACTIVE -> mailService.sendCompanyApprovalNotification(company, owner.getUser());
-            case REJECTED -> mailService.sendCompanyRejectionNotification(company, owner.getUser(), reason);
-            case PENDING -> mailService.sendCompanyBackToPendingNotification(company, owner.getUser());
+            case ACTIVE -> companyMailService.sendCompanyApprovalNotification(company, owner.getUser());
+            case REJECTED -> companyMailService.sendCompanyRejectionNotification(company, owner.getUser(), reason);
+            case PENDING -> companyMailService.sendCompanyBackToPendingNotification(company, owner.getUser());
             default -> log.warn("Unhandled company status update: {}", newStatus);
         }
 
