@@ -2,7 +2,7 @@ package com.demoJob.demo.service;
 
 import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.User;
-import com.demoJob.demo.util.enums.OtpType;
+
 import java.util.Map;
 
 public interface MailService {
@@ -14,7 +14,7 @@ public interface MailService {
     /**
      * Send OTP email
      */
-    void sendOtpMail(String to, String code, OtpType type);
+    void sendOtpMail(String to, String code);
 
     /**
      * Send notification to admin when new company registered

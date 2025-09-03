@@ -16,7 +16,6 @@ import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
 import com.demoJob.demo.service.UserService.UserClientService;
-import com.demoJob.demo.util.enums.OtpType;
 import com.demoJob.demo.util.enums.TokenBlacklistReason;
 import com.demoJob.demo.util.enums.UserStatus;
 import jakarta.servlet.http.HttpServletRequest;
@@ -82,7 +81,6 @@ public class AuthServiceImpl implements AuthService {
 
         otpService.sendOtp(SendOtpRequest.builder()
                 .email(request.getEmail())
-                .type(OtpType.VERIFY_EMAIL)
                 .build());
     }
 
@@ -193,7 +191,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         //check verifyKey
-        User user = otpService.confirmVerifyKey(request.getVerifyKey(), OtpType.RESET_PASSWORD);
+        User user = otpService.confirmVerifyKey(request.getVerifyKey());
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
@@ -202,7 +200,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
-    //=====//=====//=====//=====//
+    //====================== PRIVATE METHODS ====================//
 
     /**
      * Xác thực người dùng bằng tên đăng nhập và mật khẩu

@@ -122,12 +122,11 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
-    public void sendOtpMail(String to, String code, OtpType type) {
+    public void sendOtpMail(String to, String code) {
         Map<String, Object> model = Map.of(
-                "otp", code,
-                "type", type.name()
+                "otp", code
         );
-        sendMail(to, "[OTP] Xác thực hành động " + type.name(), "otp-template.html", model);
+        sendMail(to, "[OTP] Xác thực hành động", "otp-template.html", model);
     }
 
     /**

@@ -30,7 +30,7 @@ public class OtpController {
      */
     @PostMapping("/resend")
     public ResponseEntity<ResponseData<Void>> sendOtp(@RequestBody @Valid SendOtpRequest request) {
-        log.info("[OTP] Sending OTP to email: {} - type: {}", request.getEmail(), request.getType());
+        log.info("[OTP] Sending OTP to email: {}", request.getEmail());
         otpService.sendOtp(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "OTP đã được gửi"));
     }
