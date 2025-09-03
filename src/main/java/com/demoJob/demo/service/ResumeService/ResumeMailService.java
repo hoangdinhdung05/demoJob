@@ -5,6 +5,7 @@ import com.demoJob.demo.entity.Resume;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.entity.UserCompany;
 import com.demoJob.demo.exception.InvalidDataException;
+import com.demoJob.demo.helper.TemplateVariableMapper;
 import com.demoJob.demo.service.EmailService;
 import com.demoJob.demo.util.EmailUtil;
 import com.demoJob.demo.util.UserCompanyUtil;
@@ -22,6 +23,7 @@ public class ResumeMailService {
     private final EmailService emailService;
     private final UserCompanyUtil userCompanyUtil;
     private final EmailUtil emailUtil;
+    private final TemplateVariableMapper templateVariableMapper;
 
     public void sendmailToHrOrOwner(Job job, User user, Resume resume) {
         try {
@@ -29,20 +31,14 @@ public class ResumeMailService {
             User hrOrOwner = ownerCompany.getUser();
 
             String subject = "New Resume Submitted for Job: " + job.getName();
-
-            Map<String, Object> variables = new HashMap<>();
-            variables.put("hrName", emailUtil.getDisplayName(hrOrOwner));
-            variables.put("candidateName", emailUtil.getDisplayName(user));
-            variables.put("jobName", job.getName());
-            variables.put("candidateEmail", resume.getEmail());
-            variables.put("resumeUrl", resume.getUrl());
-            variables.put("fromEmail", user.getEmail());
+            Map<String, Object> variables = templateVariableMapper.toMapTemplate(hrOrOwner, user, job, resume);
 
             emailService.sendTemplateEmailAsync(
                     new String[]{hrOrOwner.getEmail()},
                     subject,
                     "resume-notification",
-                    variables);
+                    variables
+            );
 
             log.info("Sent resume email to HR {} for job {}", hrOrOwner.getEmail(), job.getId());
         } catch (InvalidDataException e) {
