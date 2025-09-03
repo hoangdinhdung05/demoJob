@@ -78,5 +78,15 @@ app:
   admin:
     email: hoangdinhdung0205@gmail.com
 
-
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+openapi:
+  service:
+    api-docs: backend-service
+    server: http://localhost:${server.port}
+    title: Backend Service
+    version: 1.0.0
 

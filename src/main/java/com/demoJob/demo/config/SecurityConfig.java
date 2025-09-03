@@ -39,7 +39,12 @@ public class SecurityConfig {
             "/api/auth/**",
             "/favicon.ico",
             "/ott/**",
-            "/api/otp/**"
+            "/api/otp/**",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/swagger-resources/**/**",
+            "/webjars/**"
     };
 
     @Bean
