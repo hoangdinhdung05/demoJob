@@ -12,7 +12,6 @@ import com.demoJob.demo.util.UserCompanyUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -55,17 +54,13 @@ public class ResumeMailService {
             Job job = resume.getJob();
 
             String subject = "Your application for " + job.getName() + " has been approved";
-
-            Map<String, Object> model = new HashMap<>();
-            model.put("candidateName", emailUtil.getDisplayName(candidate));
-            model.put("jobName", job.getName());
-            model.put("companyName", job.getCompany().getName());
+            Map<String, Object> variables = templateVariableMapper.toMapTemplate(candidate, job);
 
             emailService.sendTemplateEmailAsync(
                     candidate.getEmail(),
                     subject,
                     "resume-approved",
-                    model
+                    variables
             );
             log.info("Sent APPROVED mail to {} for job {}", candidate.getEmail(), job.getId());
 
@@ -85,18 +80,16 @@ public class ResumeMailService {
             Job job = resume.getJob();
 
             String subject = "Your application for " + job.getName() + " has been rejected";
-
-            Map<String, Object> model = new HashMap<>();
-            model.put("candidateName", emailUtil.getDisplayName(candidate));
-            model.put("jobName", job.getName());
-            model.put("companyName", job.getCompany().getName());
-            model.put("reason", reason != null ? reason : "No specific reason provided");
+            Map<String, Object> additionalVariables = templateVariableMapper.toMapTemplate(candidate, job);
+            if (reason != null && !reason.isEmpty()) {
+                additionalVariables.put("reason", reason);
+            }
 
             emailService.sendTemplateEmailAsync(
                     candidate.getEmail(),
                     subject,
                     "resume-rejected",
-                    model
+                    additionalVariables
             );
             log.info("Sent REJECTED mail to {} for job {}", candidate.getEmail(), job.getId());
 

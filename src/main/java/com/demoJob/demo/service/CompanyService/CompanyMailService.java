@@ -1,12 +1,13 @@
 package com.demoJob.demo.service.CompanyService;
 
-import com.demoJob.demo.config.AppProperties;
 import com.demoJob.demo.entity.Company;
 import com.demoJob.demo.entity.User;
+import com.demoJob.demo.helper.TemplateVariableMapper;
 import com.demoJob.demo.service.EmailService;
 import com.demoJob.demo.util.EmailUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -20,7 +21,10 @@ public class CompanyMailService {
 
     private final EmailUtil emailUtil;
     private final EmailService emailService;
-    private final AppProperties appProperties;
+    private final TemplateVariableMapper templateVariableMapper;
+
+    @Value("${app.admin.email}")
+    private String adminEmail;
 
     /**
      * Send notification to admin when new company registered
@@ -28,11 +32,11 @@ public class CompanyMailService {
     public void sendCompanyRegistrationNotification(Company company, User creator) {
         try {
             String subject = "New Company Registration: " + company.getName();
-
-            Map<String, Object> variables = builderRegistration(company, creator);
+            Map<String, Object> variables = templateVariableMapper.toMapTemplate(company, creator);
+            variables.put("createDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 
             emailService.sendTemplateEmailAsync(
-                    appProperties.getAdmin().getEmail(),
+                    adminEmail,
                     subject,
                     "company-registration-admin",
                     variables
@@ -51,7 +55,8 @@ public class CompanyMailService {
         try {
             String subject = "[APPROVED] Your Company Registration - " + company.getName();
 
-            Map<String, Object> variables = builderApproved(company, owner);
+            Map<String, Object> variables = templateVariableMapper.toMapTemplate(company, owner);
+            variables.put("createDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 
             emailService.sendTemplateEmailAsync(
                     owner.getEmail(),
@@ -73,7 +78,10 @@ public class CompanyMailService {
         try {
             String subject = "[REJECTED] Your Company Registration - " + company.getName();
 
-            Map<String, Object> variables = builderReject(company, owner, reason);
+            Map<String, Object> variables = templateVariableMapper.toMapTemplate(company, owner, reason);
+            variables.put("rejectionDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            variables.put("rejectionReason", reason != null && !reason.trim().isEmpty()
+                    ? reason : "Please contact support for more details about the rejection.");
 
             emailService.sendTemplateEmailAsync(
                     owner.getEmail(),
@@ -95,7 +103,8 @@ public class CompanyMailService {
         try {
             String subject = "[UPDATE] Company Status Changed - " + company.getName();
 
-            Map<String, Object> variables = builderUpdateStatus(company, owner);
+            Map<String, Object> variables = templateVariableMapper.toMapTemplate(company, owner);
+            variables.put("updateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 
             emailService.sendTemplateEmailAsync(
                     owner.getEmail(),
@@ -108,59 +117,5 @@ public class CompanyMailService {
         } catch (Exception e) {
             log.error("Error sending company back to pending email for company {}: {}", company.getId(), e.getMessage(), e);
         }
-    }
-
-    //========== BUILDER ==========//
-
-    private Map<String, Object> builderRegistration(Company company, User creator) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("companyId", company.getId());
-        variables.put("companyName", company.getName());
-        variables.put("companyEmail", company.getEmail());
-        variables.put("companyPhone", company.getPhone() != null ? company.getPhone() : "N/A");
-        variables.put("companyWebsite", company.getWebsite() != null ? company.getWebsite() : "N/A");
-        variables.put("createDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-        variables.put("creatorName", emailUtil.getDisplayName(creator));
-        variables.put("creatorEmail", creator.getEmail());
-        variables.put("approveUrl", appProperties.getFrontend() + "/admin/companies/" + company.getId() + "/approve");
-        variables.put("rejectUrl", appProperties.getFrontend() + "/admin/companies/" + company.getId() + "/reject");
-        variables.put("dashboardUrl", appProperties.getFrontend() + "/admin/companies");
-        return variables;
-    }
-
-    private Map<String, Object> builderReject(Company company, User owner, String reason) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("companyName", company.getName());
-        variables.put("ownerName", emailUtil.getDisplayName(owner));
-        variables.put("rejectionReason", reason != null && !reason.trim().isEmpty()
-                ? reason : "Please contact support for more details about the rejection.");
-        variables.put("supportEmail", appProperties.getAdmin().getEmail());
-        variables.put("reapplyUrl", appProperties.getFrontend() + "/company/register");
-        return variables;
-    }
-
-    private Map<String, Object> builderUpdateStatus(Company company, User owner) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("companyName", company.getName());
-        variables.put("companyEmail", company.getEmail());
-        variables.put("companyPhone", company.getPhone() != null ? company.getPhone() : "Chưa cập nhật");
-        variables.put("companyWebsite", company.getWebsite() != null ? company.getWebsite() : "Chưa cập nhật");
-        variables.put("ownerName", emailUtil.getDisplayName(owner));
-        variables.put("ownerEmail", owner.getEmail());
-        variables.put("updateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
-        variables.put("dashboardUrl", appProperties.getFrontend() + "/company/dashboard");
-        variables.put("supportEmail", appProperties.getAdmin().getEmail());
-        variables.put("supportPhone", "1900-9099");
-        return variables;
-    }
-
-    private Map<String, Object> builderApproved(Company company, User owner) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("companyName", company.getName());
-        variables.put("ownerName", emailUtil.getDisplayName(owner));
-        variables.put("loginUrl", appProperties.getFrontend() + "/login");
-        variables.put("dashboardUrl", appProperties.getFrontend() + "/company/dashboard");
-        variables.put("supportEmail", appProperties.getAdmin().getEmail());
-        return variables;
     }
 }
