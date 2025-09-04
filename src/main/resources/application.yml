@@ -77,6 +77,18 @@ app:
     url: http://localhost:3000
   admin:
     email: hoangdinhdung0205@gmail.com
+  mail:
+    executor:
+      core-pool-size: 2
+      max-pool-size: 5
+      queue-capacity: 100
+      thread-name-prefix: "Email-"
+    template:
+      prefix: templates/
+      suffix: .html
+      encoding: UTF-8
+      cacheable: true
+      cache-ttl-ms: 3600000
 
 springdoc:
   api-docs:

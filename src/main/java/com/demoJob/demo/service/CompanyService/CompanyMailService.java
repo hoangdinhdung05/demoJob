@@ -32,8 +32,11 @@ public class CompanyMailService {
     public void sendCompanyRegistrationNotification(Company company, User creator) {
         try {
             String subject = "New Company Registration: " + company.getName();
-            Map<String, Object> variables = templateVariableMapper.toMapTemplate(company, creator);
-            variables.put("createDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            Map<String, Object> variables = new HashMap<>();
+            variables.put("company", company);
+            variables.put("user", creator);
+            variables.put("createDate", LocalDateTime.now()
+                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 
             emailService.sendTemplateEmailAsync(
                     adminEmail,

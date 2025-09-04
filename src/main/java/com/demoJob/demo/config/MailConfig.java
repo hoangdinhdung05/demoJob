@@ -1,7 +1,5 @@
 package com.demoJob.demo.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -17,8 +15,19 @@ import java.util.concurrent.Executor;
 
 @Configuration
 @EnableAsync
-@EnableConfigurationProperties(MailProperties.class)
 public class MailConfig {
+
+    private final MailProperties mailProperties;
+    private final MailExecutorProperties executorProperties;
+    private final MailTemplateProperties templateProperties;
+
+    public MailConfig(MailProperties mailProperties,
+                      MailExecutorProperties executorProperties,
+                      MailTemplateProperties templateProperties) {
+        this.mailProperties = mailProperties;
+        this.executorProperties = executorProperties;
+        this.templateProperties = templateProperties;
+    }
 
     /**
      * Executor phục vụ gửi email bất đồng bộ.
@@ -32,10 +41,10 @@ public class MailConfig {
     @Bean(name = "mailTaskExecutor")
     public Executor mailTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(5);
-        executor.setQueueCapacity(100);
-        executor.setThreadNamePrefix("Email-");
+        executor.setCorePoolSize(executorProperties.getCorePoolSize());
+        executor.setMaxPoolSize(executorProperties.getMaxPoolSize());
+        executor.setQueueCapacity(executorProperties.getQueueCapacity());
+        executor.setThreadNamePrefix(executorProperties.getThreadNamePrefix());
         executor.initialize();
         return executor;
     }
@@ -46,20 +55,17 @@ public class MailConfig {
      * - Đọc thông tin host, port, username, password từ application.yml.<br>
      * - Dùng để gửi email qua SMTP server.<br>
      *
-     * @param mailProperties properties cấu hình mail (bind từ application.yml)
      * @return JavaMailSender đã cấu hình
      */
     @Bean
-    public JavaMailSender javaMailSender(MailProperties mailProperties) {
+    public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-
         mailSender.setHost(mailProperties.getHost());
         mailSender.setPort(mailProperties.getPort());
         mailSender.setUsername(mailProperties.getUsername());
         mailSender.setPassword(mailProperties.getPassword());
         mailSender.setDefaultEncoding(mailProperties.getDefaultEncoding());
         mailSender.setJavaMailProperties(mailProperties.getJavaMailProperties());
-
         return mailSender;
     }
 
@@ -89,13 +95,12 @@ public class MailConfig {
      */
     private ITemplateResolver mailTemplateResolver() {
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-        templateResolver.setPrefix("templates/");
-        templateResolver.setSuffix(".html");
+        templateResolver.setPrefix(templateProperties.getPrefix());
+        templateResolver.setSuffix(templateProperties.getSuffix());
         templateResolver.setTemplateMode(TemplateMode.HTML);
-        templateResolver.setCharacterEncoding("UTF-8");
-        templateResolver.setCacheable(true);
-        templateResolver.setCacheTTLMs(3600000L);
+        templateResolver.setCharacterEncoding(templateProperties.getEncoding());
+        templateResolver.setCacheable(templateProperties.isCacheable());
+        templateResolver.setCacheTTLMs(templateProperties.getCacheTtlMs());
         return templateResolver;
     }
-
 }
