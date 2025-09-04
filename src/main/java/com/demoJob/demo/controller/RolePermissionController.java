@@ -5,6 +5,8 @@ import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.entity.Permission;
 import com.demoJob.demo.service.RolePermissionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,10 +19,17 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@Tag(name = "ADMIN-ROLE-PERMISSION", description = "Quản lý vai trò và quyền - Admin")
 public class RolePermissionController {
 
     private final RolePermissionService rolePermissionService;
 
+    /**
+     * Gán quyền cho role.
+     * @param request Yêu cầu gán quyền cho role.
+     * @return ResponseData chứa mã trạng thái và thông báo.
+     */
+    @Operation(summary = "Gán quyền cho role", description = "Gán quyền cho role.")
     @PostMapping("/assign-permissions")
     public Object assignPermissions(@RequestBody AssignPermissionRequest request) {
         try {
@@ -32,6 +41,12 @@ public class RolePermissionController {
         }
     }
 
+    /**
+     * Lấy danh sách quyền theo role.
+     * @param roleId ID của role.
+     * @return ResponseData chứa mã trạng thái và danh sách quyền.
+     */
+    @Operation(summary = "Lấy danh sách quyền theo role", description = "Lấy danh sách quyền theo role.")
     @GetMapping("/{roleId}/permissions")
     public Object getPermissionsByRole(@PathVariable Integer roleId) {
         try {
