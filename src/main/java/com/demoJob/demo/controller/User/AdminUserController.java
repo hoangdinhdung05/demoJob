@@ -4,6 +4,8 @@ import com.demoJob.demo.dto.request.User.Admin.AdminCreateUserRequest;
 import com.demoJob.demo.dto.request.User.Admin.UserAdminUpdateRequest;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.service.UserService.AdminUserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Validated
 @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_SUPER_ADMIN')")
+@Tag(name = "ADMIN-USER", description = "Quản lý người dùng - Admin")
 public class AdminUserController {
 
     private final AdminUserService adminUserService;
@@ -26,6 +29,7 @@ public class AdminUserController {
     /**
      * Admin tạo mới người dùng (khác với user tự đăng ký).
      */
+    @Operation(summary = "Admin tạo mới user", description = "Admin tạo mới user (khác với user tự đăng ký).")
     @PostMapping
     public ResponseEntity<?> createUser(@RequestBody @Valid AdminCreateUserRequest request) {
         log.info("API admin create user with username={}", request.getUsername());
@@ -36,6 +40,7 @@ public class AdminUserController {
     /**
      * Lấy danh sách user (có phân trang).
      */
+    @Operation(summary = "Lấy danh sách user", description = "Lấy danh sách user với phân trang.")
     @GetMapping
     public ResponseEntity<?> getAllUsers(
             @RequestParam(defaultValue = "0") int page,
@@ -48,6 +53,7 @@ public class AdminUserController {
     /**
      * Lấy chi tiết user theo ID.
      */
+    @Operation(summary = "Lấy chi tiết user theo ID", description = "Lấy thông tin chi tiết của user theo ID.")
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable Long id) {
         log.info("API admin get user detail id={}", id);
@@ -58,6 +64,7 @@ public class AdminUserController {
     /**
      * Cập nhật user theo ID.
      */
+    @Operation(summary = "Cập nhật user theo ID", description = "Cập nhật thông tin user theo ID.")
     @PatchMapping("/{id}")
     public ResponseEntity<?> updateUser(
             @PathVariable Long id,
@@ -70,6 +77,7 @@ public class AdminUserController {
     /**
      * Xóa (soft delete) user theo ID.
      */
+    @Operation(summary = "Xóa user theo ID", description = "Xóa (soft delete) user theo ID.")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         log.info("API admin delete user id={}", id);

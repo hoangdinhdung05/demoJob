@@ -5,6 +5,8 @@ import com.demoJob.demo.dto.response.Admin.PermissionResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.service.PermissionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,10 +19,17 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@Tag(name = "ADMIN-PERMISSION", description = "Quản lý quyền - Admin")
 public class PermissionController {
 
     private final PermissionService permissionService;
 
+    /**
+     * Admin tạo quyền mới.
+     * @param request Thông tin quyền mới.
+     * @return ResponseData chứa mã trạng thái và thông tin quyền đã tạo.
+     */
+    @Operation(summary = "Tạo quyền mới", description = "Admin tạo quyền mới.")
     @PostMapping
     public Object create(@RequestBody PermissionRequest request) {
         try {
@@ -32,6 +41,13 @@ public class PermissionController {
         }
     }
 
+    /**
+     * Admin cập nhật quyền hiện có.
+     * @param id ID của quyền cần cập nhật.
+     * @param request Thông tin cập nhật quyền.
+     * @return ResponseData chứa mã trạng thái và thông tin quyền đã cập nhật.
+     */
+    @Operation(summary = "Cập nhật quyền", description = "Admin cập nhật quyền hiện có.")
     @PutMapping("/{id}")
     public Object update(@PathVariable int id, @RequestBody PermissionRequest request) {
         try {
@@ -43,6 +59,12 @@ public class PermissionController {
         }
     }
 
+    /**
+     * Admin xoá quyền hiện có.
+     * @param id ID của quyền cần xoá.
+     * @return ResponseData chứa mã trạng thái và thông báo xoá thành công.
+     */
+    @Operation(summary = "Xoá quyền", description = "Admin xoá quyền hiện có.")
     @DeleteMapping("/{id}")
     public Object delete(@PathVariable int id) {
         try {
@@ -54,6 +76,12 @@ public class PermissionController {
         }
     }
 
+    /**
+     * Lấy thông tin chi tiết quyền theo ID.
+     * @param id ID của quyền cần lấy.
+     * @return ResponseData chứa mã trạng thái và thông tin quyền.
+     */
+    @Operation(summary = "Lấy quyền theo ID", description = "Lấy thông tin chi tiết quyền theo ID.")
     @GetMapping("/{id}")
     public Object getById(@PathVariable int id) {
         try {
@@ -65,6 +93,11 @@ public class PermissionController {
         }
     }
 
+    /**
+     * Lấy danh sách tất cả quyền.
+     * @return ResponseData chứa mã trạng thái và danh sách quyền.
+     */
+    @Operation(summary = "Lấy tất cả quyền", description = "Lấy danh sách tất cả quyền.")
     @GetMapping
     public Object getAll() {
         try {

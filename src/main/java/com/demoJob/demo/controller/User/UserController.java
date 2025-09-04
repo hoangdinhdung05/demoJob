@@ -2,6 +2,8 @@ package com.demoJob.demo.controller.User;
 
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.service.UserService.UserClientService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Slf4j
 @Valid
+@Tag(name = "USER-PUBLIC", description = "Thông tin người dùng công khai")
 public class UserController {
 
     private final UserClientService userClientService;
@@ -26,6 +29,7 @@ public class UserController {
      * @param userId ID của người dùng cần lấy thông tin
      * @return ResponseEntity chứa mã trạng thái và thông tin người dùng
      */
+    @Operation(summary = "Lấy thông tin công khai của người dùng theo ID", description = "Lấy thông tin công khai của người dùng theo ID.")
     @GetMapping("/{userId}/info")
     public ResponseEntity<?> getUserInfo(@PathVariable Long userId) {
         log.info("Fetching public info for user with ID: {}", userId);

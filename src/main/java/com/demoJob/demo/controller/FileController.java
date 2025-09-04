@@ -3,6 +3,8 @@ package com.demoJob.demo.controller;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.service.FileService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
@@ -17,10 +19,19 @@ import java.util.List;
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "FILE", description = "Quản lý tệp tin")
 public class FileController {
 
     private final FileService fileService;
 
+    /**
+     * Upload file to server
+     * @param file MultipartFile
+     * @param folder Folder to save file
+     * @return ResponseData with file path and upload time
+     */
+    @SuppressWarnings("rawtypes")
+    @Operation(summary = "Upload file", description = "Upload file to server")
     @PostMapping
     public ResponseData<?> uploadFile(@RequestParam("file") MultipartFile file,
                                       @RequestParam(defaultValue = "upload") String folder) {
@@ -54,6 +65,14 @@ public class FileController {
         }
     }
 
+    /**
+     * Download file from server
+     * @param fileName Name of the file to download
+     * @param folder Folder where the file is stored
+     * @return ResponseData with status and message
+     */
+    @SuppressWarnings("rawtypes")
+    @Operation(summary = "Download file", description = "Download file from server")
     @GetMapping
     public ResponseData<?> downloadFile(@RequestParam("fileName") String fileName,
                                           @RequestParam(defaultValue = "upload") String folder) {

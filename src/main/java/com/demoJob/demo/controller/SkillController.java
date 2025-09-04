@@ -6,6 +6,8 @@ import com.demoJob.demo.dto.response.system.PageResponse;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.dto.response.system.ResponseError;
 import com.demoJob.demo.service.SkillService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +20,17 @@ import java.util.List;
 @RequestMapping("/api/skills")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "ADMIN-SKILL", description = "Quản lý kỹ năng - Admin")
 public class SkillController {
 
     private final SkillService skillService;
 
+    /**
+     * Admin tạo kỹ năng mới.
+     * @param request Thông tin kỹ năng mới.
+     * @return ResponseData chứa mã trạng thái và thông tin kỹ năng đã tạo.
+     */
+    @Operation(summary = "Create a new skill", description = "Admin tạo kỹ năng mới.")
     @PostMapping("/admin/create")
     public ResponseData<?> createSkill(@RequestBody @Valid SkillRequest request) {
         log.info("API admin create skill");
@@ -35,6 +44,13 @@ public class SkillController {
         }
     }
 
+    /**
+     * Admin cập nhật kỹ năng hiện có.
+     * @param skillId ID của kỹ năng cần cập nhật.
+     * @param request Thông tin cập nhật kỹ năng.
+     * @return ResponseData chứa mã trạng thái và thông tin kỹ năng đã cập nhật.
+     */
+    @Operation(summary = "Update an existing skill", description = "Admin cập nhật kỹ năng hiện có.")
     @PatchMapping("/admin/{skillId}")
     public ResponseData<?> updateSkill(@PathVariable @Min(1) Long skillId,
                                        @RequestBody @Valid SkillRequest request) {
@@ -49,6 +65,12 @@ public class SkillController {
         }
     }
 
+    /**
+     * Admin xoá kỹ năng hiện có.
+     * @param skillId ID của kỹ năng cần xoá.
+     * @return ResponseData chứa mã trạng thái và thông báo xoá kỹ năng.
+     */
+    @Operation(summary = "Delete an existing skill", description = "Admin xoá kỹ năng hiện có.")
     @DeleteMapping("/admin/{skillId}")
     public ResponseData<?> deleteSkill(@PathVariable @Min(1) Long skillId) {
         log.info("API admin delete skill ID={}", skillId);
@@ -62,6 +84,12 @@ public class SkillController {
         }
     }
 
+    /**
+     * Lấy thông tin chi tiết kỹ năng theo ID.
+     * @param skillId ID của kỹ năng cần lấy.
+     * @return ResponseData chứa mã trạng thái và thông tin kỹ năng.
+     */
+    @Operation(summary = "Get skill by ID", description = "Lấy thông tin chi tiết kỹ năng theo ID.")
     @GetMapping("/admin/{skillId}")
     public ResponseData<?> getSkillById(@PathVariable @Min(1) Long skillId) {
         log.info("API admin get skill by ID={}", skillId);
@@ -75,6 +103,12 @@ public class SkillController {
         }
     }
 
+    /**
+     * Tìm kiếm kỹ năng theo từ khoá.
+     * @param keyword Từ khoá tìm kiếm.
+     * @return ResponseData chứa mã trạng thái và danh sách kỹ năng khớp với từ khoá.
+     */
+    @Operation(summary = "Search skills by keyword", description = "Tìm kiếm kỹ năng theo từ khoá.")
     @GetMapping("/admin/search")
     public ResponseData<?> searchSkill(@RequestParam String keyword) {
         log.info("API admin search skill by keyword='{}'", keyword);
@@ -88,6 +122,11 @@ public class SkillController {
         }
     }
 
+    /**
+     * Lấy danh sách tất cả kỹ năng.
+     * @return ResponseData chứa mã trạng thái và danh sách tất cả kỹ năng.
+     */
+    @Operation(summary = "Get all skills", description = "Lấy danh sách tất cả kỹ năng.")
     @GetMapping("/admin/getAll")
     public ResponseData<?> getAllSkills() {
         log.info("API admin get all skills");
@@ -101,6 +140,13 @@ public class SkillController {
         }
     }
 
+    /**
+     * Lấy danh sách kỹ năng với phân trang.
+     * @param page Số trang.
+     * @param size Kích thước trang.
+     * @return ResponseData chứa mã trạng thái và danh sách kỹ năng theo trang.
+     */
+    @Operation(summary = "Get all skills with pagination", description = "Lấy danh sách kỹ năng với phân trang.")
     @GetMapping("/admin/getAllPage")
     public ResponseData<?> getAllSkillsPage(@RequestParam int page, @RequestParam int size) {
         log.info("API admin get paginated skills");

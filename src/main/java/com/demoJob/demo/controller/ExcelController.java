@@ -4,6 +4,8 @@ import com.demoJob.demo.dto.UserExportDTO;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.util.excel.BaseExport;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,10 +21,12 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/excel")
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+@Tag(name = "EXCEL-EXPORT", description = "Xuất file Excel")
 public class ExcelController {
 
     private final UserRepository userRepository;
 
+    @Operation(summary = "Export danh sách user", description = "Xuất danh sách user ra file Excel, chỉ ADMIN mới có quyền thực hiện.")
     @GetMapping("/export/users")
     public void exportUsers(HttpServletResponse response) throws IOException {
 
