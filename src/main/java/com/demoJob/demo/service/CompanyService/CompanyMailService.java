@@ -9,10 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
+import static com.demoJob.demo.util.DateTimeUtil.dateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -35,8 +34,7 @@ public class CompanyMailService {
             Map<String, Object> variables = new HashMap<>();
             variables.put("company", company);
             variables.put("user", creator);
-            variables.put("createDate", LocalDateTime.now()
-                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            variables.put("createDate", dateTime());
 
             emailService.sendTemplateEmailAsync(
                     adminEmail,
@@ -59,7 +57,7 @@ public class CompanyMailService {
             String subject = "[APPROVED] Your Company Registration - " + company.getName();
 
             Map<String, Object> variables = templateVariableMapper.toMapTemplate(company, owner);
-            variables.put("createDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            variables.put("createDate", dateTime());
 
             emailService.sendTemplateEmailAsync(
                     owner.getEmail(),
@@ -82,7 +80,7 @@ public class CompanyMailService {
             String subject = "[REJECTED] Your Company Registration - " + company.getName();
 
             Map<String, Object> variables = templateVariableMapper.toMapTemplate(company, owner, reason);
-            variables.put("rejectionDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            variables.put("rejectionDate", dateTime());
             variables.put("rejectionReason", reason != null && !reason.trim().isEmpty()
                     ? reason : "Please contact support for more details about the rejection.");
 
@@ -107,7 +105,7 @@ public class CompanyMailService {
             String subject = "[UPDATE] Company Status Changed - " + company.getName();
 
             Map<String, Object> variables = templateVariableMapper.toMapTemplate(company, owner);
-            variables.put("updateDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            variables.put("updateDate", dateTime());
 
             emailService.sendTemplateEmailAsync(
                     owner.getEmail(),

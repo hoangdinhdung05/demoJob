@@ -1,5 +1,6 @@
 package com.demoJob.demo.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,71 +12,101 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 import org.thymeleaf.templateresolver.ITemplateResolver;
+import java.util.Properties;
 import java.util.concurrent.Executor;
 
 @Configuration
 @EnableAsync
 public class MailConfig {
 
-    private final MailProperties mailProperties;
-    private final MailExecutorProperties executorProperties;
-    private final MailTemplateProperties templateProperties;
+    // --- Mail properties ---
+    @Value("${spring.mail.host}")
+    private String host;
 
-    public MailConfig(MailProperties mailProperties,
-                      MailExecutorProperties executorProperties,
-                      MailTemplateProperties templateProperties) {
-        this.mailProperties = mailProperties;
-        this.executorProperties = executorProperties;
-        this.templateProperties = templateProperties;
-    }
+    @Value("${spring.mail.port}")
+    private int port;
+
+    @Value("${spring.mail.username}")
+    private String username;
+
+    @Value("${spring.mail.password}")
+    private String password;
+
+    @Value("${spring.mail.default-encoding:UTF-8}")
+    private String defaultEncoding;
+
+    // Extra mail properties
+    @Value("${spring.mail.properties.mail.smtp.auth}")
+    private boolean smtpAuth;
+
+    @Value("${spring.mail.properties.mail.smtp.starttls.enable}")
+    private boolean starttlsEnable;
+
+    // --- Executor properties ---
+    @Value("${app.mail.executor.core-pool-size}")
+    private int corePoolSize;
+
+    @Value("${app.mail.executor.max-pool-size}")
+    private int maxPoolSize;
+
+    @Value("${app.mail.executor.queue-capacity}")
+    private int queueCapacity;
+
+    @Value("${app.mail.executor.thread-name-prefix}")
+    private String threadNamePrefix;
+
+    // --- Template properties ---
+    @Value("${app.mail.template.prefix}")
+    private String templatePrefix;
+
+    @Value("${app.mail.template.suffix}")
+    private String templateSuffix;
+
+    @Value("${app.mail.template.encoding}")
+    private String templateEncoding;
+
+    @Value("${app.mail.template.cacheable}")
+    private boolean cacheable;
+
+    @Value("${app.mail.template.cache-ttl-ms}")
+    private Long cacheTtlMs;
 
     /**
      * Executor phục vụ gửi email bất đồng bộ.
-     * <p>
-     * - Dùng ThreadPoolTaskExecutor (Spring-managed).<br>
-     * - Cho phép chạy nhiều task gửi mail song song.<br>
-     * - Có thread pool, Spring quản lý và tự khởi động lại khi cần.<br>
-     *
-     * @return Executor dành riêng cho email tasks
      */
     @Bean(name = "mailTaskExecutor")
     public Executor mailTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(executorProperties.getCorePoolSize());
-        executor.setMaxPoolSize(executorProperties.getMaxPoolSize());
-        executor.setQueueCapacity(executorProperties.getQueueCapacity());
-        executor.setThreadNamePrefix(executorProperties.getThreadNamePrefix());
+        executor.setCorePoolSize(corePoolSize);
+        executor.setMaxPoolSize(maxPoolSize);
+        executor.setQueueCapacity(queueCapacity);
+        executor.setThreadNamePrefix(threadNamePrefix);
         executor.initialize();
         return executor;
     }
 
     /**
-     * Cấu hình JavaMailSender dựa trên MailProperties.
-     * <p>
-     * - Đọc thông tin host, port, username, password từ application.yml.<br>
-     * - Dùng để gửi email qua SMTP server.<br>
-     *
-     * @return JavaMailSender đã cấu hình
+     * Cấu hình JavaMailSender.
      */
     @Bean
     public JavaMailSender javaMailSender() {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        mailSender.setHost(mailProperties.getHost());
-        mailSender.setPort(mailProperties.getPort());
-        mailSender.setUsername(mailProperties.getUsername());
-        mailSender.setPassword(mailProperties.getPassword());
-        mailSender.setDefaultEncoding(mailProperties.getDefaultEncoding());
-        mailSender.setJavaMailProperties(mailProperties.getJavaMailProperties());
+        mailSender.setHost(host);
+        mailSender.setPort(port);
+        mailSender.setUsername(username);
+        mailSender.setPassword(password);
+        mailSender.setDefaultEncoding(defaultEncoding);
+
+        Properties props = new Properties();
+        props.put("mail.smtp.auth", smtpAuth);
+        props.put("mail.smtp.starttls.enable", starttlsEnable);
+        mailSender.setJavaMailProperties(props);
+
         return mailSender;
     }
 
     /**
-     * Tạo TemplateEngine cho Thymeleaf.
-     * <p>
-     * - Dùng để render email HTML từ template.<br>
-     * - Nếu chưa có bean TemplateEngine nào khác, sẽ tạo mới.<br>
-     *
-     * @return TemplateEngine cấu hình cho email
+     * TemplateEngine cho Thymeleaf.
      */
     @Bean(name = "mailTemplateEngine")
     public TemplateEngine mailTemplateEngine() {
@@ -86,21 +117,15 @@ public class MailConfig {
 
     /**
      * TemplateResolver cho Thymeleaf.
-     * <p>
-     * - Đọc template từ classpath: resources/templates/<br>
-     * - Định dạng: HTML (.html)<br>
-     * - UTF-8 encoding, cache 1 giờ<br>
-     *
-     * @return ITemplateResolver đọc file template HTML
      */
     private ITemplateResolver mailTemplateResolver() {
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-        templateResolver.setPrefix(templateProperties.getPrefix());
-        templateResolver.setSuffix(templateProperties.getSuffix());
+        templateResolver.setPrefix(templatePrefix);
+        templateResolver.setSuffix(templateSuffix);
         templateResolver.setTemplateMode(TemplateMode.HTML);
-        templateResolver.setCharacterEncoding(templateProperties.getEncoding());
-        templateResolver.setCacheable(templateProperties.isCacheable());
-        templateResolver.setCacheTTLMs(templateProperties.getCacheTtlMs());
+        templateResolver.setCharacterEncoding(templateEncoding);
+        templateResolver.setCacheable(cacheable);
+        templateResolver.setCacheTTLMs(cacheTtlMs);
         return templateResolver;
     }
 }
