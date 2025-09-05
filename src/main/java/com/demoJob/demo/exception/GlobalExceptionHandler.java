@@ -1,6 +1,7 @@
 package com.demoJob.demo.exception;
 
 import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -46,7 +47,7 @@ public class GlobalExceptionHandler {
             message = manve.getBindingResult()
                     .getFieldErrors()
                     .stream()
-                    .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage)   // chỉ lấy message
                     .collect(Collectors.joining("; "));
             error = "INVALID_PAYLOAD";
         } else if (e instanceof MissingServletRequestParameterException msrp) {
@@ -78,13 +79,14 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(e, request, INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", e.getMessage());
     }
 
-    private ErrorResponse buildErrorResponse(Exception e, WebRequest request, HttpStatus status, String error, String message) {
+    private ErrorResponse buildErrorResponse(Exception e, WebRequest request,
+                                             HttpStatus status,
+                                             String error,
+                                             String message) {
         ErrorResponse response = new ErrorResponse();
         response.setTimestamp(new Date());
         response.setStatus(status.value());
-        response.setError(error);
         response.setMessage(message);
-        response.setPath(request.getDescription(false).replace("uri=", "").replace("url=", ""));
         return response;
     }
 }

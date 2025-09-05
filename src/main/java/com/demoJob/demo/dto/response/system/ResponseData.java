@@ -34,4 +34,15 @@ public class ResponseData<T> implements Serializable {
         this.status = status;
         this.message = message;
     }
+
+    /**
+     * Response data when API executes successfully or getting error. For PUT, PATCH, DELETE
+     * @param status mã trạng thái
+     * @param data dữ liệu trả về
+     */
+    public ResponseData(int status, T data) {
+        this.status = status;
+        this.message = "Success";
+        this.data = data;
+    }
 }

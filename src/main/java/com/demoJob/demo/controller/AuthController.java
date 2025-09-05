@@ -39,7 +39,6 @@ public class AuthController {
     public ResponseEntity<ResponseData<AuthResponse>> login(@RequestBody @Valid LoginRequest request) {
         log.info("[AUTH] Login request for username: {}", request.getUsername());
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
-                LOGIN_SUCCESS,
                 authService.authenticateUser(request)));
     }
 
