@@ -22,15 +22,15 @@ public interface AuthService {
      * Đăng ký người dùng mới
      * @param request chứa thông tin đăng ký (họ, tên, tên đăng nhập, email, mật khẩu)
      */
-    void register(RegisterRequest request);
-
+    String register(RegisterRequest request);
 
     /**
      * Đặt lại mật khẩu cho người dùng
      *
      * @param request chứa thông tin đặt lại mật khẩu (verifyKey, mật khẩu mới)
+     * @return thông báo đặt lại mật khẩu thành công
      */
-    void resetPassword(ResetPasswordRequest request);
+    String resetPassword(ResetPasswordRequest request);
 
     /**
      * Làm mới token truy cập bằng refresh token
@@ -49,26 +49,28 @@ public interface AuthService {
     /**
      * Xác minh email người dùng
      * @param request chứa thông tin xác minh email (verifyKey, email)
+     * @return thông báo xác minh email thành công
      */
-    void active(VerifyOtpRequest request);
+    String active(VerifyOtpRequest request);
 
     /**
      * Gửi OTP đến email người dùng để xác minh hoặc đặt lại mật khẩu
      * @param request chứa thông tin gửi OTP (email, loại OTP)
+     * @return thông báo gửi OTP thành công
      */
-    void forgotPassword(SendOtpRequest request);
+    String forgotPassword(SendOtpRequest request);
 
     /**
      * User thay đổi mật khẩu của chính mình.
-     *
      * @param request thông tin thay đổi mật khẩu
+     * @return thông báo thay đổi mật khẩu thành công
      */
-    void changeMyPassword(ChangePasswordRequest request);
+    String changeMyPassword(ChangePasswordRequest request);
 
     /**
      * Xác minh OTP được gửi đến email người dùng
-     *
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
+     * @return verifyKey nếu xác minh thành công
      */
-    void verifyResetPassword(VerifyOtpRequest request);
+    String verifyResetPassword(VerifyOtpRequest request);
 }

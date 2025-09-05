@@ -12,17 +12,17 @@ import java.util.Optional;
 @Repository
 public interface TokenRepository extends JpaRepository<Token, Long> {
 
-    Optional<Token> findByToken(String token);
-
-    void deleteByToken(String token);
-
-    void deleteAllByUserId(Long userId);
-
-    List<Token> findAllByUserAndRevokedFalse(User user);
-
-    @Modifying
-    @Query("DELETE FROM RefreshToken r WHERE r.expiryDate < CURRENT_TIMESTAMP")
-    int deleteAllRefreshTokens();
+//    Optional<Token> findByToken(String token);
+//
+//    void deleteByToken(String token);
+//
+//    void deleteAllByUserId(Long userId);
+//
+//    List<Token> findAllByUserAndRevokedFalse(User user);
+//
+//    @Modifying
+//    @Query("DELETE FROM RefreshToken r WHERE r.expiryDate < CURRENT_TIMESTAMP")
+//    int deleteAllRefreshTokens();
 
     /**
      * Query token theo username

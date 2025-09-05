@@ -8,7 +8,6 @@ import com.demoJob.demo.service.TokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -21,41 +20,41 @@ public class TokenServiceImpl implements TokenService {
 
     private final TokenRepository tokenRepository;
 
-    @Override
-    public Token createRefreshToken(User user, String token, Date expiryInMs) {
-        Token refreshToken = Token.builder()
-                .user(user)
-                .token(token)
-                .expiryDate(expiryInMs.toInstant())
-                .revoked(false)
-                .build();
-        return refreshTokenRepository.save(refreshToken);
-    }
-
-    @Override
-    public Optional<Token> findByToken(String token) {
-        return refreshTokenRepository.findByToken(token);
-    }
-
-    @Override
-    public boolean isValid(Token refreshToken) {
-        return !refreshToken.isRevoked() && refreshToken.getExpiryDate().isAfter(Instant.now());
-    }
-
-    @Override
-    public void revokeToken(String token) {
-        refreshTokenRepository.findByToken(token).ifPresent(rt -> {
-            rt.setRevoked(true);
-            refreshTokenRepository.save(rt);
-        });
-    }
-
-    @Override
-    public void revokeTokenByUser(User user) {
-        List<Token> tokens = refreshTokenRepository.findAllByUserAndRevokedFalse(user);
-        tokens.forEach(token -> token.setRevoked(true));
-        refreshTokenRepository.saveAll(tokens);
-    }
+//    @Override
+//    public Token createRefreshToken(User user, String token, Date expiryInMs) {
+//        Token refreshToken = Token.builder()
+//                .user(user)
+//                .token(token)
+//                .expiryDate(expiryInMs.toInstant())
+//                .revoked(false)
+//                .build();
+//        return refreshTokenRepository.save(refreshToken);
+//    }
+//
+//    @Override
+//    public Optional<Token> findByToken(String token) {
+//        return refreshTokenRepository.findByToken(token);
+//    }
+//
+//    @Override
+//    public boolean isValid(Token refreshToken) {
+//        return !refreshToken.isRevoked() && refreshToken.getExpiryDate().isAfter(Instant.now());
+//    }
+//
+//    @Override
+//    public void revokeToken(String token) {
+//        refreshTokenRepository.findByToken(token).ifPresent(rt -> {
+//            rt.setRevoked(true);
+//            refreshTokenRepository.save(rt);
+//        });
+//    }
+//
+//    @Override
+//    public void revokeTokenByUser(User user) {
+//        List<Token> tokens = refreshTokenRepository.findAllByUserAndRevokedFalse(user);
+//        tokens.forEach(token -> token.setRevoked(true));
+//        refreshTokenRepository.saveAll(tokens);
+//    }
 
     /**
      * Lưu thông tin xuống db (username, accessToken, refreshToken)

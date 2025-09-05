@@ -8,15 +8,15 @@ import java.util.Optional;
 
 public interface TokenService {
 
-    Token createRefreshToken(User user, String token, Date expiryInMs);
-
-    Optional<Token> findByToken(String token);
-
-    boolean isValid(Token refreshToken);
-
-    void revokeToken(String token);
-
-    void revokeTokenByUser(User user);
+//    Token createRefreshToken(User user, String token, Date expiryInMs);
+//
+//    Optional<Token> findByToken(String token);
+//
+//    boolean isValid(Token refreshToken);
+//
+//    void revokeToken(String token);
+//
+//    void revokeTokenByUser(User user);
 
     /**
      * Lưu thông tin xuống db (username, accessToken, refreshToken)

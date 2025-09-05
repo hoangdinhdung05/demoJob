@@ -15,9 +15,9 @@ public class ResponseData<T> implements Serializable {
 
     /**
      * Response data for the API to retrieve data successfully. For GET, Post only
-     * @param status
-     * @param message
-     * @param data
+     * @param status mã trạng thái
+     * @param message thông điệp
+     * @param data dữ liệu trả về
      */
     public ResponseData(int status, String message, T data) {
         this.status = status;
@@ -27,12 +27,11 @@ public class ResponseData<T> implements Serializable {
 
     /**
      * Response data when API executes successfully or getting error. For PUT, PATCH, DELETE
-     * @param status
-     * @param message
+     * @param status mã trạng thái
+     * @param message thông điệp
      */
     public ResponseData(int status, String message) {
         this.status = status;
         this.message = message;
     }
-
 }

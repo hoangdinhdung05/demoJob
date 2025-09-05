@@ -30,6 +30,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Objects;
 import static com.demoJob.demo.mapper.AuthMapper.toResponse;
+import static com.demoJob.demo.util.containts.AuthMessage.*;
 
 @Service
 @RequiredArgsConstructor
@@ -65,7 +66,7 @@ public class AuthServiceImpl implements AuthService {
      * @param request đối tượng chứa thông tin đăng ký
      */
     @Override
-    public void register(RegisterRequest request) {
+    public String register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email đã được sử dụng");
@@ -81,6 +82,8 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .type(OtpType.VERIFY_EMAIL)
                 .build());
+
+        return REGISTER_SUCCESS;
     }
 
     /**
@@ -124,48 +127,58 @@ public class AuthServiceImpl implements AuthService {
 
         tokenService.delete(username);
 
-        return "Logout successful";
+        return LOGOUT_SUCCESS;
     }
 
     /**
      * Xác minh email người dùng
+     *
      * @param request đối tượng chứa thông tin xác minh email
+     * @return thông báo xác minh email thành công
      */
     //Xác minh email luôn bằng OTP mà không cần thông qua key
     @Override
-    public void active(VerifyOtpRequest request) {
+    public String active(VerifyOtpRequest request) {
         otpService.verifyEmail(request);
+        return ACTIVE_SUCCESS;
     }
 
     /**
      * Gửi OTP đến email của người dùng để đặt lại mật khẩu
      * Kiểm tra xem email có tồn tại trong hệ thống hay không
      * Nếu tồn tại, gửi OTP và trả về thông báo thành công
+     *
      * @param request đối tượng chứa thông tin gửi OTP
+     * @return thông báo gửi OTP thành công
      */
     @Override
-    public void forgotPassword(SendOtpRequest request) {
+    public String forgotPassword(SendOtpRequest request) {
         otpService.sendOtp(request);
+        return FORGOT_PASSWORD_SUCCESS;
     }
 
     /**
      * User thay đổi mật khẩu của chính mình.
      *
      * @param request thông tin thay đổi mật khẩu
+     * @return thông báo thay đổi mật khẩu thành công
      */
     @Override
-    public void changeMyPassword(ChangePasswordRequest request) {
+    public String changeMyPassword(ChangePasswordRequest request) {
         log.info("AuthService - Forwarding change password request");
-        userService.changeMyPassword(request);    }
+        userService.changeMyPassword(request);
+        return CHANGE_PASSWORD_SUCCESS;
+    }
 
     /**
      * Xác minh OTP được gửi đến email người dùng
      *
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
+     * @return verifyKey nếu xác minh thành công
      */
     @Override
-    public void verifyResetPassword(VerifyOtpRequest request) {
-        otpService.verifyOtp(request);
+    public String verifyResetPassword(VerifyOtpRequest request) {
+        return otpService.verifyOtp(request);
     }
 
     /**
@@ -173,9 +186,10 @@ public class AuthServiceImpl implements AuthService {
      * Xác minh verifyKey và cập nhật mật khẩu mới
      *
      * @param request đối tượng chứa thông tin đặt lại mật khẩu
+     * @return thông báo đặt lại mật khẩu thành công
      */
     @Override
-    public void resetPassword(ResetPasswordRequest request) {
+    public String resetPassword(ResetPasswordRequest request) {
 
         //Validate password reset request
         if (!Objects.equals(request.getConfirmPassword(), request.getNewPassword())) {
@@ -188,6 +202,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
+        return RESET_PASSWORD_SUCCESS;
     }
 
 
