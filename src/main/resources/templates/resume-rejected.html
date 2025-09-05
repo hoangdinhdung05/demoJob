@@ -4,12 +4,12 @@
     <title>Application Rejected</title>
 </head>
 <body>
-<p>Hi <span th:text="${candidateName}">Candidate</span>,</p>
+<p>Hi <span th:text="${user.email}">Candidate</span>,</p>
 
 <p>
     We regret to inform you that your application for the job
-    <strong th:text="${jobName}">Job</strong> at
-    <strong th:text="${companyName}">Company</strong> has been rejected.
+    <strong th:text="${job.name}">Job</strong> at
+    <strong th:text="${job.company.name}">Company</strong> has been rejected.
 </p>
 
 <p th:if="${reason != null}">

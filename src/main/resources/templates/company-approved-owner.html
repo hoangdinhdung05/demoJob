@@ -122,9 +122,9 @@
 
     <div class="content">
         <div class="success-message">
-            <h2>Hello <span th:text="${ownerName}">John Doe</span>!</h2>
+            <h2>Hello <span th:text="${user.fullName}">John Doe</span>!</h2>
             <p style="margin: 15px 0;">
-                We're excited to inform you that <span class="company-name" th:text="${companyName}">Your Company</span>
+                We're excited to inform you that <span class="company-name" th:text="${company.name}">Your Company</span>
                 has been successfully approved and is now active on our platform.
             </p>
             <p><strong>Approval Date:</strong> <span th:text="${approvalDate}">01/01/2024 15:30</span></p>
@@ -157,7 +157,7 @@
         <p>Welcome to the Demo Job Platform family! 🏢</p>
         <p>© 2024 Demo Job Platform. All rights reserved.</p>
         <p style="margin-top: 10px; font-size: 12px;">
-            This email was sent to <span th:text="${ownerName}">you</span> regarding your company registration.
+            This email was sent to <span th:text="${user.fullName}">you</span> regarding your company registration.
         </p>
     </div>
 </div>

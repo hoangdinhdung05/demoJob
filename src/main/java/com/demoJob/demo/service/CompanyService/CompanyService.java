@@ -1,4 +1,4 @@
-package com.demoJob.demo.service;
+package com.demoJob.demo.service.CompanyService;
 
 import com.demoJob.demo.dto.request.Company.CompanyRequest;
 import com.demoJob.demo.dto.request.Company.CompanyUpdateRequest;
