@@ -1,5 +1,6 @@
 package com.demoJob.demo.service.impl;
 
+import com.demoJob.demo.dto.MailDTO.EmailDTO;
 import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.OtpCode;
@@ -8,13 +9,14 @@ import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.exception.InvalidOtpException;
 import com.demoJob.demo.repository.OtpCodeRepository;
 import com.demoJob.demo.repository.UserRepository;
-import com.demoJob.demo.service.MailService;
+import com.demoJob.demo.service.EmailService;
 import com.demoJob.demo.service.OtpService;
 import com.demoJob.demo.util.enums.OtpType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -25,7 +27,7 @@ public class OtpServiceImpl implements OtpService {
 
     private final OtpCodeRepository otpRepo;
     private final UserRepository userRepo;
-    private final MailService mailService;
+    private final EmailService emailService;
 
     private static final int OTP_EXPIRY_MINUTES = 5;
     private static final int OTP_RESEND_LIMIT_MINUTES = 5;
@@ -72,8 +74,17 @@ public class OtpServiceImpl implements OtpService {
                 .used(false)
                 .build());
 
-        // Gửi mail
-        mailService.sendOtpMail(user.getEmail(), otp, type);
+        EmailDTO email = EmailDTO.builder()
+                .to(List.of(user.getEmail()))
+                .subject("Mã OTP xác thực của bạn")
+                .textContent("Xin chào " + user.getUsername() + ",\n\n"
+                        + "Mã OTP của bạn là: " + otp + "\n"
+                        + "Có hiệu lực đến: " + expiry + "\n\n"
+                        + "Vui lòng không chia sẻ mã này cho bất kỳ ai.")
+                .isHtml(false) // gửi plain text
+                .build();
+
+        emailService.sendEmailAsync(email);
 
         log.info("Sent OTP {} for {} to {}", otp, type, user.getEmail());
     }
@@ -148,6 +159,8 @@ public class OtpServiceImpl implements OtpService {
         return user;
     }
 
+    //========== PRIVATE METHOD ==========//
+
     /**
      * Xác minh mã OTP và đánh dấu là đã sử dụng.
      * @param email Email của người dùng
@@ -174,6 +187,4 @@ public class OtpServiceImpl implements OtpService {
         return userRepo.findByEmail(email.trim().toLowerCase())
                 .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
     }
-
-
 }

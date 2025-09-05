@@ -69,4 +69,8 @@ public class User extends AbstractEntity<Long> {
                 .map(UserHasRole::getRole)
                 .collect(Collectors.toSet());
     }
+
+    public String getFullName() {
+        return (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
+    }
 }

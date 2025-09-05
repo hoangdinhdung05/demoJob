@@ -138,19 +138,19 @@
             <h3>📋 Company Information</h3>
             <div class="info-row">
                 <span class="info-label">Company Name:</span>
-                <span class="info-value" th:text="${companyName}">ABC Corporation</span>
+                <span class="info-value" th:text="${company.name}">ABC Corporation</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Email:</span>
-                <span class="info-value" th:text="${companyEmail}">contact@abc.com</span>
+                <span class="info-value" th:text="${company.email}">contact@abc.com</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Phone:</span>
-                <span class="info-value" th:text="${companyPhone}">+84 123 456 789</span>
+                <span class="info-value" th:text="${company.phone}">+84 123 456 789</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Website:</span>
-                <span class="info-value" th:text="${companyWebsite}">www.abc.com</span>
+                <span class="info-value" th:text="${company.website}">www.abc.com</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Registration Date:</span>
@@ -160,21 +160,21 @@
 
         <div class="creator-info">
             <h4>👤 Created by:</h4>
-            <p><strong th:text="${creatorName}">John Doe</strong> (<span th:text="${creatorEmail}">john@example.com</span>)</p>
+            <p><strong th:text="${user.fullName}">John Doe</strong> (<span th:text="${user.email}">john@example.com</span>)</p>
         </div>
 
         <div class="btn-container">
-            <a href="#" class="btn btn-approve" th:href="${approveUrl}">
+            <a href="#" class="btn btn-approve">
                 ✅ Approve Company
             </a>
-            <a href="#" class="btn btn-reject" th:href="${rejectUrl}">
+            <a href="#" class="btn btn-reject">
                 ❌ Reject Company
             </a>
         </div>
 
         <p style="margin-top: 30px; text-align: center; color: #666; font-size: 14px;">
             You can also manage this company through the
-            <a th:href="${dashboardUrl}">Admin Dashboard</a>
+            <a>Admin Dashboard</a>
         </p>
 
 
