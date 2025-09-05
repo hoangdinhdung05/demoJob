@@ -4,7 +4,7 @@ import com.demoJob.demo.dto.request.Company.CompanyRequest;
 import com.demoJob.demo.dto.request.Company.CompanyUpdateRequest;
 import com.demoJob.demo.dto.request.Company.UpdateCompanyStatusRequest;
 import com.demoJob.demo.dto.response.system.ResponseData;
-import com.demoJob.demo.service.CompanyService;
+import com.demoJob.demo.service.CompanyService.CompanyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

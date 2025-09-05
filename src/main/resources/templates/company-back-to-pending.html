@@ -167,26 +167,26 @@
             <strong>📢 Thông báo:</strong> Trạng thái công ty của bạn đã được cập nhật và cần được xem xét lại.
         </div>
 
-        <p>Xin chào <strong th:text="${ownerName}">Tên người dùng</strong>,</p>
+        <p>Xin chào <strong th:text="${user.fullName}">Tên người dùng</strong>,</p>
         <p style="margin-bottom: 20px;">Chúng tôi xin thông báo rằng công ty của bạn đã được chuyển về trạng thái <strong>Chờ duyệt</strong> để xem xét lại.</p>
 
         <div class="company-info">
             <h3>📋 Thông tin công ty</h3>
             <div class="info-row">
                 <span class="info-label">Tên công ty:</span>
-                <span class="info-value" th:text="${companyName}">Tên công ty</span>
+                <span class="info-value" th:text="${company.name}">Tên công ty</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Email:</span>
-                <span class="info-value" th:text="${companyEmail}">email@company.com</span>
+                <span class="info-value" th:text="${company.email}">email@company.com</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Số điện thoại:</span>
-                <span class="info-value" th:text="${companyPhone ?: 'Chưa cập nhật'}">+84 xxx xxx xxx</span>
+                <span class="info-value" th:text="${company.phone ?: 'Chưa cập nhật'}">+84 xxx xxx xxx</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Website:</span>
-                <span class="info-value" th:text="${companyWebsite ?: 'Chưa cập nhật'}">www.company.com</span>
+                <span class="info-value" th:text="${company.website ?: 'Chưa cập nhật'}">www.company.com</span>
             </div>
 
             <div class="info-row">
@@ -203,7 +203,7 @@
 
         <div class="owner-info">
             <h4>👤 Chủ sở hữu:</h4>
-            <p><strong th:text="${ownerName}">Tên chủ sở hữu</strong> (<span th:text="${ownerEmail}">owner@example.com</span>)</p>
+            <p><strong th:text="${user.fullName}">Tên chủ sở hữu</strong> (<span th:text="${user.email}">owner@example.com</span>)</p>
         </div>
 
         <div class="warning-box">

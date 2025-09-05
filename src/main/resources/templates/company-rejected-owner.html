@@ -147,9 +147,9 @@
 
     <div class="content">
         <div class="rejection-notice">
-            <h2>Hello <span th:text="${ownerName}">John Doe</span>,</h2>
+            <h2>Hello <span th:text="${user.fullName}">John Doe</span>,</h2>
             <p style="margin: 15px 0;">
-                We have reviewed your registration for <span class="company-name" th:text="${companyName}">Your Company</span>.
+                We have reviewed your registration for <span class="company-name" th:text="${company.name}">Your Company</span>.
                 Unfortunately, we are unable to approve your company registration at this time.
             </p>
             <p><strong>Review Date:</strong> <span th:text="${rejectionDate}">01/01/2024 15:30</span></p>
@@ -193,7 +193,7 @@
         <p>Thank you for your interest in Demo Job Platform</p>
         <p>© 2024 Demo Job Platform. All rights reserved.</p>
         <p style="margin-top: 10px; font-size: 12px;">
-            This email was sent to <span th:text="${ownerName}">you</span> regarding your company registration.
+            This email was sent to <span th:text="${user.fullName}">you</span> regarding your company registration.
         </p>
     </div>
 </div>

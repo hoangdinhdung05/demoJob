@@ -4,12 +4,12 @@
     <title>Application Approved</title>
 </head>
 <body>
-<p>Hi <span th:text="${candidateName}">Candidate</span>,</p>
+<p>Hi <span th:text="${user.fullName}">Candidate</span>,</p>
 
 <p>
     Congratulations! Your application for the job
-    <strong th:text="${jobName}">Job</strong> at
-    <strong th:text="${companyName}">Company</strong> has been approved.
+    <strong th:text="${job.name}">Job</strong> at
+    <strong th:text="${job.company.name}">Company</strong> has been approved.
 </p>
 
 <p>Our HR team will contact you shortly for the next steps.</p>
