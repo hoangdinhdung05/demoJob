@@ -15,6 +15,8 @@ import org.thymeleaf.templateresolver.ITemplateResolver;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import static com.demoJob.demo.util.constants.MailConstants.*;
+
 @Configuration
 @EnableAsync
 public class MailConfig {
@@ -42,45 +44,16 @@ public class MailConfig {
     @Value("${spring.mail.properties.mail.smtp.starttls.enable}")
     private boolean starttlsEnable;
 
-    // --- Executor properties ---
-    @Value("${app.mail.executor.core-pool-size}")
-    private int corePoolSize;
-
-    @Value("${app.mail.executor.max-pool-size}")
-    private int maxPoolSize;
-
-    @Value("${app.mail.executor.queue-capacity}")
-    private int queueCapacity;
-
-    @Value("${app.mail.executor.thread-name-prefix}")
-    private String threadNamePrefix;
-
-    // --- Template properties ---
-    @Value("${app.mail.template.prefix}")
-    private String templatePrefix;
-
-    @Value("${app.mail.template.suffix}")
-    private String templateSuffix;
-
-    @Value("${app.mail.template.encoding}")
-    private String templateEncoding;
-
-    @Value("${app.mail.template.cacheable}")
-    private boolean cacheable;
-
-    @Value("${app.mail.template.cache-ttl-ms}")
-    private Long cacheTtlMs;
-
     /**
      * Executor phục vụ gửi email bất đồng bộ.
      */
     @Bean(name = "mailTaskExecutor")
     public Executor mailTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(corePoolSize);
-        executor.setMaxPoolSize(maxPoolSize);
-        executor.setQueueCapacity(queueCapacity);
-        executor.setThreadNamePrefix(threadNamePrefix);
+        executor.setCorePoolSize(CORE_POOL_SIZE);
+        executor.setMaxPoolSize(MAX_POOL_SIZE);
+        executor.setQueueCapacity(QUEUE_CAPACITY);
+        executor.setThreadNamePrefix(THREAD_NAME_PREFIX);
         executor.initialize();
         return executor;
     }
@@ -120,12 +93,12 @@ public class MailConfig {
      */
     private ITemplateResolver mailTemplateResolver() {
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-        templateResolver.setPrefix(templatePrefix);
-        templateResolver.setSuffix(templateSuffix);
+        templateResolver.setPrefix(PREFIX);
+        templateResolver.setSuffix(SUFFIX);
         templateResolver.setTemplateMode(TemplateMode.HTML);
-        templateResolver.setCharacterEncoding(templateEncoding);
-        templateResolver.setCacheable(cacheable);
-        templateResolver.setCacheTTLMs(cacheTtlMs);
+        templateResolver.setCharacterEncoding(ENCODING);
+        templateResolver.setCacheable(CACHEABLE);
+        templateResolver.setCacheTTLMs(CACHE_TTL_MS);
         return templateResolver;
     }
 }
