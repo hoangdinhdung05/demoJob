@@ -16,6 +16,7 @@ import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
 import com.demoJob.demo.service.UserService.UserClientService;
+import com.demoJob.demo.util.enums.OtpType;
 import com.demoJob.demo.util.enums.TokenBlacklistReason;
 import com.demoJob.demo.util.enums.UserStatus;
 import jakarta.servlet.http.HttpServletRequest;
@@ -81,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
 
         otpService.sendOtp(SendOtpRequest.builder()
                 .email(request.getEmail())
-                .build());
+                .build(), OtpType.VERIFY_EMAIL);
     }
 
     /**
@@ -153,7 +154,7 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public void forgotPassword(SendOtpRequest request) {
-        otpService.sendOtp(request);
+        otpService.sendOtp(request, OtpType.RESET_PASSWORD);
     }
 
     /**

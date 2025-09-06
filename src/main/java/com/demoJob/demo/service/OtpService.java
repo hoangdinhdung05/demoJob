@@ -3,14 +3,17 @@ package com.demoJob.demo.service;
 import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.User;
+import com.demoJob.demo.util.enums.OtpType;
 
 public interface OtpService {
 
     /**
      * Gửi OTP đến người dùng
+     *
      * @param request Thông tin yêu cầu gửi OTP
+     * @param type   loại OTP (LOGIN, TWO_FA, RESET_PASSWORD, VERIFY_EMAIL)
      */
-    void sendOtp(SendOtpRequest request);
+    void sendOtp(SendOtpRequest request, OtpType type);
 
     /**
      * verify key

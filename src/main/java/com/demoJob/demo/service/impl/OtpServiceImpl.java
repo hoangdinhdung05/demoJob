@@ -11,6 +11,7 @@ import com.demoJob.demo.repository.OtpCodeRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.EmailService;
 import com.demoJob.demo.service.OtpService;
+import com.demoJob.demo.util.enums.OtpType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,9 +40,10 @@ public class OtpServiceImpl implements OtpService {
      * Tạo OTP mới và lưu vào cơ sở dữ liệu, sau đó gửi email.
      *
      * @param request Thông tin yêu cầu gửi OTP
+     * @param type
      */
     @Override
-    public void sendOtp(SendOtpRequest request) {
+    public void sendOtp(SendOtpRequest request, OtpType type) {
 
         User user = userRepo.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
@@ -52,20 +54,17 @@ public class OtpServiceImpl implements OtpService {
         checkExistsAndCountSend(userId);
 
         // Tạo OTP
-        String otp = createOtpAndSaveDb(user);
+        String otp = createOtpAndSaveDb(user, type);
 
         EmailDTO email = EmailDTO.builder()
                 .to(List.of(user.getEmail()))
                 .subject("Mã OTP xác thực của bạn")
-                .textContent("Xin chào " + user.getUsername() + ",\n\n"
-                        + "Mã OTP của bạn là: " + otp + "\n"
-                        + "Có hiệu lực trong: " + OTP_EXPIRY_MINUTES + "phút" + "\n\n"
-                        + "Vui lòng không chia sẻ mã này cho bất kỳ ai.")
+                .textContent(buildEmailContent(user, otp, type))
                 .isHtml(false) // gửi plain text
                 .build();
 
         emailService.sendEmailAsync(email);
-        log.info("Sent OTP {} to {}", otp, user.getEmail());
+        log.info("Sent OTP {} to {} and type {}", otp, user.getEmail(), type);
     }
 
     /**
@@ -163,13 +162,14 @@ public class OtpServiceImpl implements OtpService {
      * @param user Người dùng nhận OTP
      * @return Mã OTP được tạo
      */
-    private String createOtpAndSaveDb(User user) {
+    private String createOtpAndSaveDb(User user, OtpType type) {
         String otp = String.format("%06d", new Random().nextInt(1_000_000));
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES);
 
         otpRepo.save(OtpCode.builder()
                 .user(user)
                 .code(otp)
+                .type(type)
                 .expiryTime(expiry)
                 .used(false)
                 .build());
@@ -208,5 +208,14 @@ public class OtpServiceImpl implements OtpService {
             throw new InvalidDataException("OTP đã hết hạn");
         }
         return otp;
+    }
+
+    private String buildEmailContent(User user, String otp, OtpType type) {
+        String action = (type == OtpType.RESET_PASSWORD) ? "đặt lại mật khẩu" : "xác minh email";
+        return "Xin chào " + user.getUsername() + ",\n\n"
+                + "Mã OTP của bạn là: " + otp + "\n"
+                + "Có hiệu lực trong: " + OTP_EXPIRY_MINUTES + " phút\n\n"
+                + "OTP này được dùng để " + action + ".\n"
+                + "Vui lòng không chia sẻ mã này cho bất kỳ ai.";
     }
 }
