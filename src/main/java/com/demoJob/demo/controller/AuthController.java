@@ -51,8 +51,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
         log.info("[AUTH] Register request for email: {}", request.getEmail());
-        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
-                authService.register(request)));
+        authService.register(request);
+        return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), REGISTER_SUCCESS));
     }
 
     /**
@@ -62,10 +62,9 @@ public class AuthController {
      */
     @Operation(summary = "Làm mới token", description = "Làm mới JWT token sử dụng refresh token.")
     @PostMapping("/refresh-token")
-    public ResponseEntity<ResponseData<TokenRefreshResponse>> refreshToken(HttpServletRequest request) {
+    public ResponseEntity<ResponseData<TokenRefreshResponse>> refreshToken(@RequestBody RefreshTokenRequest request) {
         log.info("[TOKEN] Refreshing token");
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
-                REFRESH_TOKEN_SUCCESS,
                 authService.refreshToken(request)));
     }
 

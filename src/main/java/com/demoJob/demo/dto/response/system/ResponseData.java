@@ -3,10 +3,12 @@ package com.demoJob.demo.dto.response.system;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Getter
 public class ResponseData<T> implements Serializable {
 
+    private final LocalDateTime timeStamp = LocalDateTime.now();
     private final int status;
     private final String message;
 

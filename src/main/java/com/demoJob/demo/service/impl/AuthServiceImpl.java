@@ -1,13 +1,10 @@
 package com.demoJob.demo.service.impl;
 
+import com.demoJob.demo.dto.request.*;
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
-import com.demoJob.demo.dto.request.LoginRequest;
-import com.demoJob.demo.dto.request.RegisterRequest;
-import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
-import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.Token;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.*;
@@ -66,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
      * @param request đối tượng chứa thông tin đăng ký
      */
     @Override
-    public String register(RegisterRequest request) {
+    public void register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException("Email đã được sử dụng");
@@ -82,8 +79,6 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .type(OtpType.VERIFY_EMAIL)
                 .build());
-
-        return REGISTER_SUCCESS;
     }
 
     /**
@@ -92,25 +87,19 @@ public class AuthServiceImpl implements AuthService {
      * @return TokenRefreshResponse chứa access token và refresh token mới
      */
     @Override
-    public TokenRefreshResponse refreshToken(HttpServletRequest request) {
-        final String refreshToken = extractToken(request);
-        if (StringUtils.isBlank(refreshToken)) {
-            throw new InvalidDataException("Token must be not blank");
-        }
+    public TokenRefreshResponse refreshToken(RefreshTokenRequest request) {
+        final String refreshToken = request.getRefreshToken();
+
+        isValidRefreshToken(refreshToken);
 
         final String username = jwtTokenProvider.getUsernameFromRefreshToken(refreshToken);
         var user = getUserByUsername(username);
-
-        if (blacklistService.isBlacklisted(refreshToken)) {
-            throw new TokenBlacklistedException("Refresh token is blacklisted");
-        }
 
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         buildToken(username, accessToken, refreshToken);
 
         return TokenRefreshResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(refreshToken)
                 .build();
     }
 
@@ -126,17 +115,14 @@ public class AuthServiceImpl implements AuthService {
         String username = jwtTokenProvider.getUsernameFromAccessToken(accessToken);
 
         tokenService.delete(username);
-
         return LOGOUT_SUCCESS;
     }
 
     /**
      * Xác minh email người dùng
-     *
      * @param request đối tượng chứa thông tin xác minh email
      * @return thông báo xác minh email thành công
      */
-    //Xác minh email luôn bằng OTP mà không cần thông qua key
     @Override
     public String active(VerifyOtpRequest request) {
         otpService.verifyEmail(request);
@@ -147,7 +133,6 @@ public class AuthServiceImpl implements AuthService {
      * Gửi OTP đến email của người dùng để đặt lại mật khẩu
      * Kiểm tra xem email có tồn tại trong hệ thống hay không
      * Nếu tồn tại, gửi OTP và trả về thông báo thành công
-     *
      * @param request đối tượng chứa thông tin gửi OTP
      * @return thông báo gửi OTP thành công
      */
@@ -159,7 +144,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * User thay đổi mật khẩu của chính mình.
-     *
      * @param request thông tin thay đổi mật khẩu
      * @return thông báo thay đổi mật khẩu thành công
      */
@@ -172,7 +156,6 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * Xác minh OTP được gửi đến email người dùng
-     *
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
      * @return verifyKey nếu xác minh thành công
      */
@@ -184,7 +167,6 @@ public class AuthServiceImpl implements AuthService {
     /**
      * Đặt lại mật khẩu cho người dùng
      * Xác minh verifyKey và cập nhật mật khẩu mới
-     *
      * @param request đối tượng chứa thông tin đặt lại mật khẩu
      * @return thông báo đặt lại mật khẩu thành công
      */
@@ -287,5 +269,26 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build());
+    }
+
+    /**
+     * Kiểm tra tính hợp lệ của refresh token
+     * @param refreshToken refresh token cần kiểm tra
+     * @throws InvalidDataException nếu token trống
+     * @throws InvalidTokenException nếu token không hợp lệ hoặc hết hạn
+     * @throws TokenBlacklistedException nếu token bị liệt vào danh sách đen
+     */
+    private void isValidRefreshToken(String refreshToken) {
+        if (StringUtils.isBlank(refreshToken)) {
+            throw new InvalidDataException("Token must be not blank");
+        }
+
+        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+            throw new InvalidTokenException("Refresh token is invalid or expired");
+        }
+
+        if (blacklistService.isBlacklisted(refreshToken)) {
+            throw new TokenBlacklistedException("Refresh token is blacklisted");
+        }
     }
 }

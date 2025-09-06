@@ -1,11 +1,8 @@
 package com.demoJob.demo.service;
 
+import com.demoJob.demo.dto.request.*;
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
-import com.demoJob.demo.dto.request.LoginRequest;
-import com.demoJob.demo.dto.request.RegisterRequest;
-import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
-import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +19,7 @@ public interface AuthService {
      * Đăng ký người dùng mới
      * @param request chứa thông tin đăng ký (họ, tên, tên đăng nhập, email, mật khẩu)
      */
-    String register(RegisterRequest request);
+    void register(RegisterRequest request);
 
     /**
      * Đặt lại mật khẩu cho người dùng
@@ -37,7 +34,7 @@ public interface AuthService {
      * @param request chứa refreshToken
      * @return TokenRefreshResponse chứa access token mới
      */
-    TokenRefreshResponse refreshToken(HttpServletRequest request);
+    TokenRefreshResponse refreshToken(RefreshTokenRequest request);
 
     /**
      * Đăng xuất người dùng
