@@ -11,7 +11,6 @@ import com.demoJob.demo.repository.OtpCodeRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.EmailService;
 import com.demoJob.demo.service.OtpService;
-import com.demoJob.demo.util.enums.OtpType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -55,20 +54,17 @@ public class OtpServiceImpl implements OtpService {
         // Tạo OTP
         String otp = createOtpAndSaveDb(user);
 
-        // Gửi mail
-        mailService.sendOtpMail(user.getEmail(), otp);
         EmailDTO email = EmailDTO.builder()
                 .to(List.of(user.getEmail()))
                 .subject("Mã OTP xác thực của bạn")
                 .textContent("Xin chào " + user.getUsername() + ",\n\n"
                         + "Mã OTP của bạn là: " + otp + "\n"
-                        + "Có hiệu lực đến: " + expiry + "\n\n"
+                        + "Có hiệu lực trong: " + OTP_EXPIRY_MINUTES + "phút" + "\n\n"
                         + "Vui lòng không chia sẻ mã này cho bất kỳ ai.")
                 .isHtml(false) // gửi plain text
                 .build();
 
         emailService.sendEmailAsync(email);
-
         log.info("Sent OTP {} to {}", otp, user.getEmail());
     }
 
