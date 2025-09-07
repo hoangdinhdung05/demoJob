@@ -1,6 +1,7 @@
 package com.demoJob.demo.repository;
 
 import com.demoJob.demo.entity.OtpCode;
+import com.demoJob.demo.util.enums.OtpType;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -38,10 +39,12 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
             SELECT COUNT(o)
             FROM OtpCode o
             WHERE o.user.id = :userId
+              AND o.type = :type
               AND o.createdAt > :after
             """)
     int countRecentOtpByUser(@Param("userId") Long userId,
-                             @Param("after") LocalDateTime after);
+                             @Param("after") LocalDateTime after,
+                             @Param("type") OtpType type);
 
     /**
      * Tìm mã OTP theo ID người dùng, mã OTP và loại OTP mà chưa được sử dụng.

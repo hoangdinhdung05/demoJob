@@ -40,7 +40,7 @@ public class OtpServiceImpl implements OtpService {
      * Tạo OTP mới và lưu vào cơ sở dữ liệu, sau đó gửi email.
      *
      * @param request Thông tin yêu cầu gửi OTP
-     * @param type
+     * @param type  loại OTP (RESET_PASSWORD, VERIFY_EMAIL)
      */
     @Override
     public void sendOtp(SendOtpRequest request, OtpType type) {
@@ -51,7 +51,7 @@ public class OtpServiceImpl implements OtpService {
         long userId = user.getId();
 
         // Check OTP tồn tại và số lần gửi
-        checkExistsAndCountSend(userId);
+        checkExistsAndCountSend(userId, type);
 
         // Tạo OTP
         String otp = createOtpAndSaveDb(user, type);
@@ -181,14 +181,14 @@ public class OtpServiceImpl implements OtpService {
      * Nếu đã gửi OTP trong thời gian giới hạn hoặc vượt quá số lần gửi, ném ngoại lệ.
      * @param userId ID của người dùng
      */
-    private void checkExistsAndCountSend(long userId) {
+    private void checkExistsAndCountSend(long userId, OtpType type) {
         if (otpRepo.findValidOtp(userId, LocalDateTime.now()).isPresent()) {
             throw new InvalidOtpException("OTP đã được gửi. Vui lòng kiểm tra email.");
         }
 
         // Check số lần gửi gần đây
         int count = otpRepo.countRecentOtpByUser(
-                userId, LocalDateTime.now().minusMinutes(OTP_RESEND_LIMIT_MINUTES));
+                userId, LocalDateTime.now().minusMinutes(OTP_RESEND_LIMIT_MINUTES), type);
         if (count >= MAX_OTP_SEND_COUNT) {
             throw new InvalidOtpException("Bạn đã gửi OTP quá nhiều lần. Thử lại sau.");
         }
