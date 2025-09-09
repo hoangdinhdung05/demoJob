@@ -89,7 +89,7 @@ public class AuthController {
     @Operation(summary = "Gửi OTP", description = "Gửi mã OTP đến email người dùng để xác minh đặt lại mật khẩu.")
     @PostMapping("/forgot-password")
     public ResponseEntity<ResponseData<String>> forgotPassword(@RequestBody @Valid SendOtpRequest request) {
-        log.info("[AUTH] Sending OTP to email: {} - type: {}", request.getEmail(), request.getType());
+        log.info("[AUTH] Sending OTP to email: {}", request.getEmail());
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
                 authService.forgotPassword(request)));
     }
@@ -136,7 +136,6 @@ public class AuthController {
     public ResponseEntity<ResponseData<String>> verifyResetPassword(@RequestBody @Valid VerifyOtpRequest request) {
         log.info("[AUTH] Verifying OTP for reset password for email: {}", request.getEmail());
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),
-                VERIFY_OTP_SUCCESS,
                 authService.verifyResetPassword(request)));
     }
 

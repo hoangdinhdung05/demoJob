@@ -7,5 +7,4 @@ public class AuthMessage {
     public static final String FORGOT_PASSWORD_SUCCESS = "Gửi OTP thành công, vui lòng kiểm tra email để lấy mã OTP";
     public static final String RESET_PASSWORD_SUCCESS = "Đặt lại mật khẩu thành công";
     public static final String CHANGE_PASSWORD_SUCCESS = "Đổi mật khẩu thành công";
-    public static final String VERIFY_OTP_SUCCESS = "Xác minh OTP thành công";
 }
