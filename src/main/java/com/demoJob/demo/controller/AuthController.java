@@ -86,7 +86,7 @@ public class AuthController {
     @Operation(summary = "Gửi OTP", description = "Gửi mã OTP đến email người dùng để xác minh đặt lại mật khẩu.")
     @PostMapping("/forgot-password")
     public ResponseEntity<ResponseData<String>> forgotPassword(@RequestBody @Valid SendOtpRequest request) {
-        log.info("[AUTH] Sending OTP to email: {} - type: {}", request.getEmail(), request.getType());
+        log.info("[AUTH] Sending OTP to email: {}", request.getEmail());
         authService.forgotPassword(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "OTP đã được gửi"));
     }

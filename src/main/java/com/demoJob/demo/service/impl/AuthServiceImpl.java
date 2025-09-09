@@ -82,8 +82,7 @@ public class AuthServiceImpl implements AuthService {
 
         otpService.sendOtp(SendOtpRequest.builder()
                 .email(request.getEmail())
-                .type(OtpType.VERIFY_EMAIL)
-                .build());
+                .build(), OtpType.VERIFY_EMAIL);
     }
 
     /**
@@ -155,7 +154,7 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public void forgotPassword(SendOtpRequest request) {
-        otpService.sendOtp(request);
+        otpService.sendOtp(request, OtpType.RESET_PASSWORD);
     }
 
     /**
@@ -193,7 +192,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         //check verifyKey
-        User user = otpService.confirmVerifyKey(request.getVerifyKey(), OtpType.RESET_PASSWORD);
+        User user = otpService.confirmVerifyKey(request.getVerifyKey());
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
@@ -202,7 +201,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
-    //=====//=====//=====//=====//
+    //====================== PRIVATE METHODS ====================//
 
     /**
      * Xác thực người dùng bằng tên đăng nhập và mật khẩu

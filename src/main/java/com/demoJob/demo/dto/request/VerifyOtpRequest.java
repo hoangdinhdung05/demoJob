@@ -20,6 +20,5 @@ public class VerifyOtpRequest {
     @Schema(description = "Mã OTP", example = "123456")
     @NotBlank(message = "Mã OTP không được để trống")
     private String code;
-    private OtpType type;
 }
 
