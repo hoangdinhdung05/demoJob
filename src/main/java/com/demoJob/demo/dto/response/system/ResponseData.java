@@ -3,10 +3,12 @@ package com.demoJob.demo.dto.response.system;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Getter
 public class ResponseData<T> implements Serializable {
 
+    private final LocalDateTime timeStamp = LocalDateTime.now();
     private final int status;
     private final String message;
 
@@ -15,9 +17,9 @@ public class ResponseData<T> implements Serializable {
 
     /**
      * Response data for the API to retrieve data successfully. For GET, Post only
-     * @param status
-     * @param message
-     * @param data
+     * @param status mã trạng thái
+     * @param message thông điệp
+     * @param data dữ liệu trả về
      */
     public ResponseData(int status, String message, T data) {
         this.status = status;
@@ -27,12 +29,22 @@ public class ResponseData<T> implements Serializable {
 
     /**
      * Response data when API executes successfully or getting error. For PUT, PATCH, DELETE
-     * @param status
-     * @param message
+     * @param status mã trạng thái
+     * @param message thông điệp
      */
     public ResponseData(int status, String message) {
         this.status = status;
         this.message = message;
     }
 
+    /**
+     * Response data when API executes successfully or getting error. For PUT, PATCH, DELETE
+     * @param status mã trạng thái
+     * @param data dữ liệu trả về
+     */
+    public ResponseData(int status, T data) {
+        this.status = status;
+        this.message = "Success";
+        this.data = data;
+    }
 }

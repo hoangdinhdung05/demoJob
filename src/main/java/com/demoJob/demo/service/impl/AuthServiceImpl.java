@@ -1,15 +1,11 @@
 package com.demoJob.demo.service.impl;
 
+import com.demoJob.demo.dto.request.*;
 import com.demoJob.demo.dto.request.Admin.ResetPasswordRequest;
-import com.demoJob.demo.dto.request.LoginRequest;
-import com.demoJob.demo.dto.request.Admin.RefreshTokenRequest;
-import com.demoJob.demo.dto.request.RegisterRequest;
-import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.User.Client.ChangePasswordRequest;
 import com.demoJob.demo.dto.response.AuthResponse;
 import com.demoJob.demo.dto.response.TokenRefreshResponse;
-import com.demoJob.demo.dto.request.VerifyOtpRequest;
-import com.demoJob.demo.entity.RefreshToken;
+import com.demoJob.demo.entity.Token;
 import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.*;
 import com.demoJob.demo.repository.UserRepository;
@@ -17,8 +13,8 @@ import com.demoJob.demo.security.JwtTokenProvider;
 import com.demoJob.demo.service.*;
 import com.demoJob.demo.service.UserService.UserClientService;
 import com.demoJob.demo.util.enums.OtpType;
-import com.demoJob.demo.util.enums.TokenBlacklistReason;
 import com.demoJob.demo.util.enums.UserStatus;
+import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,10 +25,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Objects;
 import static com.demoJob.demo.mapper.AuthMapper.toResponse;
+import static com.demoJob.demo.util.containts.AuthMessage.*;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +35,7 @@ import static com.demoJob.demo.mapper.AuthMapper.toResponse;
 public class AuthServiceImpl implements AuthService {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final RefreshTokenService refreshTokenService;
+    private final TokenService tokenService;
     private final BlacklistService blacklistService;
     private final AuthenticationManager authenticationManager;
     private final UserClientService userService;
@@ -87,30 +82,23 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * Làm mới access token bằng refresh token
-     * @param refreshTokenRequest đối tượng chứa refresh token
+     * @param request refresh token
      * @return TokenRefreshResponse chứa access token và refresh token mới
      */
     @Override
-    public TokenRefreshResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
-        String reqToken = refreshTokenRequest.getRefreshToken();
+    public TokenRefreshResponse refreshToken(RefreshTokenRequest request) {
+        final String refreshToken = request.getRefreshToken();
 
-        RefreshToken refreshToken = refreshTokenService.findByToken(reqToken)
-                .orElseThrow(() -> new TokenBlacklistedException("Invalid refresh token"));
+        isValidRefreshToken(refreshToken);
 
-        if (!refreshTokenService.isValid(refreshToken)) {
-            throw new RuntimeException("Refresh token expired or revoked");
-        }
+        final String username = jwtTokenProvider.getUsernameFromRefreshToken(refreshToken);
+        var user = getUserByUsername(username);
 
-        if (blacklistService.isBlacklisted(reqToken)) {
-            throw new TokenBlacklistedException("Refresh token is blacklisted");
-        }
-
-        User user = refreshToken.getUser();
         String accessToken = jwtTokenProvider.generateAccessToken(user);
+        buildToken(username, accessToken, refreshToken);
 
         return TokenRefreshResponse.builder()
                 .accessToken(accessToken)
-                .refreshToken(reqToken)
                 .build();
     }
 
@@ -124,26 +112,20 @@ public class AuthServiceImpl implements AuthService {
     public String logout(HttpServletRequest request) {
         String accessToken = extractToken(request);
         String username = jwtTokenProvider.getUsernameFromAccessToken(accessToken);
-        if (username == null) throw new TokenBlacklistedException("Invalid access token");
 
-        User user = getUserByUsername(username);
-        refreshTokenService.revokeTokenByUser(user);
-
-        Instant expiry = jwtTokenProvider.getAccessTokenExpiry(accessToken)
-                .atZone(ZoneId.systemDefault()).toInstant();
-        blacklistService.blacklistToken(accessToken, expiry, TokenBlacklistReason.LOGOUT);
-
-        return "Logout successful";
+        tokenService.delete(username);
+        return LOGOUT_SUCCESS;
     }
 
     /**
      * Xác minh email người dùng
      * @param request đối tượng chứa thông tin xác minh email
+     * @return thông báo xác minh email thành công
      */
-    //Xác minh email luôn bằng OTP mà không cần thông qua key
     @Override
-    public void active(VerifyOtpRequest request) {
+    public String active(VerifyOtpRequest request) {
         otpService.verifyEmail(request);
+        return ACTIVE_SUCCESS;
     }
 
     /**
@@ -151,26 +133,30 @@ public class AuthServiceImpl implements AuthService {
      * Kiểm tra xem email có tồn tại trong hệ thống hay không
      * Nếu tồn tại, gửi OTP và trả về thông báo thành công
      * @param request đối tượng chứa thông tin gửi OTP
+     * @return thông báo gửi OTP thành công
      */
     @Override
-    public void forgotPassword(SendOtpRequest request) {
+    public String forgotPassword(SendOtpRequest request) {
         otpService.sendOtp(request, OtpType.RESET_PASSWORD);
+        return FORGOT_PASSWORD_SUCCESS;
     }
 
     /**
      * User thay đổi mật khẩu của chính mình.
-     *
      * @param request thông tin thay đổi mật khẩu
+     * @return thông báo thay đổi mật khẩu thành công
      */
     @Override
-    public void changeMyPassword(ChangePasswordRequest request) {
+    public String changeMyPassword(ChangePasswordRequest request) {
         log.info("AuthService - Forwarding change password request");
-        userService.changeMyPassword(request);    }
+        userService.changeMyPassword(request);
+        return CHANGE_PASSWORD_SUCCESS;
+    }
 
     /**
      * Xác minh OTP được gửi đến email người dùng
-     *
      * @param request chứa thông tin xác minh OTP (email, loại OTP, mã OTP)
+     * @return verifyKey nếu xác minh thành công
      */
     @Override
     public String verifyResetPassword(VerifyOtpRequest request) {
@@ -181,7 +167,7 @@ public class AuthServiceImpl implements AuthService {
      * Đặt lại mật khẩu cho người dùng
      * Xác minh verifyKey và cập nhật mật khẩu mới
      * @param request đối tượng chứa thông tin đặt lại mật khẩu
-     * @return Thông báo đặt lại mật khẩu thành công
+     * @return thông báo đặt lại mật khẩu thành công
      */
     @Override
     public String resetPassword(ResetPasswordRequest request) {
@@ -197,7 +183,7 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        return "Mật khẩu đã được đặt lại thành công.";
+        return RESET_PASSWORD_SUCCESS;
     }
 
 
@@ -227,7 +213,7 @@ public class AuthServiceImpl implements AuthService {
     private AuthResponse generateAuthResponse(User user) {
         String accessToken = jwtTokenProvider.generateAccessToken(user);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
-        refreshTokenService.createRefreshToken(user, refreshToken, jwtTokenProvider.getRefreshTokenExpiryDate());
+        buildToken(user.getUsername(), accessToken, refreshToken);
         return toResponse(accessToken, refreshToken);
     }
 
@@ -271,5 +257,37 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidTokenException("Token not provided");
         }
         return header.substring(7);
+    }
+
+    /**
+     * Lưu thông tin token xuống db
+     */
+    private void buildToken(String username, String accessToken, String refreshToken) {
+        tokenService.save(Token.builder()
+                .username(username)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build());
+    }
+
+    /**
+     * Kiểm tra tính hợp lệ của refresh token
+     * @param refreshToken refresh token cần kiểm tra
+     * @throws InvalidDataException nếu token trống
+     * @throws InvalidTokenException nếu token không hợp lệ hoặc hết hạn
+     * @throws TokenBlacklistedException nếu token bị liệt vào danh sách đen
+     */
+    private void isValidRefreshToken(String refreshToken) {
+        if (StringUtils.isBlank(refreshToken)) {
+            throw new InvalidDataException("Token must be not blank");
+        }
+
+        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+            throw new InvalidTokenException("Refresh token is invalid or expired");
+        }
+
+        if (blacklistService.isBlacklisted(refreshToken)) {
+            throw new TokenBlacklistedException("Refresh token is blacklisted");
+        }
     }
 }
