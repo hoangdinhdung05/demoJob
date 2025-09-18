@@ -66,10 +66,10 @@ public class AuthServiceImpl implements AuthService {
     public void register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("Email đã được sử dụng");
+            throw new DuplicateResourceException("Email already in use");
         }
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new DuplicateResourceException("Tên đăng nhập đã được sử dụng");
+            throw new DuplicateResourceException("Username already in use");
         }
 
         //Tạo người dùng mới
@@ -174,7 +174,7 @@ public class AuthServiceImpl implements AuthService {
 
         //Validate password reset request
         if (!Objects.equals(request.getConfirmPassword(), request.getNewPassword())) {
-            throw new InvalidDataException("Mật khẩu xác nhận không khớp");
+            throw new InvalidDataException("Confirmation password does not match");
         }
 
         //check verifyKey
@@ -208,7 +208,7 @@ public class AuthServiceImpl implements AuthService {
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (AuthenticationException e) {
-            throw new BadRequestException("Username hoặc password không đúng");
+            throw new BadRequestException("Password not incorrect");
         }
         return getUserByUsername(username);
     }
@@ -233,13 +233,13 @@ public class AuthServiceImpl implements AuthService {
      */
     private void checkEmailVerifier(User user) {
         if (!user.getEmailVerified()) {
-            throw new BadRequestException("Vui lòng xác minh email trước khi đăng nhập.");
+            throw new BadRequestException("Please verify your email before logging in.");
         }
     }
 
     private void checkUserStatus(User user) {
         if (user.getStatus() == UserStatus.DELETE) {
-            throw new NotFoundException("Tài khoản không tồn tại hoặc đã bị xóa.");
+            throw new NotFoundException("Account does not exist or has been deleted.");
         }
     }
 
@@ -251,7 +251,7 @@ public class AuthServiceImpl implements AuthService {
      */
     private User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("Username not found"));
     }
 
     /**
