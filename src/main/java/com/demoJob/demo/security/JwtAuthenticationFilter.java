@@ -59,13 +59,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (jwtTokenProvider.validateAccessToken(token)) {
 
                 if (blacklistService.isBlacklisted(token)) {
-                    log.warn("Token is blacklisted");
+                    log.error("Token is blacklisted");
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token is blacklisted");
                     return;
                 }
 
                 if (!tokenService.existsByAccessToken(token)) {
-                    log.warn("Token does not exist in DB (maybe logout)");
+                    log.error("Token does not exist in DB (maybe logout)");
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token is invalid");
                     return;
                 }
