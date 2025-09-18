@@ -2,6 +2,7 @@ package com.demoJob.demo.security;
 
 import java.io.IOException;
 import com.demoJob.demo.service.BlacklistService;
+import com.demoJob.demo.service.TokenService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final BlacklistService blacklistService;
+    private final TokenService tokenService;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -59,6 +61,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (blacklistService.isBlacklisted(token)) {
                     log.warn("Token is blacklisted");
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token is blacklisted");
+                    return;
+                }
+
+                if (!tokenService.existsByAccessToken(token)) {
+                    log.warn("Token does not exist in DB (maybe logout)");
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token is invalid");
                     return;
                 }
 

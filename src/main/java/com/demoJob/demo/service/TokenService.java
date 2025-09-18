@@ -19,4 +19,18 @@ public interface TokenService {
      * Tìm token theo username
      */
     Token getByUsername(String username);
+
+    /**
+     * Check exists
+     * @param accessToken Header
+     * @return true/false
+     */
+    boolean existsByAccessToken(String accessToken);
+
+    /**
+     * Check exists
+     * @param refreshToken Header
+     * @return true/false
+     */
+    boolean existsByRefreshToken(String refreshToken);
 }
