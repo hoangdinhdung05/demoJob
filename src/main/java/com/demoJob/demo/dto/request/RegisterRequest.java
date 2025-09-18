@@ -1,5 +1,7 @@
 package com.demoJob.demo.dto.request;
 
+import com.demoJob.demo.validator.EmailValidator.ValidEmail;
+import com.demoJob.demo.validator.PasswordValidator.ValidPassword;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -27,11 +29,12 @@ public class RegisterRequest {
 
     @Schema(description = "Email của user", example = "exmple@gmail.com")
     @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ")
+    @ValidEmail(allDomain = {"gmail.com", "yahoo.com"})
     private String email;
 
     @Schema(description = "Mật khẩu của user", example = "P@ssw0rd!")
     @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 6, max = 30, message = "Mật khẩu phải từ 8 đến 30 ký tự")
+    @ValidPassword(message = "Mật khẩu không đúng định dạng")
     private String password;
 }
