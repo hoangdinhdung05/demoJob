@@ -21,8 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.Objects;
@@ -197,10 +197,19 @@ public class AuthServiceImpl implements AuthService {
      */
     private User authenticateAndGetUser(String username, String password) {
         log.info("Authenticate and get user with username={}", username);
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        //check exists user
+        User user = getUserByUsername(username);
+
+        //check password
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password)
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (AuthenticationException e) {
+            throw new BadRequestException("Username hoặc password không đúng");
+        }
         return getUserByUsername(username);
     }
 
@@ -224,13 +233,13 @@ public class AuthServiceImpl implements AuthService {
      */
     private void checkEmailVerifier(User user) {
         if (!user.getEmailVerified()) {
-            throw new InvalidDataException("Vui lòng xác minh email trước khi đăng nhập.");
+            throw new BadRequestException("Vui lòng xác minh email trước khi đăng nhập.");
         }
     }
 
     private void checkUserStatus(User user) {
         if (user.getStatus() == UserStatus.DELETE) {
-            throw new InvalidDataException("Tài khoản không tồn tại hoặc đã bị xóa.");
+            throw new NotFoundException("Tài khoản không tồn tại hoặc đã bị xóa.");
         }
     }
 
@@ -242,7 +251,7 @@ public class AuthServiceImpl implements AuthService {
      */
     private User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     /**
