@@ -9,8 +9,6 @@ public class AuthMapper {
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .tokenType(TokenType.ACCESS_TOKEN)
                 .build();
     }
-
 }
