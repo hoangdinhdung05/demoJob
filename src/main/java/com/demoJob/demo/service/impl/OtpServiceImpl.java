@@ -5,6 +5,7 @@ import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.OtpCode;
 import com.demoJob.demo.entity.User;
+import com.demoJob.demo.exception.BadRequestException;
 import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.exception.InvalidOtpException;
 import com.demoJob.demo.repository.OtpCodeRepository;
@@ -30,6 +31,7 @@ public class OtpServiceImpl implements OtpService {
     private final EmailService emailService;
 
     private static final int OTP_EXPIRY_MINUTES = 5;
+    private static final int VERIFY_KEY_EXPIRY_MINUTES = 5;
     private static final int OTP_RESEND_LIMIT_MINUTES = 5;
     private static final int MAX_OTP_SEND_COUNT = 5;
 
@@ -82,6 +84,7 @@ public class OtpServiceImpl implements OtpService {
         OtpCode otp = validateOtp(request.getEmail(), request.getCode());
         String verifyKey = UUID.randomUUID().toString();
         otp.setVerifyKey(verifyKey);
+        otp.setVerifyExpiryTime(LocalDateTime.now().plusMinutes(VERIFY_KEY_EXPIRY_MINUTES));
         otpRepo.save(otp);
 
         log.info("Verified OTP, key={}, user={}", verifyKey, user.getId());
@@ -116,13 +119,12 @@ public class OtpServiceImpl implements OtpService {
      */
     @Override
     public User confirmVerifyKey(String verifyKey) {
-        OtpCode otp = otpRepo.findByVerifyKeyAndUsedTrue(verifyKey)
-                .orElseThrow(() -> new InvalidDataException("Key không hợp lệ hoặc đã hết hạn"));
+        OtpCode otp = validVerify_key(verifyKey);
 
         User user = otp.getUser();
 
         // Clear verifyKey
-        otp.setVerifyKey(null);
+        otp.setVerifyExpiryTime(LocalDateTime.now());
         otpRepo.save(otp);
 
         log.info("Confirmed verify key={}, user={}", verifyKey, user.getId());
@@ -139,6 +141,10 @@ public class OtpServiceImpl implements OtpService {
      */
     private OtpCode validateOtp(String email, String code) {
         User user = getUser(email);
+
+        if (code.length() != 6) {
+            throw new BadRequestException("OTP không đúng định dạng");
+        }
 
         OtpCode otp = findAndCheckExpiryTime(code, user);
 
@@ -202,10 +208,10 @@ public class OtpServiceImpl implements OtpService {
      */
     private OtpCode findAndCheckExpiryTime(String code, User user) {
         OtpCode otp = otpRepo.findByUserIdAndCodeAndUsedIsFalse(user.getId(), code)
-                .orElseThrow(() -> new InvalidDataException("OTP không hợp lệ hoặc đã hết hạn"));
+                .orElseThrow(() -> new BadRequestException("OTP không hợp lệ hoặc đã hết hạn"));
 
         if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
-            throw new InvalidDataException("OTP đã hết hạn");
+            throw new BadRequestException("OTP đã hết hạn");
         }
         return otp;
     }
@@ -217,5 +223,15 @@ public class OtpServiceImpl implements OtpService {
                 + "Có hiệu lực trong: " + OTP_EXPIRY_MINUTES + " phút\n\n"
                 + "OTP này được dùng để " + action + ".\n"
                 + "Vui lòng không chia sẻ mã này cho bất kỳ ai.";
+    }
+
+    private OtpCode validVerify_key(String verifyKey) {
+        OtpCode otp = otpRepo.findByVerifyKeyAndAndUsedTrue(verifyKey)
+                .orElseThrow(() -> new InvalidDataException("Key không hợp lệ hoặc đã hết hạn"));
+
+        if (otp.getExpiryTime() != null && otp.getVerifyExpiryTime().isBefore(LocalDateTime.now())) {
+            throw new InvalidDataException("Key đã hết hạn");
+        }
+        return otp;
     }
 }
