@@ -3,7 +3,6 @@ package com.demoJob.demo.dto.request;
 import com.demoJob.demo.validator.EmailValidator.ValidEmail;
 import com.demoJob.demo.validator.PasswordValidator.ValidPassword;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
@@ -15,26 +14,26 @@ import lombok.Data;
 public class RegisterRequest {
 
     @Schema(description = "First name", example = "Hoang")
-    @NotBlank(message = "Họ không được để trống")
+    @NotBlank(message = "First name cannot null ")
     private String firstName;
 
     @Schema(description = "Last name", example = "Dung")
-    @NotBlank(message = "Tên không được để trống")
+    @NotBlank(message = "Last name cannot null")
     private String lastName;
 
     @Schema(description = "Tên đăng nhập duy nhất", example = "john_doe")
-    @NotBlank(message = "Tên đăng nhập không được để trống")
+    @NotBlank(message = "Username cannot null")
     @Size(min = 4, max = 20, message = "Tên đăng nhập phải từ 4 đến 20 ký tự")
     private String username;
 
     @Schema(description = "Email của user", example = "exmple@gmail.com")
-    @NotBlank(message = "Email không được để trống")
-    @ValidEmail(allDomain = {"gmail.com", "yahoo.com"})
+    @NotBlank(message = "Email cannot null")
+    @ValidEmail
     private String email;
 
     @Schema(description = "Mật khẩu của user", example = "P@ssw0rd!")
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, max = 30, message = "Mật khẩu phải từ 8 đến 30 ký tự")
-    @ValidPassword(message = "Mật khẩu không đúng định dạng")
+    @NotBlank(message = "Password cannot null")
+    @Size(min = 6, max = 30, message = "Password must be between 6 and 30 characters")
+    @ValidPassword
     private String password;
 }

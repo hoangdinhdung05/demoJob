@@ -16,6 +16,6 @@ import lombok.NoArgsConstructor;
 public class SendOtpRequest {
     @Schema(description = "Email người dùng", example = "example@gmail.com")
     @Email(message = "Email không hợp lệ")
-    @NotBlank(message = "Email không được để trống")
+    @NotBlank(message = "Email cannot null")
     private String email;
 }

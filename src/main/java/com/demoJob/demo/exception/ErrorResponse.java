@@ -1,12 +1,13 @@
 package com.demoJob.demo.exception;
 
+import lombok.Builder;
 import lombok.Data;
-import java.util.Date;
-import java.util.List;
+import java.time.LocalDateTime;
 
 @Data
+@Builder
 public class ErrorResponse {
-    private Date timestamp;
+    private LocalDateTime timestamp;
     private int status;
-    private List<String> message;
+    private String message;
 }
