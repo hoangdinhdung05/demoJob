@@ -1,6 +1,9 @@
 package com.demoJob.demo.security;
 
 import java.io.IOException;
+import java.util.Arrays;
+
+import com.demoJob.demo.config.SecurityConfig;
 import com.demoJob.demo.service.BlacklistService;
 import com.demoJob.demo.service.TokenService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -9,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import io.micrometer.common.lang.NonNull;
 import jakarta.servlet.FilterChain;
@@ -28,17 +32,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TokenService tokenService;
     private final UserDetailsService userDetailsService;
 
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        return path.startsWith("/api/auth/")
-                || path.startsWith("/ott/")
-                || path.startsWith("/api/otp/")
-                || path.startsWith("/swagger-ui/")
-                || path.equals("/swagger-ui.html")
-                || path.equals("/swagger-ui/index.html")
-                || path.startsWith("/v3/api-docs/")
-                || path.startsWith("/swagger-resources/");
+        return Arrays.stream(SecurityConfig.PUBLIC_URL)
+                .anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
 
     protected void doFilterInternal(
