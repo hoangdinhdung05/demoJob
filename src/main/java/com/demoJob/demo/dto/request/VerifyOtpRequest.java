@@ -1,6 +1,5 @@
 package com.demoJob.demo.dto.request;
 
-import com.demoJob.demo.util.enums.OtpType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -14,11 +13,11 @@ public class VerifyOtpRequest {
 
     @Schema(description = "Email của người dùng", example = "example@gmail.com")
     @Email(message = "Email không hợp lệ")
-    @NotBlank(message = "Email không được để trống")
+    @NotBlank(message = "Email cannot null")
     private String email;
 
     @Schema(description = "Mã OTP", example = "123456")
-    @NotBlank(message = "Mã OTP không được để trống")
+    @NotBlank(message = "OTP cannot null")
     private String code;
 }
 

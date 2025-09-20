@@ -32,11 +32,18 @@ public class SecurityConfig {
     private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
     private final PasswordEncoder passwordEncoder;
 
-    private final String[] PUBLIC_URL = {
+    public static final String[] PUBLIC_URL = {
             "/",
             "/login/**",
             "/oauth2/**",
-            "/api/auth/**",
+            "/api/auth/login",
+            "/api/auth/register",
+            "/api/auth/refresh-token",
+            "/api/auth/reset-password",
+            "/api/auth/forgot-password",
+            "/api/auth/logout",
+            "/api/auth/active",
+            "/api/auth/reset-password/otp/verify",
             "/favicon.ico",
             "/ott/**",
             "/api/otp/**",

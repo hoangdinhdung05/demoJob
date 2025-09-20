@@ -1,15 +1,30 @@
 package com.demoJob.demo.exception;
 
-public abstract class ApiException extends RuntimeException {
-    public ApiException(String message) {
+import lombok.Getter;
+import java.time.LocalDateTime;
+
+public class ApiException extends RuntimeException {
+    private final int status;
+    @Getter
+    private final String errorCode;
+    @Getter
+    private final LocalDateTime timestamp;
+
+    public ApiException(int status, String errorCode, String message) {
         super(message);
+        this.status = status;
+        this.errorCode = errorCode;
+        this.timestamp = LocalDateTime.now();
     }
 
-    public ApiException(String message, Throwable cause) {
+    public ApiException(int status, String errorCode, String message, Throwable cause) {
         super(message, cause);
+        this.status = status;
+        this.errorCode = errorCode;
+        this.timestamp = LocalDateTime.now();
     }
 
-    public abstract int getStatusCode();
-
-    public abstract String getErrorCode();
+    public int getStatusCode() {
+        return status;
+    }
 }

@@ -145,7 +145,7 @@ public class AuthController {
      * @return ResponseEntity chứa mã trạng thái và thông báo thay đổi mật khẩu thành công.
      */
     @Operation(summary = "Thay đổi mật khẩu", description = "Thay đổi mật khẩu của người dùng hiện tại.")
-    @PatchMapping("/password")
+    @PatchMapping("/change-password")
     public ResponseEntity<?> changeMyPassword(@RequestBody @Valid ChangePasswordRequest request) {
         log.info("Changing user password: {}", request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(),

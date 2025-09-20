@@ -58,7 +58,7 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
      * @param verifyKey verifyKey để tìm kiếm mã OTP
      * @return Optional chứa mã OTP nếu tìm thấy, hoặc rỗng nếu không có mã hợp lệ
      */
-    Optional<OtpCode> findByVerifyKeyAndUsedTrue(String verifyKey);
+    Optional<OtpCode> findByVerifyKeyAndAndUsedTrue(String verifyKey);
 
     /**
      * Lấy OTP mới nhất theo user + type
