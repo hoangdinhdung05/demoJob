@@ -1,8 +1,10 @@
 package com.demoJob.demo.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,6 +15,8 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
+import static org.springframework.http.HttpStatus.*;
 
 @Slf4j
 @RestControllerAdvice
@@ -65,7 +69,31 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(e, request, HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", e.getMessage());
     }
 
-    // Build ErrorResponse
+    //Enums
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(BAD_REQUEST)
+    public ErrorResponse handleHttpMessageNotReadable(HttpMessageNotReadableException ex, WebRequest request) {
+        Throwable cause = ex.getCause();
+
+        if (cause instanceof InvalidFormatException ife && ife.getTargetType() != null && ife.getTargetType().isEnum()) {
+            String fieldName = ife.getPath().isEmpty() ? "unknown" : ife.getPath().get(0).getFieldName();
+            String invalidValue = String.valueOf(ife.getValue());
+            String acceptedValues = Arrays.toString(ife.getTargetType().getEnumConstants());
+
+            String message = String.format(
+                    "Invalid value '%s' for field '%s'. Accepted values are: %s",
+                    invalidValue, fieldName, acceptedValues
+            );
+
+            return buildErrorResponse(ex, request, BAD_REQUEST, "ENUM_INVALID", message);
+        }
+
+        // fallback for other parse errors
+        return buildErrorResponse(ex, request, BAD_REQUEST, "INVALID_JSON", "Invalid request payload");
+    }
+
+
+
     private ErrorResponse buildErrorResponse(Exception e, WebRequest request,
                                              HttpStatus status,
                                              String error,

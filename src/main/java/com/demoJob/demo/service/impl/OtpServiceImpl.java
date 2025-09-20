@@ -1,6 +1,7 @@
 package com.demoJob.demo.service.impl;
 
 import com.demoJob.demo.dto.MailDTO.EmailDTO;
+import com.demoJob.demo.dto.request.ResendOtpRequest;
 import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.OtpCode;
@@ -8,6 +9,7 @@ import com.demoJob.demo.entity.User;
 import com.demoJob.demo.exception.BadRequestException;
 import com.demoJob.demo.exception.InvalidDataException;
 import com.demoJob.demo.exception.InvalidOtpException;
+import com.demoJob.demo.exception.NotFoundException;
 import com.demoJob.demo.repository.OtpCodeRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.EmailService;
@@ -46,27 +48,29 @@ public class OtpServiceImpl implements OtpService {
      */
     @Override
     public void sendOtp(SendOtpRequest request, OtpType type) {
+        User user = getUser(request.getEmail());
 
-        User user = userRepo.findByEmail(request.getEmail().trim().toLowerCase())
-                .orElseThrow(() -> new InvalidDataException("Email does not exist"));
+        // Rule riêng của send lần đầu
+        checkExistsAndCountSend(user.getId(), type);
 
-        long userId = user.getId();
+        // Gửi OTP chung
+        sendOtpCommon(user, type, "Mã OTP xác thực của bạn");
+    }
 
-        // Check OTP tồn tại và số lần gửi
-        checkExistsAndCountSend(userId, type);
+    /**
+     * Gửi OTP đến người dùng
+     *
+     * @param request Thông tin yêu cầu gửi OTP
+     */
+    @Override
+    public void resendOtp(ResendOtpRequest request) {
+        User user = getUser(request.getEmail());
 
-        // Tạo OTP
-        String otp = createOtpAndSaveDb(user, type);
+        // Rule riêng của resend
+        checkResend(user, request.getType());
 
-        EmailDTO email = EmailDTO.builder()
-                .to(List.of(user.getEmail()))
-                .subject("Mã OTP xác thực của bạn")
-                .textContent(buildEmailContent(user, otp, type))
-                .isHtml(false) // gửi plain text
-                .build();
-
-        emailService.sendEmailAsync(email);
-        log.info("Sent OTP {} to {} and type {}", otp, user.getEmail(), type);
+        // Gửi OTP chung
+        sendOtpCommon(user, request.getType(), "Mã OTP xác thực của bạn (Resend)");
     }
 
     /**
@@ -160,7 +164,7 @@ public class OtpServiceImpl implements OtpService {
      */
     private User getUser(String email) {
         return userRepo.findByEmail(email.trim().toLowerCase())
-                .orElseThrow(() -> new InvalidDataException("Email does not exist"));
+                .orElseThrow(() -> new NotFoundException("Email does not exist"));
     }
 
     /**
@@ -233,5 +237,55 @@ public class OtpServiceImpl implements OtpService {
             throw new InvalidDataException("Key has expired");
         }
         return otp;
+    }
+
+    /**
+     * Logic send OTP chung
+     */
+    private void sendOtpCommon(User user, OtpType type, String subject) {
+        String otp = createOtpAndSaveDb(user, type);
+
+        EmailDTO email = EmailDTO.builder()
+                .to(List.of(user.getEmail()))
+                .subject(subject)
+                .textContent(buildEmailContent(user, otp, type))
+                .isHtml(false)
+                .build();
+
+        emailService.sendEmailAsync(email);
+        log.info("Sent OTP to {} and type {}", user.getEmail(), type);
+    }
+
+    /**
+     * Validate các case về resend
+     * Case 1: OTP còn hạn và chưa dùng → không cần gửi mới.
+     * Case 2: Vừa gửi OTP trong thời gian OTP_RESEND_LIMIT_MINUTES → chặn spam.
+     * Case 3: Nếu DB có nhiều OTP “mới nhất” cùng lúc (spam lỗi DB) → coi như spam và chặn luôn.
+     */
+    private void checkResend(User user, OtpType type) {
+        // Lấy OTP mới nhất
+        otpRepo.findFirstByUserIdAndTypeOrderByCreatedAtDesc(user.getId(), type)
+                .ifPresent(latest -> {
+                    // OTP vẫn còn hạn và chưa dùng
+                    if (latest.getExpiryTime().isAfter(LocalDateTime.now()) && !latest.isUsed()) {
+                        throw new InvalidOtpException("Current OTP is still valid, no need to resend");
+                    }
+
+                    // Vừa request gần đây
+                    if (latest.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(OTP_RESEND_LIMIT_MINUTES))) {
+                        throw new InvalidOtpException("You just requested OTP, please try again in a few minutes");
+                    }
+                });
+
+        // Đếm số lượng OTP đã gửi gần đây
+        int count = otpRepo.countRecentOtpByUser(
+                user.getId(),
+                LocalDateTime.now().minusMinutes(OTP_RESEND_LIMIT_MINUTES),
+                type
+        );
+
+        if (count >= MAX_OTP_SEND_COUNT) {
+            throw new InvalidOtpException("You have resent OTP too many times. Try again later.");
+        }
     }
 }

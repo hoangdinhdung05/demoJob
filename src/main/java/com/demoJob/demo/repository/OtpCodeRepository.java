@@ -6,7 +6,6 @@ import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -56,9 +55,15 @@ public interface OtpCodeRepository extends JpaRepository<OtpCode, Long> {
 
     /**
      * Tìm mã OTP theo verifyKey và loại OTP mà đã được sử dụng.
-     *
      * @param verifyKey verifyKey để tìm kiếm mã OTP
      * @return Optional chứa mã OTP nếu tìm thấy, hoặc rỗng nếu không có mã hợp lệ
      */
     Optional<OtpCode> findByVerifyKeyAndAndUsedTrue(String verifyKey);
+
+    /**
+     * Lấy OTP mới nhất theo user + type
+     */
+    Optional<OtpCode> findFirstByUserIdAndTypeOrderByCreatedAtDesc(Long userId, OtpType type);
+
+
 }
