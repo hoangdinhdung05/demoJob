@@ -6,10 +6,7 @@ import com.demoJob.demo.dto.request.SendOtpRequest;
 import com.demoJob.demo.dto.request.VerifyOtpRequest;
 import com.demoJob.demo.entity.OtpCode;
 import com.demoJob.demo.entity.User;
-import com.demoJob.demo.exception.BadRequestException;
-import com.demoJob.demo.exception.InvalidDataException;
-import com.demoJob.demo.exception.InvalidOtpException;
-import com.demoJob.demo.exception.NotFoundException;
+import com.demoJob.demo.exception.*;
 import com.demoJob.demo.repository.OtpCodeRepository;
 import com.demoJob.demo.repository.UserRepository;
 import com.demoJob.demo.service.EmailService;
@@ -85,7 +82,7 @@ public class OtpServiceImpl implements OtpService {
     public String verifyOtp(VerifyOtpRequest request) {
         User user = getUser(request.getEmail());
 
-        OtpCode otp = validateOtp(request.getEmail(), request.getCode());
+        OtpCode otp = validateOtp(request.getEmail(), request.getCode(), OtpType.RESET_PASSWORD);
         String verifyKey = UUID.randomUUID().toString();
         otp.setVerifyKey(verifyKey);
         otp.setVerifyExpiryTime(LocalDateTime.now().plusMinutes(VERIFY_KEY_EXPIRY_MINUTES));
@@ -105,7 +102,7 @@ public class OtpServiceImpl implements OtpService {
      */
     @Override
     public void verifyEmail(VerifyOtpRequest request) {
-        validateOtp(request.getEmail(), request.getCode());
+        validateOtp(request.getEmail(), request.getCode(), OtpType.VERIFY_EMAIL);
 
         User user = getUser(request.getEmail());
 
@@ -143,7 +140,7 @@ public class OtpServiceImpl implements OtpService {
      * @param code Mã OTP cần xác minh
      * @return OtpCode nếu xác minh thành công
      */
-    private OtpCode validateOtp(String email, String code) {
+    private OtpCode validateOtp(String email, String code, OtpType expectedType) {
         User user = getUser(email);
 
         if (code.length() != 6) {
@@ -151,6 +148,10 @@ public class OtpServiceImpl implements OtpService {
         }
 
         OtpCode otp = findAndCheckExpiryTime(code, user);
+
+        if (otp.getType() != expectedType) {
+            throw new BadRequestException("OTP type mismatch. Expected=" + expectedType);
+        }
 
         otp.setUsed(true);
         otpRepo.save(otp);
