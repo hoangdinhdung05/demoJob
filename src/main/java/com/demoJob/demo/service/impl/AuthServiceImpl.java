@@ -298,5 +298,10 @@ public class AuthServiceImpl implements AuthService {
         if (blacklistService.isBlacklisted(refreshToken)) {
             throw new TokenBlacklistedException("Refresh token is blacklisted");
         }
+
+        if (!tokenService.existsByRefreshToken(refreshToken)) {
+            log.error("Refresh token does not exist in DB (maybe logout)");
+            throw new BadRequestException("Refresh token not found");
+        }
     }
 }
