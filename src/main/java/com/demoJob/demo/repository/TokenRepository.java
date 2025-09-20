@@ -12,4 +12,14 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
      */
     Optional<Token> findByUsername(String username);
 
+    /**
+     * Find by access token
+     */
+    Optional<Token> findByAccessToken(String accessToken);
+
+    /**
+     * Find by refresh token
+     */
+    Optional<Token> findByRefreshToken(String refreshToken);
+
 }
