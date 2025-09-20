@@ -1,9 +1,11 @@
 package com.demoJob.demo.exception;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.stream.Collectors;
 import static org.springframework.http.HttpStatus.*;
@@ -78,6 +81,31 @@ public class GlobalExceptionHandler {
         log.error("Unhandled exception occurred", e);
         return buildErrorResponse(e, request, INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", e.getMessage());
     }
+
+    //Enums
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(BAD_REQUEST)
+    public ErrorResponse handleHttpMessageNotReadable(HttpMessageNotReadableException ex, WebRequest request) {
+        Throwable cause = ex.getCause();
+
+        if (cause instanceof InvalidFormatException ife && ife.getTargetType() != null && ife.getTargetType().isEnum()) {
+            String fieldName = ife.getPath().isEmpty() ? "unknown" : ife.getPath().get(0).getFieldName();
+            String invalidValue = String.valueOf(ife.getValue());
+            String acceptedValues = Arrays.toString(ife.getTargetType().getEnumConstants());
+
+            String message = String.format(
+                    "Invalid value '%s' for field '%s'. Accepted values are: %s",
+                    invalidValue, fieldName, acceptedValues
+            );
+
+            return buildErrorResponse(ex, request, BAD_REQUEST, "ENUM_INVALID", message);
+        }
+
+        // fallback for other parse errors
+        return buildErrorResponse(ex, request, BAD_REQUEST, "INVALID_JSON", "Invalid request payload");
+    }
+
+
 
     private ErrorResponse buildErrorResponse(Exception e, WebRequest request,
                                              HttpStatus status,

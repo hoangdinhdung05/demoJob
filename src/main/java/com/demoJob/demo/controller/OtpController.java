@@ -1,9 +1,8 @@
 package com.demoJob.demo.controller;
 
-import com.demoJob.demo.dto.request.SendOtpRequest;
+import com.demoJob.demo.dto.request.ResendOtpRequest;
 import com.demoJob.demo.dto.response.system.ResponseData;
 import com.demoJob.demo.service.OtpService;
-import com.demoJob.demo.util.enums.OtpType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -33,9 +32,9 @@ public class OtpController {
      */
     @Operation(summary = "Gửi OTP đến email", description = "Gửi OTP đến email của người dùng")
     @PostMapping("/resend")
-    public ResponseEntity<ResponseData<Void>> sendOtp(@RequestBody @Valid SendOtpRequest request, @RequestParam OtpType type) {
-        log.info("[OTP] Sending OTP to email, type: {} {}", request.getEmail(), type);
-        otpService.sendOtp(request, type);
+    public ResponseEntity<ResponseData<Void>> sendOtp(@RequestBody @Valid ResendOtpRequest request) {
+        log.info("[OTP] Sending OTP to email: {}", request.getEmail());
+        otpService.resendOtp(request);
         return ResponseEntity.ok(new ResponseData<>(HttpStatus.OK.value(), "OTP đã được gửi"));
     }
 }
