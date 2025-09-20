@@ -1,5 +1,6 @@
 package com.demoJob.demo.dto.request.User.Client;
 
+import com.demoJob.demo.validator.PasswordValidator.ValidPassword;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -21,5 +22,6 @@ public class ChangePasswordRequest {
     @Schema(description = "Xác nhận mật khẩu mới của người dùng", example = "newPassword123")
     @NotBlank(message = "Confirm password cannot be blank")
     @Size(min = 6, max = 20, message = "Confirm password must be between 8 and 20 characters")
+    @ValidPassword
     private String confirmPassword;
 }
