@@ -164,7 +164,7 @@ public class OtpServiceImpl implements OtpService {
      */
     private User getUser(String email) {
         return userRepo.findByEmail(email.trim().toLowerCase())
-                .orElseThrow(() -> new InvalidDataException("Email does not exist"));
+                .orElseThrow(() -> new NotFoundException("Email does not exist"));
     }
 
     /**
@@ -253,7 +253,7 @@ public class OtpServiceImpl implements OtpService {
                 .build();
 
         emailService.sendEmailAsync(email);
-        log.info("Sent OTP {} to {} and type {}", otp, user.getEmail(), type);
+        log.info("Sent OTP to {} and type {}", user.getEmail(), type);
     }
 
     /**
