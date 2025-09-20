@@ -48,7 +48,7 @@ public class OtpServiceImpl implements OtpService {
     public void sendOtp(SendOtpRequest request, OtpType type) {
 
         User user = userRepo.findByEmail(request.getEmail().trim().toLowerCase())
-                .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
+                .orElseThrow(() -> new InvalidDataException("Email does not exist"));
 
         long userId = user.getId();
 
@@ -119,7 +119,7 @@ public class OtpServiceImpl implements OtpService {
      */
     @Override
     public User confirmVerifyKey(String verifyKey) {
-        OtpCode otp = validVerify_key(verifyKey);
+        OtpCode otp = validVerifyKey(verifyKey);
 
         User user = otp.getUser();
 
@@ -143,7 +143,7 @@ public class OtpServiceImpl implements OtpService {
         User user = getUser(email);
 
         if (code.length() != 6) {
-            throw new BadRequestException("OTP không đúng định dạng");
+            throw new BadRequestException("OTP is not in correct format");
         }
 
         OtpCode otp = findAndCheckExpiryTime(code, user);
@@ -160,7 +160,7 @@ public class OtpServiceImpl implements OtpService {
      */
     private User getUser(String email) {
         return userRepo.findByEmail(email.trim().toLowerCase())
-                .orElseThrow(() -> new InvalidDataException("Email không tồn tại"));
+                .orElseThrow(() -> new InvalidDataException("Email does not exist"));
     }
 
     /**
@@ -189,14 +189,14 @@ public class OtpServiceImpl implements OtpService {
      */
     private void checkExistsAndCountSend(long userId, OtpType type) {
         if (otpRepo.findValidOtp(userId, LocalDateTime.now()).isPresent()) {
-            throw new InvalidOtpException("OTP đã được gửi. Vui lòng kiểm tra email.");
+            throw new InvalidOtpException("OTP has been sent. Please check your email.");
         }
 
         // Check số lần gửi gần đây
         int count = otpRepo.countRecentOtpByUser(
                 userId, LocalDateTime.now().minusMinutes(OTP_RESEND_LIMIT_MINUTES), type);
         if (count >= MAX_OTP_SEND_COUNT) {
-            throw new InvalidOtpException("Bạn đã gửi OTP quá nhiều lần. Thử lại sau.");
+            throw new InvalidOtpException("You have sent OTP too many times. Try again later.");
         }
     }
 
@@ -208,10 +208,10 @@ public class OtpServiceImpl implements OtpService {
      */
     private OtpCode findAndCheckExpiryTime(String code, User user) {
         OtpCode otp = otpRepo.findByUserIdAndCodeAndUsedIsFalse(user.getId(), code)
-                .orElseThrow(() -> new BadRequestException("OTP không hợp lệ hoặc đã hết hạn"));
+                .orElseThrow(() -> new BadRequestException("OTP invalid or expired key"));
 
         if (otp.getExpiryTime().isBefore(LocalDateTime.now())) {
-            throw new BadRequestException("OTP đã hết hạn");
+            throw new BadRequestException("OTP has expired");
         }
         return otp;
     }
@@ -225,12 +225,12 @@ public class OtpServiceImpl implements OtpService {
                 + "Vui lòng không chia sẻ mã này cho bất kỳ ai.";
     }
 
-    private OtpCode validVerify_key(String verifyKey) {
+    private OtpCode validVerifyKey(String verifyKey) {
         OtpCode otp = otpRepo.findByVerifyKeyAndAndUsedTrue(verifyKey)
-                .orElseThrow(() -> new InvalidDataException("Key không hợp lệ hoặc đã hết hạn"));
+                .orElseThrow(() -> new InvalidDataException("Key invalid or expired key"));
 
         if (otp.getExpiryTime() != null && otp.getVerifyExpiryTime().isBefore(LocalDateTime.now())) {
-            throw new InvalidDataException("Key đã hết hạn");
+            throw new InvalidDataException("Key has expired");
         }
         return otp;
     }
