@@ -63,4 +63,25 @@ public class TokenServiceImpl implements TokenService {
         return tokenRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Token not found"));
     }
+
+    /**
+     * Check exists
+     *
+     * @param accessToken Header
+     * @return true/false
+     */
+    public boolean existsByAccessToken(String accessToken) {
+        return tokenRepository.findByAccessToken(accessToken).isPresent();
+    }
+
+    /**
+     * Check exists
+     *
+     * @param refreshToken Header
+     * @return true/false
+     */
+    @Override
+    public boolean existsByRefreshToken(String refreshToken) {
+        return tokenRepository.findByRefreshToken(refreshToken).isPresent();
+    }
 }
